@@ -1,6 +1,17 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { supabase } from "./supabase";
-import type { Profile, Couple, UserState, PartnerInfo } from "../types/database";
+import type {
+  Profile,
+  Couple,
+  UserState,
+  PartnerInfo,
+} from "../types/database";
 
 interface AuthContextType {
   session: any;
@@ -10,13 +21,22 @@ interface AuthContextType {
   userState: UserState;
   partnerInfo: PartnerInfo | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (
+    email: string,
+    password: string,
+  ) => Promise<{ error?: string; session?: any; user?: any }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<{ error?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string }>;
-  saveProfile: (data: { full_name: string; birth_date: string; monthly_income?: number }) => Promise<{ error?: string; inviteCode?: string }>;
-  lookupPartner: (inviteCode: string) => Promise<{ error?: string; partner?: PartnerInfo }>;
+  saveProfile: (data: {
+    full_name: string;
+    birth_date: string;
+    monthly_income?: number;
+  }) => Promise<{ error?: string; inviteCode?: string }>;
+  lookupPartner: (
+    inviteCode: string,
+  ) => Promise<{ error?: string; partner?: PartnerInfo }>;
   linkPartner: (inviteCode: string) => Promise<{ error?: string }>;
   refreshProfile: () => Promise<void>;
 }
@@ -26,7 +46,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 function generateInviteCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
@@ -40,12 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const getUserState = useCallback((profile: Profile | null, couple: Couple | null): UserState => {
-    if (!profile) return "profile_incomplete";
-    if (!couple) return "awaiting_partner";
-    if (couple.status === "pending") return "awaiting_partner";
-    return "linked";
-  }, []);
+  const getUserState = useCallback(
+    (profile: Profile | null, couple: Couple | null): UserState => {
+      if (!profile) return "profile_incomplete";
+      if (!couple) return "awaiting_partner";
+      if (couple.status === "pending") return "awaiting_partner";
+      return "linked";
+    },
+    [],
+  );
 
   const fetchCouple = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -77,19 +100,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   }, []);
 
-  const refreshProfile = useCallback(async (userId?: string) => {
-    const uid = userId || user?.id;
-    if (!uid) return;
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", uid)
-      .single();
-    setProfile(p);
-    if (p) {
-      await fetchCouple(uid);
-    }
-  }, [user, fetchCouple]);
+  const refreshProfile = useCallback(
+    async (userId?: string) => {
+      const uid = userId || user?.id;
+      if (!uid) return;
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", uid)
+        .single();
+      setProfile(p);
+      if (p) {
+        await fetchCouple(uid);
+      }
+    },
+    [user, fetchCouple],
+  );
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -101,7 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -135,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (updated.status === "active") {
             refreshProfile();
           }
-        }
+        },
       )
       .subscribe();
 
@@ -145,12 +173,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [couple?.id, user, refreshProfile]);
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error: error?.message };
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    return { error: error?.message, session: data.session, user: data.user };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     return { error: error?.message };
   };
 
@@ -175,7 +206,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message };
   };
 
-  const saveProfile = async (data: { full_name: string; birth_date: string; monthly_income?: number }) => {
+  const saveProfile = async (data: {
+    full_name: string;
+    birth_date: string;
+    monthly_income?: number;
+  }) => {
     if (!user) return { error: "No user" };
 
     let inviteCode = generateInviteCode();
@@ -211,11 +246,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const lookupPartner = async (inviteCode: string) => {
     const { data: rpcData, error: rpcError } = await supabase.rpc(
       "lookup_partner",
-      { p_invite_code: inviteCode }
+      { p_invite_code: inviteCode },
     );
 
     if (rpcError) return { error: rpcError.message };
-    if (!rpcData) return { error: "Código inválido. Verifique e tente novamente." };
+    if (!rpcData)
+      return { error: "Código inválido. Verifique e tente novamente." };
 
     return { partner: rpcData as PartnerInfo };
   };
@@ -224,11 +260,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return { error: "No user" };
     const { data: rpcData, error: rpcError } = await supabase.rpc(
       "link_partner",
-      { p_invite_code: inviteCode, p_current_user_id: user.id }
+      { p_invite_code: inviteCode, p_current_user_id: user.id },
     );
 
     if (rpcError) return { error: rpcError.message };
-    if (rpcData && (rpcData as any).error) return { error: (rpcData as any).error };
+    if (rpcData && (rpcData as any).error)
+      return { error: (rpcData as any).error };
 
     await refreshProfile();
     return {};

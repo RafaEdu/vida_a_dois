@@ -9,11 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
 
 export default function VerifyEmail() {
   const { user, verifyOtp, resendVerification } = useAuth();
+  const params = useLocalSearchParams<{ email?: string }>();
+  const email = user?.email ?? params.email ?? "";
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,12 +23,12 @@ export default function VerifyEmail() {
   const inputs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
-    if (!user) {
+    if (!user && !params.email) {
       router.replace("/sign-in");
-    } else if (user.email_confirmed_at) {
+    } else if (user?.email_confirmed_at) {
       router.replace("/");
     }
-  }, [user]);
+  }, [user, params.email]);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -57,10 +59,10 @@ export default function VerifyEmail() {
   };
 
   const handleVerify = async (otp: string) => {
-    if (!user?.email) return;
+    if (!email) return;
     setError("");
     setLoading(true);
-    const { error: verifyError } = await verifyOtp(user.email, otp);
+    const { error: verifyError } = await verifyOtp(email, otp);
     setLoading(false);
     if (verifyError) {
       setError("Código inválido ou expirado. Tente novamente.");
@@ -70,9 +72,9 @@ export default function VerifyEmail() {
   };
 
   const handleResend = async () => {
-    if (!user?.email || cooldown > 0) return;
+    if (!email || cooldown > 0) return;
     setError("");
-    const { error: resendError } = await resendVerification(user.email);
+    const { error: resendError } = await resendVerification(email);
     if (resendError) {
       setError(resendError);
     } else {
@@ -92,7 +94,7 @@ export default function VerifyEmail() {
         <View style={styles.header}>
           <Text style={styles.title}>Verifique seu e-mail</Text>
           <Text style={styles.subtitle} selectable>
-            Enviamos um código para {user?.email ?? "seu e-mail"}. Verifique sua caixa de
+            Enviamos um código para {email || "seu e-mail"}. Verifique sua caixa de
             entrada.
           </Text>
         </View>

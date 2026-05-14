@@ -46,11 +46,16 @@ export default function SignUp() {
     }
 
     setLoading(true);
-    const { error: signUpError } = await signUp(email, password);
+    const { error: signUpError, session } = await signUp(email, password);
     setLoading(false);
 
     if (signUpError) {
       setError(signUpError);
+      return;
+    }
+
+    if (!session) {
+      router.replace({ pathname: "/verify-email", params: { email } });
     }
   };
 
