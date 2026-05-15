@@ -12,6 +12,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { Link } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function formatCode(code: string): string {
   if (code.length !== 8) return code;
@@ -26,6 +27,10 @@ export default function LinkPartner() {
   const [linking, setLinking] = useState(false);
   const [foundPartner, setFoundPartner] = useState<{ id: string; full_name: string } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.setItem("@registration_step", "link").catch(() => {});
+  }, []);
 
   // If already in a pending couple (waiting for partner), redirect to home
   // The _layout will handle navigation based on state

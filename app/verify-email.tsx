@@ -11,6 +11,9 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const REGISTRATION_STEP_KEY = "@registration_step";
 
 export default function VerifyEmail() {
   const { user, verifyOtp, resendVerification } = useAuth();
@@ -21,14 +24,23 @@ export default function VerifyEmail() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const inputs = useRef<(TextInput | null)[]>([]);
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
+    if (hasNavigated.current) return;
+
     if (!user && !params.email) {
+      hasNavigated.current = true;
       router.replace("/sign-in");
     } else if (user?.email_confirmed_at) {
+      hasNavigated.current = true;
       router.replace("/");
     }
   }, [user, params.email]);
+
+  useEffect(() => {
+    AsyncStorage.setItem(REGISTRATION_STEP_KEY, "verify").catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (cooldown > 0) {

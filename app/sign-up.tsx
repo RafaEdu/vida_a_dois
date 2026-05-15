@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -11,6 +11,9 @@ import {
 } from "react-native";
 import { Link, router } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const REGISTRATION_STEP_KEY = "@registration_step";
 
 export default function SignUp() {
   const { user, signUp } = useAuth();
@@ -19,12 +22,19 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
+    if (hasNavigated.current) return;
     if (user && !user.email_confirmed_at) {
+      hasNavigated.current = true;
       router.replace("/verify-email");
     }
   }, [user]);
+
+  useEffect(() => {
+    AsyncStorage.setItem(REGISTRATION_STEP_KEY, "signup").catch(() => {});
+  }, []);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isPasswordValid = password.length >= 8;

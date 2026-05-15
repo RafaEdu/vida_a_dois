@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -11,9 +11,12 @@ import { useAuth } from "../src/lib/auth-context";
 
 export default function Home() {
   const { profile, partnerInfo, userState, signOut } = useAuth();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
+    if (hasNavigated.current) return;
     if (userState !== "linked") {
+      hasNavigated.current = true;
       router.replace("/");
     }
   }, [userState]);

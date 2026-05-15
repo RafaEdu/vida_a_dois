@@ -5,6 +5,7 @@ import {
   useState,
   useCallback,
 } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
 import type {
   Profile,
@@ -186,6 +187,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    await AsyncStorage.multiRemove([
+      "@registration_step",
+      "@profile_draft_name",
+      "@profile_draft_birthdate",
+      "@profile_draft_income",
+    ]).catch(() => {});
     await supabase.auth.signOut();
   };
 
