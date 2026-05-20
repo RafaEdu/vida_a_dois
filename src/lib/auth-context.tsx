@@ -12,6 +12,8 @@ import type {
   Couple,
   UserState,
   PartnerInfo,
+  Expense,
+  ExpenseInput,
 } from "../types/database";
 
 interface AuthContextType {
@@ -39,7 +41,15 @@ interface AuthContextType {
     inviteCode: string,
   ) => Promise<{ error?: string; partner?: PartnerInfo }>;
   linkPartner: (inviteCode: string) => Promise<{ error?: string }>;
+  acceptInvitation: (coupleId: string) => Promise<{ error?: string }>;
+  rejectInvitation: (coupleId: string) => Promise<{ error?: string }>;
   refreshProfile: () => Promise<void>;
+  expenses: Expense[];
+  addExpense: (data: ExpenseInput) => Promise<{ error?: string }>;
+  updateExpense: (id: string, data: Partial<ExpenseInput>) => Promise<{ error?: string }>;
+  deleteExpense: (id: string) => Promise<{ error?: string }>;
+  fetchExpenses: () => Promise<void>;
+  updateCostPlan: (data: { monthly_budget?: number; split_ratio_a?: number; split_ratio_b?: number }) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -60,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const getUserState = useCallback(
     (profile: Profile | null, couple: Couple | null): UserState => {
@@ -88,6 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("id", partnerId)
           .single();
         setPartnerInfo(partnerProfile);
+        const { data: expensesData } = await supabase
+          .from("expenses")
+          .select("*")
+          .eq("couple_id", data.id)
+          .order("created_at", { ascending: false });
+        if (expensesData) setExpenses(expensesData as Expense[]);
       } else if (data.status === "pending") {
         const partnerId = data.user_a === userId ? data.user_b : data.user_a;
         const { data: pp } = await supabase
@@ -97,6 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
         setPartnerInfo(pp);
       }
+    } else {
+      setCouple(null);
+      setPartnerInfo(null);
+      setExpenses([]);
     }
     return data;
   }, []);
@@ -172,6 +193,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(channel);
     };
   }, [couple?.id, user, refreshProfile]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const insertChannel = supabase
+      .channel(`couples-insert-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "couples",
+          filter: `user_a=eq.${user.id}`,
+        },
+        () => { refreshProfile(); },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "couples",
+          filter: `user_b=eq.${user.id}`,
+        },
+        () => { refreshProfile(); },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "couples",
+          filter: `user_a=eq.${user.id}`,
+        },
+        () => {
+          setCouple(null);
+          setPartnerInfo(null);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "couples",
+          filter: `user_b=eq.${user.id}`,
+        },
+        () => {
+          setCouple(null);
+          setPartnerInfo(null);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(insertChannel);
+    };
+  }, [user, refreshProfile]);
+
+  useEffect(() => {
+    if (!couple || couple.status !== "active" || !user) return;
+
+    const expensesChannel = supabase
+      .channel(`expenses-${couple.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "expenses",
+          filter: `couple_id=eq.${couple.id}`,
+        },
+        () => { fetchExpenses(); },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "expenses",
+          filter: `couple_id=eq.${couple.id}`,
+        },
+        () => { fetchExpenses(); },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "expenses",
+          filter: `couple_id=eq.${couple.id}`,
+        },
+        () => { fetchExpenses(); },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(expensesChannel);
+    };
+  }, [couple?.id, couple?.status, user]);
 
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
@@ -257,10 +378,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     if (rpcError) return { error: rpcError.message };
-    if (!rpcData)
+    if (!rpcData || (Array.isArray(rpcData) && rpcData.length === 0))
       return { error: "Código inválido. Verifique e tente novamente." };
 
-    return { partner: rpcData as PartnerInfo };
+    const partner = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    return { partner: partner as PartnerInfo };
   };
 
   const linkPartner = async (inviteCode: string) => {
@@ -274,6 +396,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (rpcData && (rpcData as any).error)
       return { error: (rpcData as any).error };
 
+    await refreshProfile();
+    return {};
+  };
+
+  const acceptInvitation = async (coupleId: string) => {
+    if (!user) return { error: "No user" };
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "accept_invitation",
+      { p_couple_id: coupleId, p_current_user_id: user.id },
+    );
+
+    if (rpcError) return { error: rpcError.message };
+    if (rpcData && (rpcData as any).error)
+      return { error: (rpcData as any).error };
+
+    await refreshProfile();
+    return {};
+  };
+
+  const rejectInvitation = async (coupleId: string) => {
+    if (!user) return { error: "No user" };
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "reject_invitation",
+      { p_couple_id: coupleId, p_current_user_id: user.id },
+    );
+
+    if (rpcError) return { error: rpcError.message };
+    if (rpcData && (rpcData as any).error)
+      return { error: (rpcData as any).error };
+
+    setCouple(null);
+    setPartnerInfo(null);
+    return {};
+  };
+
+  const fetchExpenses = useCallback(async () => {
+    if (!couple) return;
+    const { data } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("couple_id", couple.id)
+      .order("created_at", { ascending: false });
+    if (data) setExpenses(data as Expense[]);
+  }, [couple]);
+
+  const addExpense = async (data: ExpenseInput) => {
+    if (!user || !couple) return { error: "No user or couple" };
+    const { error } = await supabase.from("expenses").insert({
+      ...data,
+      couple_id: couple.id,
+      created_by: user.id,
+      paid: data.paid ?? false,
+    });
+    if (error) return { error: error.message };
+    await fetchExpenses();
+    return {};
+  };
+
+  const updateExpense = async (id: string, data: Partial<ExpenseInput>) => {
+    const { error } = await supabase.from("expenses").update(data).eq("id", id);
+    if (error) return { error: error.message };
+    await fetchExpenses();
+    return {};
+  };
+
+  const deleteExpense = async (id: string) => {
+    const { error } = await supabase.from("expenses").delete().eq("id", id);
+    if (error) return { error: error.message };
+    await fetchExpenses();
+    return {};
+  };
+
+  const updateCostPlan = async (data: {
+    monthly_budget?: number;
+    split_ratio_a?: number;
+    split_ratio_b?: number;
+  }) => {
+    if (!couple) return { error: "No couple" };
+    const { error } = await supabase
+      .from("couples")
+      .update(data)
+      .eq("id", couple.id);
+    if (error) return { error: error.message };
     await refreshProfile();
     return {};
   };
@@ -298,7 +503,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         saveProfile,
         lookupPartner,
         linkPartner,
+        acceptInvitation,
+        rejectInvitation,
         refreshProfile,
+        expenses,
+        addExpense,
+        updateExpense,
+        deleteExpense,
+        fetchExpenses,
+        updateCostPlan,
       }}
     >
       {children}

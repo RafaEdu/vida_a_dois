@@ -14,8 +14,30 @@ export interface Couple {
   status: "pending" | "active";
   split_ratio_a: number;
   split_ratio_b: number;
+  monthly_budget: number;
   created_at: string;
   linked_at: string | null;
+}
+
+export interface Expense {
+  id: string;
+  couple_id: string;
+  created_by: string;
+  description: string;
+  amount: number;
+  category: string;
+  due_date: string | null;
+  paid: boolean;
+  paid_at: string | null;
+  created_at: string;
+}
+
+export interface ExpenseInput {
+  description: string;
+  amount: number;
+  category: string;
+  due_date?: string;
+  paid?: boolean;
 }
 
 export interface PartnerInfo {

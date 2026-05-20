@@ -26,6 +26,9 @@ function AppNavigator() {
       <Stack.Screen name="link-partner" options={{ title: "Vincular parceiro", gestureEnabled: false }} />
       <Stack.Screen name="home" options={{ title: "Vida a Dois", gestureEnabled: false }} />
       <Stack.Screen name="profile" options={{ title: "Meu perfil", presentation: "modal" }} />
+      <Stack.Screen name="expense/new" options={{ title: "Nova despesa" }} />
+      <Stack.Screen name="cost-plan" options={{ title: "Plano de custos" }} />
+      <Stack.Screen name="cost-plan/edit" options={{ title: "Editar plano" }} />
     </Stack>
   );
 }

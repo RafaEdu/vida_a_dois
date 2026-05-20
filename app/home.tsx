@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import {
   ScrollView,
   View,
@@ -9,9 +9,35 @@ import {
 import { Link, router } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
 
+function getInitials(name: string | undefined | null): string {
+  if (!name) return "??";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 export default function Home() {
-  const { profile, partnerInfo, userState, signOut } = useAuth();
+  const {
+    profile,
+    partnerInfo,
+    couple,
+    userState,
+    expenses,
+    fetchExpenses,
+    signOut,
+  } = useAuth();
   const hasNavigated = useRef(false);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     if (hasNavigated.current) return;
@@ -20,6 +46,37 @@ export default function Home() {
       router.replace("/");
     }
   }, [userState]);
+
+  useEffect(() => {
+    if (couple?.status === "active" && !hasFetched.current) {
+      hasFetched.current = true;
+      fetchExpenses();
+    }
+  }, [couple?.status, fetchExpenses]);
+
+  const summary = useMemo(() => {
+    const budget = couple?.monthly_budget ?? 0;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthExpenses = expenses.filter((e) => {
+      if (!e.due_date) return true;
+      const d = new Date(e.due_date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const totalSpent = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const remaining = budget - totalSpent;
+    const paid = monthExpenses.filter((e) => e.paid).reduce((s, e) => s + e.amount, 0);
+    const pending = monthExpenses.filter((e) => !e.paid).reduce((s, e) => s + e.amount, 0);
+
+    return { budget, totalSpent, remaining, paid, pending, monthExpenses };
+  }, [expenses, couple?.monthly_budget]);
+
+  const recentExpenses = useMemo(() => {
+    return expenses.slice(0, 5);
+  }, [expenses]);
 
   return (
     <ScrollView
@@ -30,23 +87,13 @@ export default function Home() {
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {profile?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
+              {getInitials(profile?.full_name)}
             </Text>
           </View>
           <Text style={styles.and}>&</Text>
           <View style={[styles.avatar, styles.partnerAvatar]}>
             <Text style={styles.avatarText}>
-              {partnerInfo?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
+              {getInitials(partnerInfo?.full_name)}
             </Text>
           </View>
         </View>
@@ -55,26 +102,141 @@ export default function Home() {
         </Text>
       </View>
 
-      <View style={styles.comingSoon}>
-        <Text style={styles.comingSoonTitle}>Em breve</Text>
-        <Text style={styles.comingSoonText}>
-          O planejamento financeiro completo estará disponível aqui:
-        </Text>
-        <View style={styles.featureList}>
-          <Text style={styles.featureItem}>{"\u2022"} Orçamento mensal compartilhado</Text>
-          <Text style={styles.featureItem}>{"\u2022"} Divisão de custos personalizada</Text>
-          <Text style={styles.featureItem}>{"\u2022"} Categorias pré-definidas</Text>
-          <Text style={styles.featureItem}>{"\u2022"} Alertas de gastos</Text>
-          <Text style={styles.featureItem}>{"\u2022"} Relatórios mensais</Text>
+      <View style={styles.summaryRow}>
+        <View style={[styles.summaryCard, styles.summaryBudget]}>
+          <Text style={styles.summaryLabel}>Orçamento</Text>
+          <Text style={styles.summaryValue}>
+            {formatCurrency(summary.budget)}
+          </Text>
+        </View>
+        <View style={[styles.summaryCard, styles.summarySpent]}>
+          <Text style={styles.summaryLabel}>Gasto no mês</Text>
+          <Text style={styles.summaryValue}>
+            {formatCurrency(summary.totalSpent)}
+          </Text>
+        </View>
+        <View style={[styles.summaryCard, summary.remaining >= 0 ? styles.summaryRemaining : styles.summaryOver]}>
+          <Text style={styles.summaryLabel}>Saldo</Text>
+          <Text style={styles.summaryValue}>
+            {formatCurrency(summary.remaining)}
+          </Text>
         </View>
       </View>
 
+      {summary.budget > 0 && (
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.min((summary.totalSpent / summary.budget) * 100, 100)}%`,
+                  backgroundColor:
+                    summary.remaining < 0
+                      ? "#D32F2F"
+                      : summary.totalSpent / summary.budget > 0.8
+                        ? "#FFB347"
+                        : "#4CAF50",
+                },
+              ]}
+            />
+          </View>
+          <View style={styles.progressLabels}>
+            <Text style={styles.progressText}>
+              Pago: {formatCurrency(summary.paid)}
+            </Text>
+            <Text style={styles.progressText}>
+              Pendente: {formatCurrency(summary.pending)}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <Text style={styles.sectionTitle}>Ações</Text>
+
+      <View style={styles.actionsGrid}>
+        <Link href="/expense/new" asChild>
+          <Pressable style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}>
+            <Text style={styles.actionIcon}>{"\uD83D\uDCB0"}</Text>
+            <Text style={styles.actionTitle}>Cadastrar{"\n"}despesa</Text>
+            <Text style={styles.actionSubtitle}>Adicionar novo gasto</Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/cost-plan" asChild>
+          <Pressable style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}>
+            <Text style={styles.actionIcon}>{"\uD83D\uDCCA"}</Text>
+            <Text style={styles.actionTitle}>Visualizar{"\n"}plano de custos</Text>
+            <Text style={styles.actionSubtitle}>Ver orçamento e gastos</Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/cost-plan/edit" asChild>
+          <Pressable style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}>
+            <Text style={styles.actionIcon}>{"\u270F\uFE0F"}</Text>
+            <Text style={styles.actionTitle}>Editar{"\n"}plano de custos</Text>
+            <Text style={styles.actionSubtitle}>Ajustar orçamento</Text>
+          </Pressable>
+        </Link>
+      </View>
+
+      {recentExpenses.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Despesas recentes</Text>
+          <View style={styles.expenseList}>
+            {recentExpenses.map((expense) => (
+              <View key={expense.id} style={styles.expenseItem}>
+                <View style={styles.expenseLeft}>
+                  <Text style={styles.expenseCategory}>{expense.category}</Text>
+                  <Text style={styles.expenseDescription} numberOfLines={1}>
+                    {expense.description}
+                  </Text>
+                </View>
+                <View style={styles.expenseRight}>
+                  <Text style={styles.expenseAmount}>
+                    {formatCurrency(expense.amount)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.expenseStatus,
+                      expense.paid && styles.expenseStatusPaid,
+                    ]}
+                  >
+                    {expense.paid ? "Pago" : "Pendente"}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+
+      {expenses.length === 0 && (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>{"\uD83D\uDCB0"}</Text>
+          <Text style={styles.emptyText}>
+            Nenhuma despesa cadastrada ainda. Comece adicionando sua primeira despesa!
+          </Text>
+        </View>
+      )}
+
       <View style={styles.linkRow}>
         <Link href="/profile" asChild>
-          <Pressable style={({ pressed }) => [
-            styles.linkButton,
-            pressed && styles.linkButtonPressed,
-          ]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.linkButton,
+              pressed && styles.linkButtonPressed,
+            ]}
+          >
             <Text style={styles.linkButtonText}>Meu perfil</Text>
           </Pressable>
         </Link>
@@ -103,20 +265,20 @@ const styles = StyleSheet.create({
   coupleCard: {
     backgroundColor: "#FFF",
     borderRadius: 20,
-    padding: 32,
+    padding: 24,
     alignItems: "center",
     boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   avatarRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "#FF6B6B",
     justifyContent: "center",
     alignItems: "center",
@@ -126,48 +288,177 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: "#FFF",
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "700",
   },
   and: {
-    fontSize: 28,
+    fontSize: 24,
     color: "#FF6B6B",
     fontWeight: "300",
-    marginHorizontal: 16,
+    marginHorizontal: 12,
   },
   coupleText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1A1A1A",
     textAlign: "center",
   },
-  comingSoon: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 24,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    marginBottom: 32,
+  summaryRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
   },
-  comingSoonTitle: {
-    fontSize: 13,
-    color: "#FF6B6B",
-    fontWeight: "600",
+  summaryCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+  },
+  summaryBudget: {
+    backgroundColor: "#F3F0FF",
+  },
+  summarySpent: {
+    backgroundColor: "#FFF0F0",
+  },
+  summaryRemaining: {
+    backgroundColor: "#F0FFF0",
+  },
+  summaryOver: {
+    backgroundColor: "#FFF0F0",
+  },
+  summaryLabel: {
+    fontSize: 11,
+    color: "#666",
+    marginBottom: 4,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
+  },
+  progressContainer: {
+    marginBottom: 28,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: "#E8E8E8",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  progressLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  progressText: {
+    fontSize: 12,
+    color: "#888",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
     marginBottom: 12,
   },
-  comingSoonText: {
-    fontSize: 15,
-    color: "#666",
-    marginBottom: 16,
-    lineHeight: 22,
+  actionsGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 28,
   },
-  featureList: {
-    gap: 8,
+  actionCard: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
   },
-  featureItem: {
+  actionCardPressed: {
+    opacity: 0.7,
+  },
+  actionIcon: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  actionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    textAlign: "center",
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  actionSubtitle: {
+    fontSize: 10,
+    color: "#999",
+    textAlign: "center",
+  },
+  expenseList: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 4,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    marginBottom: 28,
+  },
+  expenseItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  expenseLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  expenseCategory: {
+    fontSize: 12,
+    color: "#FF6B6B",
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  expenseDescription: {
     fontSize: 14,
-    color: "#555",
+    color: "#333",
+  },
+  expenseRight: {
+    alignItems: "flex-end",
+  },
+  expenseAmount: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 2,
+  },
+  expenseStatus: {
+    fontSize: 11,
+    color: "#FFB347",
+    fontWeight: "600",
+  },
+  expenseStatusPaid: {
+    color: "#4CAF50",
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 32,
+    marginBottom: 28,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
     lineHeight: 20,
   },
   linkRow: {

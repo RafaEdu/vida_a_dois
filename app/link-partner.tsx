@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -19,21 +19,43 @@ function formatCode(code: string): string {
   return `${code.slice(0, 4)}-${code.slice(4, 8)}`;
 }
 
+function getInitials(name: string | undefined | null): string {
+  if (!name) return "??";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export default function LinkPartner() {
-  const { profile, couple, partnerInfo, lookupPartner, linkPartner, refreshProfile } = useAuth();
+  const {
+    profile,
+    user,
+    couple,
+    partnerInfo,
+    lookupPartner,
+    linkPartner,
+    acceptInvitation,
+    rejectInvitation,
+    refreshProfile,
+  } = useAuth();
+
   const [partnerCode, setPartnerCode] = useState("");
   const [error, setError] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const [foundPartner, setFoundPartner] = useState<{ id: string; full_name: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
     AsyncStorage.setItem("@registration_step", "link").catch(() => {});
   }, []);
-
-  // If already in a pending couple (waiting for partner), redirect to home
-  // The _layout will handle navigation based on state
 
   useEffect(() => {
     if (couple?.status === "active") return;
@@ -41,6 +63,19 @@ export default function LinkPartner() {
       setFoundPartner(partnerInfo);
     }
   }, [partnerInfo, couple]);
+
+  useEffect(() => {
+    if (couple?.status === "active" && !hasNavigated.current) {
+      setConfirmed(true);
+      const timer = setTimeout(() => {
+        if (!hasNavigated.current) {
+          hasNavigated.current = true;
+          router.replace("/home");
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [couple?.status]);
 
   const handleCopy = async () => {
     if (!profile?.invite_code) return;
@@ -82,78 +117,178 @@ export default function LinkPartner() {
 
     if (linkError) {
       setError(linkError);
-    } else {
-      await refreshProfile();
     }
   };
 
-  // If couple is pending, show awaiting screen
+  const handleAccept = async () => {
+    if (!couple) return;
+    setError("");
+    setAccepting(true);
+    const { error: acceptError } = await acceptInvitation(couple.id);
+    setAccepting(false);
+
+    if (acceptError) {
+      setError(acceptError);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!couple) return;
+    setError("");
+    setRejecting(true);
+    const { error: rejectError } = await rejectInvitation(couple.id);
+    setRejecting(false);
+
+    if (rejectError) {
+      setError(rejectError);
+    }
+  };
+
+  // If couple is pending, show appropriate screen based on role
   if (couple?.status === "pending") {
+    const isReceiver = couple.user_b === user?.id;
+
     return (
       <ScrollView
         contentContainerStyle={styles.container}
         contentInsetAdjustmentBehavior="automatic"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Aguardando parceiro</Text>
-        </View>
-
-        <View style={styles.avatarRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {profile?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
-            </Text>
-          </View>
-          <View style={styles.connectionLine} />
-          <View style={[styles.avatar, styles.avatarPending]}>
-            <Text style={styles.avatarText}>
-              {foundPartner?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
-            </Text>
-            <View style={styles.pendingBadge}>
-              <Text style={styles.pendingBadgeText}>Pendente</Text>
+        {isReceiver ? (
+          <>
+            <View style={styles.header}>
+              <Text style={styles.title}>Convite recebido</Text>
             </View>
-          </View>
-        </View>
 
-        {foundPartner && (
-          <Text style={styles.waitingText}>
-            Aguardando {foundPartner.full_name} inserir o seu código
-          </Text>
+            <View style={styles.avatarRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {getInitials(partnerInfo?.full_name)}
+                </Text>
+              </View>
+              <View style={styles.connectionLine} />
+              <View style={[styles.avatar, styles.avatarPending]}>
+                <Text style={styles.avatarText}>
+                  {getInitials(profile?.full_name)}
+                </Text>
+                <View style={styles.pendingBadge}>
+                  <Text style={styles.pendingBadgeText}>Você</Text>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.inviteText}>
+              {partnerInfo?.full_name ?? "Alguém"} quer começar uma vida a dois com você
+            </Text>
+
+            {error ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.actionRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.rejectButton,
+                  rejecting && styles.buttonDisabled,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={handleReject}
+                disabled={rejecting || accepting}
+              >
+                <Text style={styles.rejectButtonText}>
+                  {rejecting ? "..." : "Recusar"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.acceptButton,
+                  accepting && styles.buttonDisabled,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={handleAccept}
+                disabled={accepting || rejecting}
+              >
+                <Text style={styles.acceptButtonText}>
+                  {accepting ? "..." : "Aceitar"}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.codeDisplay}>
+              <Text style={styles.codeLabel}>Seu código</Text>
+              <Text style={styles.codeValue} selectable>
+                {profile?.invite_code ? formatCode(profile.invite_code) : "---"}
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.copyButton,
+                  pressed && styles.copyButtonPressed,
+                ]}
+                onPress={handleCopy}
+              >
+                <Text style={styles.copyButtonText}>
+                  {copied ? "Copiado!" : "Copiar"}
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.header}>
+              <Text style={styles.title}>Aguardando parceiro</Text>
+            </View>
+
+            <View style={styles.avatarRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {getInitials(profile?.full_name)}
+                </Text>
+              </View>
+              <View style={styles.connectionLine} />
+              <View style={[styles.avatar, styles.avatarPending]}>
+                <Text style={styles.avatarText}>
+                  {getInitials(partnerInfo?.full_name)}
+                </Text>
+                <View style={styles.pendingBadge}>
+                  <Text style={styles.pendingBadgeText}>Pendente</Text>
+                </View>
+              </View>
+            </View>
+
+            {partnerInfo && (
+              <Text style={styles.waitingText}>
+                Aguardando {partnerInfo.full_name} aceitar o convite
+              </Text>
+            )}
+
+            <View style={styles.codeDisplay}>
+              <Text style={styles.codeLabel}>Seu código</Text>
+              <Text style={styles.codeValue} selectable>
+                {profile?.invite_code ? formatCode(profile.invite_code) : "---"}
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.copyButton,
+                  pressed && styles.copyButtonPressed,
+                ]}
+                onPress={handleCopy}
+              >
+                <Text style={styles.copyButtonText}>
+                  {copied ? "Copiado!" : "Copiar"}
+                </Text>
+              </Pressable>
+            </View>
+          </>
         )}
 
-        <View style={styles.codeDisplay}>
-          <Text style={styles.codeLabel}>Seu código</Text>
-          <Text style={styles.codeValue} selectable>
-            {profile?.invite_code ? formatCode(profile.invite_code) : "---"}
-          </Text>
+        <Link href="/profile" asChild>
           <Pressable
             style={({ pressed }) => [
-              styles.copyButton,
-              pressed && styles.copyButtonPressed,
+              styles.secondaryButton,
+              pressed && styles.secondaryButtonPressed,
             ]}
-            onPress={handleCopy}
           >
-            <Text style={styles.copyButtonText}>
-              {copied ? "Copiado!" : "Copiar"}
-            </Text>
-          </Pressable>
-        </View>
-
-        <Link href="/profile" asChild>
-          <Pressable style={({ pressed }) => [
-            styles.secondaryButton,
-            pressed && styles.secondaryButtonPressed,
-          ]}>
             <Text style={styles.secondaryButtonText}>Editar meu perfil</Text>
           </Pressable>
         </Link>
@@ -161,7 +296,7 @@ export default function LinkPartner() {
     );
   }
 
-  // If couple is active, show confirmed
+  // If couple is active, show confirmation then redirect
   if (couple?.status === "active") {
     return (
       <ScrollView
@@ -169,29 +304,21 @@ export default function LinkPartner() {
         contentInsetAdjustmentBehavior="automatic"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Vínculo confirmado</Text>
+          <Text style={styles.title}>
+            {confirmed ? "Vinculado com sucesso!" : "Vínculo confirmado"}
+          </Text>
         </View>
 
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {profile?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
+              {getInitials(profile?.full_name)}
             </Text>
           </View>
           <View style={[styles.connectionLine, styles.connectionLineSolid]} />
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {partnerInfo?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
+              {getInitials(partnerInfo?.full_name)}
             </Text>
           </View>
         </View>
@@ -200,18 +327,28 @@ export default function LinkPartner() {
           <Text style={styles.linkedBadgeText}>Vinculados</Text>
         </View>
 
+        <View style={styles.checkmarkContainer}>
+          <Text style={styles.checkmark}>{confirmed ? "\u2705" : "\u2764\uFE0F"}</Text>
+        </View>
+
         <Text style={styles.confirmedText}>
-          Agora vamos configurar a vida financeira de vocês juntos
+          {confirmed
+            ? "Redirecionando para o planejamento financeiro..."
+            : "Agora vamos configurar a vida financeira de vocês juntos"}
         </Text>
 
-        <Link href="/home" asChild>
-          <Pressable style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}>
-            <Text style={styles.buttonText}>Começar planejamento</Text>
-          </Pressable>
-        </Link>
+        {!hasNavigated.current && (
+          <Link href="/home" asChild>
+            <Pressable
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.buttonText}>Começar planejamento</Text>
+            </Pressable>
+          </Link>
+        )}
       </ScrollView>
     );
   }
@@ -236,12 +373,7 @@ export default function LinkPartner() {
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {profile?.full_name
-                ?.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() ?? "?"}
+              {getInitials(profile?.full_name)}
             </Text>
           </View>
           <View style={[styles.connectionLine, styles.connectionLineDashed]} />
@@ -313,12 +445,7 @@ export default function LinkPartner() {
           <View style={styles.partnerCard}>
             <View style={styles.partnerAvatar}>
               <Text style={styles.partnerAvatarText}>
-                {foundPartner.full_name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()}
+                {getInitials(foundPartner.full_name)}
               </Text>
             </View>
             <View style={styles.partnerInfo}>
@@ -342,10 +469,12 @@ export default function LinkPartner() {
         )}
 
         <Link href="/profile" asChild>
-          <Pressable style={({ pressed }) => [
-            styles.secondaryButton,
-            pressed && styles.secondaryButtonPressed,
-          ]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              pressed && styles.secondaryButtonPressed,
+            ]}
+          >
             <Text style={styles.secondaryButtonText}>Editar meu perfil</Text>
           </Pressable>
         </Link>
@@ -440,12 +569,65 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontStyle: "italic",
   },
+  inviteText: {
+    fontSize: 18,
+    color: "#1A1A1A",
+    textAlign: "center",
+    marginBottom: 24,
+    fontWeight: "500",
+    lineHeight: 26,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: "#4CAF50",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    boxShadow: "0 2px 8px rgba(76, 175, 80, 0.3)",
+  },
+  acceptButtonText: {
+    color: "#FFF",
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  rejectButtonText: {
+    color: "#999",
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
   confirmedText: {
     fontSize: 16,
     color: "#666",
     textAlign: "center",
     marginBottom: 24,
     lineHeight: 22,
+  },
+  checkmarkContainer: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  checkmark: {
+    fontSize: 48,
   },
   linkedBadge: {
     backgroundColor: "#E8F5E9",
@@ -614,9 +796,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
     boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
-  },
-  buttonPressed: {
-    opacity: 0.85,
   },
   buttonText: {
     color: "#FFF",
