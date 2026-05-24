@@ -34,6 +34,7 @@ export default function Home() {
     userState,
     expenses,
     fetchExpenses,
+    updateExpense,
     signOut,
   } = useAuth();
   const hasNavigated = useRef(false);
@@ -77,6 +78,19 @@ export default function Home() {
   const recentExpenses = useMemo(() => {
     return expenses.slice(0, 5);
   }, [expenses]);
+
+  const handleConfirmPayment = async (expenseId: string) => {
+    await updateExpense(expenseId, {
+      paid: true,
+      paid_at: new Date().toISOString(),
+    });
+  };
+
+  const getPayerName = (paidBy: string | null | undefined): string | null => {
+    if (!paidBy) return null;
+    if (paidBy === profile?.id) return null;
+    return partnerInfo?.full_name ?? "Parceiro";
+  };
 
   return (
     <ScrollView
@@ -166,6 +180,17 @@ export default function Home() {
           </Pressable>
         </Link>
 
+        <Link href="/income/new" asChild>
+          <Pressable style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}>
+            <Text style={styles.actionIcon}>{"\uD83D\uDCC8"}</Text>
+            <Text style={styles.actionTitle}>Adicionar{"\n"}receita</Text>
+            <Text style={styles.actionSubtitle}>Registrar renda extra</Text>
+          </Pressable>
+        </Link>
+
         <Link href="/cost-plan" asChild>
           <Pressable style={({ pressed }) => [
             styles.actionCard,
@@ -176,7 +201,9 @@ export default function Home() {
             <Text style={styles.actionSubtitle}>Ver orçamento e gastos</Text>
           </Pressable>
         </Link>
+      </View>
 
+      <View style={styles.actionsGrid}>
         <Link href="/cost-plan/edit" asChild>
           <Pressable style={({ pressed }) => [
             styles.actionCard,
@@ -187,6 +214,19 @@ export default function Home() {
             <Text style={styles.actionSubtitle}>Ajustar orçamento</Text>
           </Pressable>
         </Link>
+
+        <Link href="/monthly-closing" asChild>
+          <Pressable style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}>
+            <Text style={styles.actionIcon}>{"\uD83D\uDDD3\uFE0F"}</Text>
+            <Text style={styles.actionTitle}>Fechamento{"\n"}do mês</Text>
+            <Text style={styles.actionSubtitle}>Resumo e saldo</Text>
+          </Pressable>
+        </Link>
+
+        <View style={[styles.actionCard, styles.actionCardEmpty]} />
       </View>
 
       {recentExpenses.length > 0 && (
@@ -196,10 +236,22 @@ export default function Home() {
             {recentExpenses.map((expense) => (
               <View key={expense.id} style={styles.expenseItem}>
                 <View style={styles.expenseLeft}>
-                  <Text style={styles.expenseCategory}>{expense.category}</Text>
+                  <View style={styles.expenseCategoryRow}>
+                    <Text style={styles.expenseCategory}>{expense.category}</Text>
+                    {expense.is_recurring && (
+                      <View style={styles.recurringBadge}>
+                        <Text style={styles.recurringBadgeText}>Recorrente</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.expenseDescription} numberOfLines={1}>
                     {expense.description}
                   </Text>
+                  {getPayerName(expense.paid_by) && (
+                    <Text style={styles.expensePayer}>
+                      Pago por {getPayerName(expense.paid_by)}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.expenseRight}>
                   <Text style={styles.expenseAmount}>
@@ -213,6 +265,17 @@ export default function Home() {
                   >
                     {expense.paid ? "Pago" : "Pendente"}
                   </Text>
+                  {!expense.paid && expense.is_recurring && (
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.confirmButton,
+                        pressed && styles.confirmButtonPressed,
+                      ]}
+                      onPress={() => handleConfirmPayment(expense.id)}
+                    >
+                      <Text style={styles.confirmButtonText}>Confirmar</Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             ))}
@@ -399,6 +462,10 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
   },
+  actionCardEmpty: {
+    backgroundColor: "transparent",
+    boxShadow: "none",
+  },
   expenseList: {
     backgroundColor: "#FFF",
     borderRadius: 16,
@@ -419,15 +486,36 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  expenseCategoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
   expenseCategory: {
     fontSize: 12,
     color: "#FF6B6B",
     fontWeight: "600",
-    marginBottom: 2,
+  },
+  recurringBadge: {
+    backgroundColor: "#F3F0FF",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  recurringBadgeText: {
+    fontSize: 9,
+    color: "#6C5CE7",
+    fontWeight: "600",
   },
   expenseDescription: {
     fontSize: 14,
     color: "#333",
+  },
+  expensePayer: {
+    fontSize: 10,
+    color: "#999",
+    marginTop: 2,
   },
   expenseRight: {
     alignItems: "flex-end",
@@ -445,6 +533,21 @@ const styles = StyleSheet.create({
   },
   expenseStatusPaid: {
     color: "#4CAF50",
+  },
+  confirmButton: {
+    marginTop: 6,
+    backgroundColor: "#4ECDC4",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  confirmButtonPressed: {
+    opacity: 0.7,
+  },
+  confirmButtonText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "600",
   },
   emptyState: {
     alignItems: "center",

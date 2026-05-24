@@ -27,8 +27,10 @@ function AppNavigator() {
       <Stack.Screen name="home" options={{ title: "Vida a Dois", gestureEnabled: false }} />
       <Stack.Screen name="profile" options={{ title: "Meu perfil", presentation: "modal" }} />
       <Stack.Screen name="expense/new" options={{ title: "Nova despesa" }} />
+      <Stack.Screen name="income/new" options={{ title: "Nova receita" }} />
       <Stack.Screen name="cost-plan" options={{ title: "Plano de custos" }} />
       <Stack.Screen name="cost-plan/edit" options={{ title: "Editar plano" }} />
+      <Stack.Screen name="monthly-closing" options={{ title: "Fechamento do mês" }} />
     </Stack>
   );
 }

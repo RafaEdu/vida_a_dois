@@ -15,12 +15,14 @@ import { useAuth } from "../../src/lib/auth-context";
 import { DEFAULT_CATEGORIES } from "../../src/types/database";
 
 export default function NewExpense() {
-  const { addExpense, couple } = useAuth();
+  const { addExpense, couple, user, profile, partnerInfo } = useAuth();
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0].name);
   const [dueDate, setDueDate] = useState("");
   const [paid, setPaid] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [paidBy, setPaidBy] = useState<string>(user?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showCategories, setShowCategories] = useState(false);
@@ -52,6 +54,8 @@ export default function NewExpense() {
       category,
       due_date: dueDate || undefined,
       paid,
+      paid_by: paidBy,
+      is_recurring: isRecurring,
     });
     setSaving(false);
 
@@ -162,6 +166,91 @@ export default function NewExpense() {
             placeholder="AAAA-MM-DD"
             placeholderTextColor="#999"
             maxLength={10}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Quem pagou?</Text>
+          <View style={styles.paidByRow}>
+            <Pressable
+              style={[
+                styles.paidByOption,
+                paidBy === user?.id && styles.paidByOptionSelected,
+              ]}
+              onPress={() => setPaidBy(user?.id ?? "")}
+            >
+              <View style={styles.paidByAvatar}>
+                <Text style={styles.paidByAvatarText}>
+                  {profile?.full_name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() ?? "EU"}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.paidByName,
+                  paidBy === user?.id && styles.paidByNameSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {profile?.full_name ?? "Você"}
+              </Text>
+              {paidBy === user?.id && (
+                <Text style={styles.paidByCheck}>✓</Text>
+              )}
+            </Pressable>
+            {partnerInfo && (
+              <Pressable
+                style={[
+                  styles.paidByOption,
+                  paidBy === partnerInfo.id && styles.paidByOptionSelected,
+                ]}
+                onPress={() => setPaidBy(partnerInfo.id)}
+              >
+                <View style={[styles.paidByAvatar, styles.paidByAvatarPartner]}>
+                  <Text style={styles.paidByAvatarText}>
+                    {partnerInfo.full_name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase() ?? "??"}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.paidByName,
+                    paidBy === partnerInfo.id && styles.paidByNameSelected,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {partnerInfo.full_name}
+                </Text>
+                {paidBy === partnerInfo.id && (
+                  <Text style={styles.paidByCheck}>✓</Text>
+                )}
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.switchRow}>
+          <View>
+            <Text style={styles.switchLabel}>Despesa recorrente</Text>
+            <Text style={styles.switchHint}>
+              {isRecurring
+                ? "Gasto fixo mensal (ex: aluguel, internet)"
+                : "Gasto pontual ou variável"}
+            </Text>
+          </View>
+          <Switch
+            value={isRecurring}
+            onValueChange={setIsRecurring}
+            trackColor={{ false: "#E0E0E0", true: "#C8E6C9" }}
+            thumbColor={isRecurring ? "#4CAF50" : "#FAFAFA"}
           />
         </View>
 
@@ -326,6 +415,63 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 16,
     color: "#333",
+  },
+  switchHint: {
+    fontSize: 11,
+    color: "#999",
+    marginTop: 2,
+    maxWidth: 220,
+  },
+  paidByRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  paidByOption: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+  paidByOptionSelected: {
+    borderColor: "#FF6B6B",
+    backgroundColor: "#FFF5F5",
+  },
+  paidByAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FF6B6B",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  paidByAvatarPartner: {
+    backgroundColor: "#4ECDC4",
+  },
+  paidByAvatarText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  paidByName: {
+    flex: 1,
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
+  },
+  paidByNameSelected: {
+    color: "#FF6B6B",
+    fontWeight: "600",
+  },
+  paidByCheck: {
+    color: "#FF6B6B",
+    fontSize: 16,
+    fontWeight: "700",
   },
   saveButton: {
     backgroundColor: "#FF6B6B",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -11,9 +11,11 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
+import type { IdealSplit } from "../../src/types/database";
 
 export default function EditCostPlan() {
-  const { couple, profile, partnerInfo, updateCostPlan } = useAuth();
+  const { couple, profile, partnerInfo, updateCostPlan, fetchIdealSplit } = useAuth();
+  const [idealSplit, setIdealSplit] = useState<IdealSplit | null>(null);
 
   const [budgetText, setBudgetText] = useState(
     couple?.monthly_budget ? String(couple.monthly_budget) : ""
@@ -24,7 +26,17 @@ export default function EditCostPlan() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    fetchIdealSplit().then(setIdealSplit);
+  }, [fetchIdealSplit]);
+
   const splitB = String(100 - (parseFloat(splitA) || 0));
+
+  const handleUseIdeal = () => {
+    if (idealSplit) {
+      setSplitA(String(idealSplit.ratio_a));
+    }
+  };
 
   const handleSave = async () => {
     setError("");
@@ -156,6 +168,31 @@ export default function EditCostPlan() {
               </View>
             </View>
           </View>
+
+          {idealSplit && (
+            <View style={styles.idealSuggestion}>
+              <Text style={styles.idealSuggestionTitle}>
+                Divisão ideal sugerida
+              </Text>
+              <Text style={styles.idealSuggestionText}>
+                {profile?.full_name}: {idealSplit.ratio_a}% / {partnerInfo?.full_name}: {idealSplit.ratio_b}%
+              </Text>
+              <Text style={styles.idealSuggestionHint}>
+                Calculado proporcionalmente com base na renda mensal
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.useIdealButton,
+                  pressed && styles.useIdealButtonPressed,
+                ]}
+                onPress={handleUseIdeal}
+              >
+                <Text style={styles.useIdealButtonText}>
+                  Usar divisão ideal
+                </Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
         <Pressable
@@ -318,6 +355,44 @@ const styles = StyleSheet.create({
     color: "#CCC",
     marginHorizontal: 12,
     fontWeight: "300",
+  },
+  idealSuggestion: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+    alignItems: "center",
+  },
+  idealSuggestionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#6C5CE7",
+    marginBottom: 4,
+  },
+  idealSuggestionText: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 2,
+  },
+  idealSuggestionHint: {
+    fontSize: 11,
+    color: "#999",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  useIdealButton: {
+    backgroundColor: "#6C5CE7",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  useIdealButtonPressed: {
+    opacity: 0.8,
+  },
+  useIdealButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
   saveButton: {
     backgroundColor: "#FF6B6B",

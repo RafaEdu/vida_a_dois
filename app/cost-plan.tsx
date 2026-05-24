@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "../src/lib/auth-context";
+import type { IdealSplit } from "../src/types/database";
 
 function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", {
@@ -17,7 +18,12 @@ function formatCurrency(value: number): string {
 }
 
 export default function CostPlan() {
-  const { couple, profile, partnerInfo, expenses } = useAuth();
+  const { couple, profile, partnerInfo, expenses, fetchIdealSplit } = useAuth();
+  const [idealSplit, setIdealSplit] = useState<IdealSplit | null>(null);
+
+  useEffect(() => {
+    fetchIdealSplit().then(setIdealSplit);
+  }, [fetchIdealSplit]);
 
   const summary = useMemo(() => {
     const budget = couple?.monthly_budget ?? 0;
@@ -128,6 +134,50 @@ export default function CostPlan() {
           </View>
         </View>
       </View>
+
+      {(couple?.shared_balance ?? 0) !== 0 && (
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Caixa comum acumulado</Text>
+          <Text
+            style={[
+              styles.balanceValue,
+              { color: (couple?.shared_balance ?? 0) >= 0 ? "#2E7D32" : "#D32F2F" },
+            ]}
+          >
+            {formatCurrency(couple?.shared_balance ?? 0)}
+          </Text>
+        </View>
+      )}
+
+      {idealSplit && (
+        <View style={styles.idealCard}>
+          <Text style={styles.idealTitle}>Divisão ideal (proporcional à renda)</Text>
+          <Text style={styles.idealDescription}>
+            Calculado automaticamente com base no salário de cada um
+          </Text>
+          <View style={styles.idealRow}>
+            <View style={styles.idealPerson}>
+              <Text style={styles.idealName} numberOfLines={1}>
+                {profile?.full_name}
+              </Text>
+              <Text style={styles.idealPercent}>{idealSplit.ratio_a}%</Text>
+            </View>
+            <Text style={styles.idealVs}>×</Text>
+            <View style={styles.idealPerson}>
+              <Text style={styles.idealName} numberOfLines={1}>
+                {partnerInfo?.full_name}
+              </Text>
+              <Text style={styles.idealPercent}>{idealSplit.ratio_b}%</Text>
+            </View>
+          </View>
+          {splitA !== idealSplit.ratio_a && (
+            <Text style={styles.idealWarning}>
+              A divisão atual ({splitA}% / {splitB}%) difere da divisão ideal.
+              Você pode editá-la manualmente.
+            </Text>
+          )}
+        </View>
+      )}
 
       {summary.categoryBreakdown.length > 0 && (
         <>
@@ -302,6 +352,79 @@ const styles = StyleSheet.create({
     width: 1,
     height: 80,
     backgroundColor: "#E0E0E0",
+  },
+  balanceCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+    marginBottom: 16,
+  },
+  balanceLabel: {
+    fontSize: 12,
+    color: "#999",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  balanceValue: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  idealCard: {
+    backgroundColor: "#F3F0FF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#E0D8F0",
+  },
+  idealTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#6C5CE7",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  idealDescription: {
+    fontSize: 12,
+    color: "#999",
+    textAlign: "center",
+    marginBottom: 14,
+  },
+  idealRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  idealPerson: {
+    alignItems: "center",
+  },
+  idealName: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+    marginBottom: 4,
+    maxWidth: 100,
+  },
+  idealPercent: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#6C5CE7",
+  },
+  idealVs: {
+    fontSize: 18,
+    color: "#CCC",
+    fontWeight: "300",
+  },
+  idealWarning: {
+    fontSize: 12,
+    color: "#FFB347",
+    textAlign: "center",
+    marginTop: 12,
+    fontStyle: "italic",
   },
   sectionTitle: {
     fontSize: 16,

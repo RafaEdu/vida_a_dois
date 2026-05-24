@@ -14,6 +14,10 @@ import type {
   PartnerInfo,
   Expense,
   ExpenseInput,
+  Income,
+  IncomeInput,
+  CloseMonthResult,
+  IdealSplit,
 } from "../types/database";
 
 interface AuthContextType {
@@ -49,6 +53,13 @@ interface AuthContextType {
   updateExpense: (id: string, data: Partial<ExpenseInput>) => Promise<{ error?: string }>;
   deleteExpense: (id: string) => Promise<{ error?: string }>;
   fetchExpenses: () => Promise<void>;
+  incomes: Income[];
+  addIncome: (data: IncomeInput) => Promise<{ error?: string }>;
+  updateIncome: (id: string, data: Partial<IncomeInput>) => Promise<{ error?: string }>;
+  deleteIncome: (id: string) => Promise<{ error?: string }>;
+  fetchIncomes: () => Promise<void>;
+  closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
+  fetchIdealSplit: () => Promise<IdealSplit | null>;
   updateCostPlan: (data: { monthly_budget?: number; split_ratio_a?: number; split_ratio_b?: number }) => Promise<{ error?: string }>;
 }
 
@@ -71,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
 
   const getUserState = useCallback(
     (profile: Profile | null, couple: Couple | null): UserState => {
@@ -105,6 +117,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("couple_id", data.id)
           .order("created_at", { ascending: false });
         if (expensesData) setExpenses(expensesData as Expense[]);
+        const { data: incomesData } = await supabase
+          .from("incomes")
+          .select("*")
+          .eq("couple_id", data.id)
+          .order("received_at", { ascending: false });
+        if (incomesData) setIncomes(incomesData as Income[]);
       } else if (data.status === "pending") {
         const partnerId = data.user_a === userId ? data.user_b : data.user_a;
         const { data: pp } = await supabase
@@ -118,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCouple(null);
       setPartnerInfo(null);
       setExpenses([]);
+      setIncomes([]);
     }
     return data;
   }, []);
@@ -294,6 +313,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [couple?.id, couple?.status, user]);
 
+  useEffect(() => {
+    if (!couple || couple.status !== "active" || !user) return;
+
+    const incomesChannel = supabase
+      .channel(`incomes-${couple.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "incomes",
+          filter: `couple_id=eq.${couple.id}`,
+        },
+        () => { fetchIncomes(); },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "incomes",
+          filter: `couple_id=eq.${couple.id}`,
+        },
+        () => { fetchIncomes(); },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "incomes",
+          filter: `couple_id=eq.${couple.id}`,
+        },
+        () => { fetchIncomes(); },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(incomesChannel);
+    };
+  }, [couple?.id, couple?.status, user]);
+
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     return { error: error?.message, session: data.session, user: data.user };
@@ -448,6 +509,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       couple_id: couple.id,
       created_by: user.id,
       paid: data.paid ?? false,
+      paid_by: data.paid_by || user.id,
+      is_recurring: data.is_recurring ?? false,
     });
     if (error) return { error: error.message };
     await fetchExpenses();
@@ -467,6 +530,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchExpenses();
     return {};
   };
+
+  const fetchIncomes = useCallback(async () => {
+    if (!couple) return;
+    const { data } = await supabase
+      .from("incomes")
+      .select("*")
+      .eq("couple_id", couple.id)
+      .order("received_at", { ascending: false });
+    if (data) setIncomes(data as Income[]);
+  }, [couple]);
+
+  const addIncome = async (data: IncomeInput) => {
+    if (!user || !couple) return { error: "No user or couple" };
+    const { error } = await supabase.from("incomes").insert({
+      couple_id: couple.id,
+      user_id: user.id,
+      description: data.description,
+      amount: data.amount,
+      is_extra: data.is_extra ?? true,
+      received_at: data.received_at || new Date().toISOString(),
+    });
+    if (error) return { error: error.message };
+    await fetchIncomes();
+    return {};
+  };
+
+  const updateIncome = async (id: string, data: Partial<IncomeInput>) => {
+    const { error } = await supabase.from("incomes").update(data).eq("id", id);
+    if (error) return { error: error.message };
+    await fetchIncomes();
+    return {};
+  };
+
+  const deleteIncome = async (id: string) => {
+    const { error } = await supabase.from("incomes").delete().eq("id", id);
+    if (error) return { error: error.message };
+    await fetchIncomes();
+    return {};
+  };
+
+  const closeMonth = async () => {
+    if (!couple) return { error: "No couple" };
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "close_month",
+      { p_couple_id: couple.id },
+    );
+    if (rpcError) return { error: rpcError.message };
+    if (rpcData && (rpcData as any).error)
+      return { error: (rpcData as any).error };
+    await refreshProfile();
+    return { result: rpcData as CloseMonthResult };
+  };
+
+  const fetchIdealSplit = useCallback(async () => {
+    if (!couple) return null;
+    const { data: coupleData } = await supabase
+      .from("couples")
+      .select("user_a, user_b")
+      .eq("id", couple.id)
+      .single();
+
+    if (!coupleData) return null;
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, monthly_income")
+      .in("id", [coupleData.user_a, coupleData.user_b]);
+
+    if (!profiles || profiles.length < 2) return null;
+
+    const incomeA = profiles.find((p) => p.id === coupleData.user_a)?.monthly_income;
+    const incomeB = profiles.find((p) => p.id === coupleData.user_b)?.monthly_income;
+
+    if (!incomeA || !incomeB || incomeA + incomeB === 0) return null;
+
+    const ratioA = Math.round((incomeA / (incomeA + incomeB)) * 100 * 100) / 100;
+    const ratioB = 100 - ratioA;
+
+    return { ratio_a: ratioA, ratio_b: ratioB, calculated: true } as IdealSplit;
+  }, [couple]);
 
   const updateCostPlan = async (data: {
     monthly_budget?: number;
@@ -511,6 +654,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateExpense,
         deleteExpense,
         fetchExpenses,
+        incomes,
+        addIncome,
+        updateIncome,
+        deleteIncome,
+        fetchIncomes,
+        closeMonth,
+        fetchIdealSplit,
         updateCostPlan,
       }}
     >

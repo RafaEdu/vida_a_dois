@@ -15,6 +15,7 @@ export interface Couple {
   split_ratio_a: number;
   split_ratio_b: number;
   monthly_budget: number;
+  shared_balance: number;
   created_at: string;
   linked_at: string | null;
 }
@@ -23,12 +24,14 @@ export interface Expense {
   id: string;
   couple_id: string;
   created_by: string;
+  paid_by: string | null;
   description: string;
   amount: number;
   category: string;
   due_date: string | null;
   paid: boolean;
   paid_at: string | null;
+  is_recurring: boolean;
   created_at: string;
 }
 
@@ -38,11 +41,48 @@ export interface ExpenseInput {
   category: string;
   due_date?: string;
   paid?: boolean;
+  paid_at?: string;
+  paid_by?: string;
+  is_recurring?: boolean;
 }
 
 export interface PartnerInfo {
   id: string;
   full_name: string;
+}
+
+export interface Income {
+  id: string;
+  couple_id: string;
+  user_id: string;
+  description: string;
+  amount: number;
+  is_extra: boolean;
+  received_at: string;
+  created_at: string;
+}
+
+export interface IncomeInput {
+  description: string;
+  amount: number;
+  is_extra?: boolean;
+  received_at?: string;
+}
+
+export interface CloseMonthResult {
+  success: boolean;
+  total_incomes: number;
+  total_expenses: number;
+  month_balance: number;
+  previous_balance: number;
+  new_shared_balance: number;
+  monthly_budget: number;
+}
+
+export interface IdealSplit {
+  ratio_a: number;
+  ratio_b: number;
+  calculated: boolean;
 }
 
 export type UserState =
