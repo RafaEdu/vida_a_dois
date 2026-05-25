@@ -518,6 +518,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateExpense = async (id: string, data: Partial<ExpenseInput>) => {
+    const isMarkingPaid = data.paid === true && data.paid_at !== undefined;
+
+    if (isMarkingPaid && couple) {
+      const { data: currentExpense } = await supabase
+        .from("expenses")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (currentExpense && (currentExpense as Expense).is_recurring && !(currentExpense as Expense).paid) {
+        const { error: updateError } = await supabase
+          .from("expenses")
+          .update(data)
+          .eq("id", id);
+        if (updateError) return { error: updateError.message };
+
+        const original = currentExpense as Expense;
+        const nextDueDate = original.due_date
+          ? new Date(new Date(original.due_date).setMonth(new Date(original.due_date).getMonth() + 1))
+              .toISOString()
+              .slice(0, 10)
+          : undefined;
+
+        await supabase.from("expenses").insert({
+          couple_id: couple.id,
+          created_by: original.created_by,
+          description: original.description,
+          amount: original.amount,
+          category: original.category,
+          due_date: nextDueDate,
+          paid: false,
+          paid_by: original.paid_by,
+          is_recurring: true,
+        });
+
+        await fetchExpenses();
+        return {};
+      }
+    }
+
     const { error } = await supabase.from("expenses").update(data).eq("id", id);
     if (error) return { error: error.message };
     await fetchExpenses();

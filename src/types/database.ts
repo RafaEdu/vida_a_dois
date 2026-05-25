@@ -16,6 +16,7 @@ export interface Couple {
   split_ratio_b: number;
   monthly_budget: number;
   shared_balance: number;
+  last_closed_month: string | null;
   created_at: string;
   linked_at: string | null;
 }

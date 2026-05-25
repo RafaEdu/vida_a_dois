@@ -27,6 +27,13 @@ export default function NewIncome() {
     return parseFloat(cleaned) || 0;
   }, [amountText]);
 
+  const formatDate = (text: string): string => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+  };
+
   const handleSave = async () => {
     setError("");
     if (!description.trim()) {
@@ -108,9 +115,10 @@ export default function NewIncome() {
           <TextInput
             style={styles.input}
             value={receivedDate}
-            onChangeText={setReceivedDate}
+            onChangeText={(t) => setReceivedDate(formatDate(t))}
             placeholder="AAAA-MM-DD"
             placeholderTextColor="#999"
+            keyboardType="numeric"
             maxLength={10}
           />
         </View>
