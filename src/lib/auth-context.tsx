@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const refreshingRef = useRef(false);
 
   const getUserState = useCallback(
     (profile: Profile | null, couple: Couple | null): UserState => {
@@ -115,24 +117,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCouple(data);
       if (data.status === "active") {
         const partnerId = data.user_a === userId ? data.user_b : data.user_a;
-        const { data: partnerProfile } = await supabase
-          .from("profiles")
-          .select("id, full_name, monthly_income")
-          .eq("id", partnerId)
-          .single();
-        setPartnerInfo(partnerProfile);
-        const { data: expensesData } = await supabase
-          .from("expenses")
-          .select("*")
-          .eq("couple_id", data.id)
-          .order("created_at", { ascending: false });
-        if (expensesData) setExpenses(expensesData as Expense[]);
-        const { data: incomesData } = await supabase
-          .from("incomes")
-          .select("*")
-          .eq("couple_id", data.id)
-          .order("received_at", { ascending: false });
-        if (incomesData) setIncomes(incomesData as Income[]);
+        const [partnerRes, expensesRes, incomesRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, monthly_income")
+            .eq("id", partnerId)
+            .single(),
+          supabase
+            .from("expenses")
+            .select("*")
+            .eq("couple_id", data.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("incomes")
+            .select("*")
+            .eq("couple_id", data.id)
+            .order("received_at", { ascending: false }),
+        ]);
+        setPartnerInfo(partnerRes.data);
+        if (expensesRes.data) setExpenses(expensesRes.data as Expense[]);
+        if (incomesRes.data) setIncomes(incomesRes.data as Income[]);
       } else if (data.status === "pending") {
         const partnerId = data.user_a === userId ? data.user_b : data.user_a;
         const { data: pp } = await supabase
@@ -153,16 +157,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = useCallback(
     async (userId?: string) => {
+      if (refreshingRef.current) return;
       const uid = userId || user?.id;
       if (!uid) return;
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", uid)
-        .single();
-      setProfile(p);
-      if (p) {
-        await fetchCouple(uid);
+      refreshingRef.current = true;
+      try {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", uid)
+          .single();
+        setProfile(p);
+        if (p) {
+          await fetchCouple(uid);
+        }
+      } finally {
+        refreshingRef.current = false;
       }
     },
     [user, fetchCouple],

@@ -51,21 +51,26 @@ export default function Profile() {
     setSaving(true);
     setError("");
 
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        full_name: name.trim(),
-        monthly_income: income ? parseCurrencyInput(income) : null,
-      })
-      .eq("id", profile?.id);
+    try {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: name.trim(),
+          monthly_income: income ? parseCurrencyInput(income) : null,
+        })
+        .eq("id", profile?.id);
 
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      await refreshProfile();
-      setEditing(false);
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        await refreshProfile();
+        setEditing(false);
+      }
+    } catch {
+      setError("Erro inesperado ao salvar.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return (
