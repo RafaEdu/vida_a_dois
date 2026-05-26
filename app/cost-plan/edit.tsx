@@ -32,9 +32,17 @@ export default function EditCostPlan() {
 
   const splitB = String(100 - (parseFloat(splitA) || 0));
 
+  const combinedIncome = (profile?.monthly_income ?? 0) + (partnerInfo?.monthly_income ?? 0);
+
   const handleUseIdeal = () => {
     if (idealSplit) {
       setSplitA(String(idealSplit.ratio_a));
+    }
+  };
+
+  const handleUseIncomeBudget = () => {
+    if (combinedIncome > 0) {
+      setBudgetText(String(combinedIncome));
     }
   };
 
@@ -53,18 +61,25 @@ export default function EditCostPlan() {
     }
 
     setSaving(true);
-    const { error: saveError } = await updateCostPlan({
-      monthly_budget: budget,
-      split_ratio_a: ratioA,
-      split_ratio_b: 100 - ratioA,
-    });
-    setSaving(false);
+    try {
+      const { error: saveError } = await updateCostPlan({
+        monthly_budget: budget,
+        split_ratio_a: ratioA,
+        split_ratio_b: 100 - ratioA,
+      });
 
-    if (saveError) {
-      setError(saveError);
-    } else {
-      router.back();
+      if (saveError) {
+        setError(saveError);
+        return;
+      }
+    } catch {
+      setError("Erro inesperado ao salvar.");
+      return;
+    } finally {
+      setSaving(false);
     }
+
+    router.back();
   };
 
   return (
@@ -103,6 +118,20 @@ export default function EditCostPlan() {
               placeholderTextColor="#CCC"
             />
           </View>
+
+          {combinedIncome > 0 && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.useIdealButton,
+                pressed && styles.useIdealButtonPressed,
+              ]}
+              onPress={handleUseIncomeBudget}
+            >
+              <Text style={styles.useIdealButtonText}>
+                Usar renda somada do casal (R$ {combinedIncome.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.card}>

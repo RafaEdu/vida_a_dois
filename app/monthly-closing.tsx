@@ -23,6 +23,15 @@ export default function MonthlyClosing() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
 
+  const currentYearMonth = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }, []);
+
+  const alreadyClosed = couple?.last_closed_month === currentYearMonth;
+
   const summary = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -57,15 +66,21 @@ export default function MonthlyClosing() {
   }, [expenses, incomes, couple]);
 
   const handleCloseMonth = async () => {
+    if (closing) return;
     setError("");
     setClosing(true);
-    const { error: closeError, result: closeResult } = await closeMonth();
-    setClosing(false);
+    try {
+      const { error: closeError, result: closeResult } = await closeMonth();
 
-    if (closeError) {
-      setError(closeError);
-    } else if (closeResult) {
-      setResult(closeResult);
+      if (closeError) {
+        setError(closeError);
+      } else if (closeResult) {
+        setResult(closeResult);
+      }
+    } catch {
+      setError("Erro inesperado ao fechar o mês.");
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -92,6 +107,15 @@ export default function MonthlyClosing() {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
+
+      {alreadyClosed && (
+        <View style={styles.idempotencyBox}>
+          <Text style={styles.idempotencyTitle}>Mês já consolidado</Text>
+          <Text style={styles.idempotencyText}>
+            Este mês já foi consolidado e o saldo foi integrado ao Caixa Comum.
+          </Text>
+        </View>
+      )}
 
       {result ? (
         <View style={styles.resultCard}>
@@ -258,7 +282,7 @@ export default function MonthlyClosing() {
         </>
       )}
 
-      {!result && (
+      {!result && !alreadyClosed && (
         <Pressable
           style={({ pressed }) => [
             styles.closeButton,
@@ -296,7 +320,7 @@ export default function MonthlyClosing() {
           ]}
           onPress={() => router.back()}
         >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
+          <Text style={styles.cancelButtonText}>Voltar</Text>
         </Pressable>
       )}
     </ScrollView>
@@ -330,6 +354,27 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#D32F2F",
     fontSize: 14,
+  },
+  idempotencyBox: {
+    backgroundColor: "#FFF8E1",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#FFE082",
+    alignItems: "center",
+  },
+  idempotencyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#F57F17",
+    marginBottom: 6,
+  },
+  idempotencyText: {
+    fontSize: 14,
+    color: "#795548",
+    textAlign: "center",
+    lineHeight: 20,
   },
   summaryCard: {
     backgroundColor: "#FFF",

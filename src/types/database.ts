@@ -16,6 +16,7 @@ export interface Couple {
   split_ratio_b: number;
   monthly_budget: number;
   shared_balance: number;
+  last_closed_month: string | null;
   created_at: string;
   linked_at: string | null;
 }
@@ -49,6 +50,7 @@ export interface ExpenseInput {
 export interface PartnerInfo {
   id: string;
   full_name: string;
+  monthly_income: number | null;
 }
 
 export interface Income {
@@ -77,6 +79,7 @@ export interface CloseMonthResult {
   previous_balance: number;
   new_shared_balance: number;
   monthly_budget: number;
+  last_closed_month: string;
 }
 
 export interface IdealSplit {

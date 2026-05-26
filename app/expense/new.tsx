@@ -32,6 +32,27 @@ export default function NewExpense() {
     return parseFloat(cleaned) || 0;
   }, [amountText]);
 
+  const handleDateChange = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    let masked = digits;
+    if (digits.length > 4) {
+      masked = digits.slice(0, 4) + "-" + digits.slice(4);
+    }
+    if (digits.length > 6) {
+      masked = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+    }
+    setDueDate(masked);
+  };
+
+  const isValidDate = (dateStr: string): boolean => {
+    if (!dateStr) return true;
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return false;
+    const d = new Date(dateStr + "T00:00:00");
+    const [y, m, day] = dateStr.split("-").map(Number);
+    return d.getFullYear() === y && d.getMonth() + 1 === m && d.getDate() === day;
+  };
+
   const handleSave = async () => {
     setError("");
     if (!description.trim()) {
@@ -44,6 +65,10 @@ export default function NewExpense() {
     }
     if (!couple) {
       setError("Nenhum casal vinculado.");
+      return;
+    }
+    if (dueDate && !isValidDate(dueDate)) {
+      setError("Data inválida. Use o formato AAAA-MM-DD.");
       return;
     }
 
@@ -162,9 +187,10 @@ export default function NewExpense() {
           <TextInput
             style={styles.input}
             value={dueDate}
-            onChangeText={setDueDate}
+            onChangeText={handleDateChange}
             placeholder="AAAA-MM-DD"
             placeholderTextColor="#999"
+            keyboardType="number-pad"
             maxLength={10}
           />
         </View>
