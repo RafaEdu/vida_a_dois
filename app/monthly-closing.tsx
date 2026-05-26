@@ -116,7 +116,6 @@ export default function MonthlyClosing() {
         </View>
       ) : null}
 
-<<<<<<< HEAD
       {alreadyClosed && (
         <View style={styles.idempotencyBox}>
           <Text style={styles.idempotencyTitle}>Mês já consolidado</Text>
@@ -125,17 +124,6 @@ export default function MonthlyClosing() {
           </Text>
         </View>
       )}
-=======
-      {monthAlreadyClosed ? (
-        <View style={styles.alreadyClosedCard}>
-          <Text style={styles.alreadyClosedIcon}>{"\uD83D\uDD12"}</Text>
-          <Text style={styles.alreadyClosedTitle}>Mês já fechado</Text>
-          <Text style={styles.alreadyClosedText}>
-            Este mês já foi fechado e os saldos foram integrados ao Caixa Comum.
-          </Text>
-        </View>
-      ) : null}
->>>>>>> a7cf52451e8961595acf93985fb155e14ceb966e
 
       {result ? (
         <View style={styles.resultCard}>
@@ -302,11 +290,7 @@ export default function MonthlyClosing() {
         </>
       )}
 
-<<<<<<< HEAD
       {!result && !alreadyClosed && (
-=======
-      {!result && !monthAlreadyClosed && (
->>>>>>> a7cf52451e8961595acf93985fb155e14ceb966e
         <Pressable
           style={({ pressed }) => [
             styles.closeButton,
