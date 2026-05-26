@@ -27,6 +27,7 @@ export default function NewIncome() {
     return parseFloat(cleaned) || 0;
   }, [amountText]);
 
+<<<<<<< HEAD
   const handleDateChange = (text: string) => {
     const digits = text.replace(/\D/g, "").slice(0, 8);
     let masked = digits;
@@ -46,6 +47,13 @@ export default function NewIncome() {
     const d = new Date(dateStr + "T00:00:00");
     const [y, m, day] = dateStr.split("-").map(Number);
     return d.getFullYear() === y && d.getMonth() + 1 === m && d.getDate() === day;
+=======
+  const formatDate = (text: string): string => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+>>>>>>> a7cf52451e8961595acf93985fb155e14ceb966e
   };
 
   const handleSave = async () => {
@@ -133,10 +141,17 @@ export default function NewIncome() {
           <TextInput
             style={styles.input}
             value={receivedDate}
+<<<<<<< HEAD
             onChangeText={handleDateChange}
             placeholder="AAAA-MM-DD"
             placeholderTextColor="#999"
             keyboardType="number-pad"
+=======
+            onChangeText={(t) => setReceivedDate(formatDate(t))}
+            placeholder="AAAA-MM-DD"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+>>>>>>> a7cf52451e8961595acf93985fb155e14ceb966e
             maxLength={10}
           />
         </View>

@@ -84,6 +84,14 @@ export default function MonthlyClosing() {
     }
   };
 
+  const currentMonth = useMemo(() => {
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    return `${now.getFullYear()}-${mm}`;
+  }, []);
+
+  const monthAlreadyClosed = couple?.last_closed_month === currentMonth;
+
   const monthName = useMemo(() => {
     const months = [
       "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -108,6 +116,7 @@ export default function MonthlyClosing() {
         </View>
       ) : null}
 
+<<<<<<< HEAD
       {alreadyClosed && (
         <View style={styles.idempotencyBox}>
           <Text style={styles.idempotencyTitle}>Mês já consolidado</Text>
@@ -116,6 +125,17 @@ export default function MonthlyClosing() {
           </Text>
         </View>
       )}
+=======
+      {monthAlreadyClosed ? (
+        <View style={styles.alreadyClosedCard}>
+          <Text style={styles.alreadyClosedIcon}>{"\uD83D\uDD12"}</Text>
+          <Text style={styles.alreadyClosedTitle}>Mês já fechado</Text>
+          <Text style={styles.alreadyClosedText}>
+            Este mês já foi fechado e os saldos foram integrados ao Caixa Comum.
+          </Text>
+        </View>
+      ) : null}
+>>>>>>> a7cf52451e8961595acf93985fb155e14ceb966e
 
       {result ? (
         <View style={styles.resultCard}>
@@ -282,7 +302,11 @@ export default function MonthlyClosing() {
         </>
       )}
 
+<<<<<<< HEAD
       {!result && !alreadyClosed && (
+=======
+      {!result && !monthAlreadyClosed && (
+>>>>>>> a7cf52451e8961595acf93985fb155e14ceb966e
         <Pressable
           style={({ pressed }) => [
             styles.closeButton,
@@ -539,6 +563,32 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 17,
     fontWeight: "600",
+  },
+  alreadyClosedCard: {
+    backgroundColor: "#F3F0FF",
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+    marginBottom: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D5CFF7",
+  },
+  alreadyClosedIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  alreadyClosedTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#6C5CE7",
+    marginBottom: 8,
+  },
+  alreadyClosedText: {
+    fontSize: 14,
+    color: "#8E8CA6",
+    textAlign: "center",
+    lineHeight: 20,
   },
   cancelButton: {
     alignItems: "center",
