@@ -11,9 +11,30 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../src/lib/auth-context";
 
+const C = {
+  surface: "#f9f9ff",
+  surfaceContainerLowest: "#ffffff",
+  surfaceContainerLow: "#f1f3ff",
+  surfaceContainerHigh: "#e3e8f9",
+  surfaceVariant: "#dde2f3",
+  onSurface: "#161c27",
+  onSurfaceVariant: "#434655",
+  outline: "#747686",
+  outlineVariant: "#c4c5d7",
+  primary: "#1f4ed8",
+  onPrimary: "#ffffff",
+  primaryFixedDim: "#b7c4ff",
+  error: "#ba1a1a",
+  errorContainer: "#ffdad6",
+  onErrorContainer: "#93000a",
+};
+
 export default function NewIncome() {
+  const insets = useSafeAreaInsets();
   const { addIncome, couple } = useAuth();
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
@@ -73,7 +94,7 @@ export default function NewIncome() {
       amount: parsedAmount,
       is_extra: isExtra,
       received_at: receivedDate
-        ? new Date(receivedDate).toISOString()
+        ? new Date(receivedDate + "T00:00:00").toISOString()
         : new Date().toISOString(),
     });
     setSaving(false);
@@ -88,23 +109,34 @@ export default function NewIncome() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      style={[styles.root, { paddingTop: insets.top }]}
     >
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <MaterialIcons name="arrow-back" size={24} color={C.primary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Nova receita</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.container}
-        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Adicionar receita</Text>
         <Text style={styles.subtitle}>
           Registre uma receita adicional do casal
         </Text>
 
         {error ? (
           <View style={styles.errorBox}>
+            <MaterialIcons name="error-outline" size={18} color={C.error} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
 
+        {/* Description */}
         <View style={styles.field}>
           <Text style={styles.label}>Descrição</Text>
           <TextInput
@@ -112,10 +144,11 @@ export default function NewIncome() {
             value={description}
             onChangeText={setDescription}
             placeholder="Ex: Freelance, Bônus, Venda..."
-            placeholderTextColor="#999"
+            placeholderTextColor={C.outlineVariant}
           />
         </View>
 
+        {/* Amount */}
         <View style={styles.field}>
           <Text style={styles.label}>Valor (R$)</Text>
           <TextInput
@@ -124,10 +157,11 @@ export default function NewIncome() {
             onChangeText={setAmountText}
             placeholder="0,00"
             keyboardType="decimal-pad"
-            placeholderTextColor="#999"
+            placeholderTextColor={C.outlineVariant}
           />
         </View>
 
+        {/* Received Date */}
         <View style={styles.field}>
           <Text style={styles.label}>Data de recebimento (opcional)</Text>
           <TextInput
@@ -135,14 +169,15 @@ export default function NewIncome() {
             value={receivedDate}
             onChangeText={handleDateChange}
             placeholder="AAAA-MM-DD"
-            placeholderTextColor="#999"
+            placeholderTextColor={C.outlineVariant}
             keyboardType="number-pad"
             maxLength={10}
           />
         </View>
 
-        <View style={styles.switchRow}>
-          <View>
+        {/* Extra Toggle */}
+        <View style={[styles.switchCard]}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.switchLabel}>Receita extra</Text>
             <Text style={styles.switchHint}>
               {isExtra
@@ -153,33 +188,36 @@ export default function NewIncome() {
           <Switch
             value={isExtra}
             onValueChange={setIsExtra}
-            trackColor={{ false: "#E0E0E0", true: "#C8E6C9" }}
-            thumbColor={isExtra ? "#4CAF50" : "#FAFAFA"}
+            trackColor={{ false: C.surfaceVariant, true: C.primaryFixedDim }}
+            thumbColor={isExtra ? C.primary : C.surfaceContainerLowest}
           />
         </View>
 
+        {/* Save Button */}
         <Pressable
           style={({ pressed }) => [
-            styles.saveButton,
-            saving && styles.saveButtonDisabled,
-            pressed && styles.saveButtonPressed,
+            styles.saveBtn,
+            saving && styles.saveBtnDisabled,
+            pressed && styles.saveBtnPressed,
           ]}
           onPress={handleSave}
           disabled={saving}
         >
-          <Text style={styles.saveButtonText}>
+          <MaterialIcons name="save" size={20} color={C.onPrimary} />
+          <Text style={styles.saveBtnText}>
             {saving ? "Salvando..." : "Salvar receita"}
           </Text>
         </Pressable>
 
+        {/* Cancel */}
         <Pressable
           style={({ pressed }) => [
-            styles.cancelButton,
-            pressed && styles.cancelButtonPressed,
+            styles.cancelBtn,
+            pressed && styles.cancelBtnPressed,
           ]}
           onPress={() => router.back()}
         >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
+          <Text style={styles.cancelBtnText}>Cancelar</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -187,103 +225,155 @@ export default function NewIncome() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
+  root: {
+    flex: 1,
+    backgroundColor: C.surface,
   },
-  title: {
-    fontSize: 24,
+  /* Header */
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: C.surface,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.surfaceContainerHigh,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 6,
+    color: C.onSurface,
+  },
+  /* Scroll */
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#666",
+    color: C.onSurfaceVariant,
     marginBottom: 24,
   },
+  /* Error */
   errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: C.errorContainer,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
   },
   errorText: {
-    color: "#D32F2F",
+    flex: 1,
+    color: C.onErrorContainer,
     fontSize: 14,
+    fontWeight: "500",
   },
+  /* Fields */
   field: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.onSurfaceVariant,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: "#FFF",
+    backgroundColor: C.surfaceContainerLowest,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
+    borderColor: C.outlineVariant,
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#1A1A1A",
+    fontWeight: "500",
+    color: C.onSurface,
   },
-  switchRow: {
+  /* Switch */
+  switchCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    backgroundColor: C.surfaceContainerLowest,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginBottom: 28,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      default: { elevation: 2 },
+    }),
   },
   switchLabel: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
+    color: C.onSurface,
   },
   switchHint: {
-    fontSize: 11,
-    color: "#999",
+    fontSize: 12,
+    color: C.onSurfaceVariant,
     marginTop: 2,
+    maxWidth: 230,
   },
-  saveButton: {
-    backgroundColor: "#4ECDC4",
-    borderRadius: 12,
+  /* Save */
+  saveBtn: {
+    flexDirection: "row",
+    backgroundColor: C.primary,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     marginBottom: 12,
-    boxShadow: "0 2px 8px rgba(78, 205, 196, 0.3)",
+    ...Platform.select({
+      ios: {
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      default: { elevation: 4 },
+    }),
   },
-  saveButtonDisabled: {
+  saveBtnDisabled: {
     opacity: 0.6,
   },
-  saveButtonPressed: {
+  saveBtnPressed: {
     opacity: 0.85,
   },
-  saveButtonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "600",
+  saveBtnText: {
+    color: C.onPrimary,
+    fontSize: 16,
+    fontWeight: "700",
   },
-  cancelButton: {
+  /* Cancel */
+  cancelBtn: {
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
+    marginBottom: 20,
   },
-  cancelButtonPressed: {
+  cancelBtnPressed: {
     opacity: 0.7,
   },
-  cancelButtonText: {
-    color: "#999",
-    fontSize: 15,
+  cancelBtnText: {
+    color: C.onSurfaceVariant,
+    fontSize: 14,
     fontWeight: "600",
   },
 });

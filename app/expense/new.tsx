@@ -11,10 +11,52 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../src/lib/auth-context";
 import { DEFAULT_CATEGORIES } from "../../src/types/database";
 
+const C = {
+  surface: "#f9f9ff",
+  surfaceContainerLowest: "#ffffff",
+  surfaceContainerLow: "#f1f3ff",
+  surfaceContainerHigh: "#e3e8f9",
+  surfaceVariant: "#dde2f3",
+  onSurface: "#161c27",
+  onSurfaceVariant: "#434655",
+  outline: "#747686",
+  outlineVariant: "#c4c5d7",
+  primary: "#1f4ed8",
+  onPrimary: "#ffffff",
+  primaryContainer: "#4169f2",
+  onPrimaryContainer: "#fffbff",
+  primaryFixedDim: "#b7c4ff",
+  error: "#ba1a1a",
+  errorContainer: "#ffdad6",
+  onErrorContainer: "#93000a",
+  avatarRed: "#ff5252",
+  avatarTeal: "#39b5bf",
+};
+
+const shadowSm = Platform.select({
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  default: { elevation: 2 },
+});
+
+function formatCurrencyBR(value: number): string {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 export default function NewExpense() {
+  const insets = useSafeAreaInsets();
   const { addExpense, couple, user, profile, partnerInfo } = useAuth();
   const [description, setDescription] = useState("");
   const [amountText, setAmountText] = useState("");
@@ -94,23 +136,34 @@ export default function NewExpense() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      style={[styles.root, { paddingTop: insets.top }]}
     >
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <MaterialIcons name="arrow-back" size={24} color={C.primary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Nova despesa</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.container}
-        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Cadastrar despesa</Text>
         <Text style={styles.subtitle}>
           Adicione um novo gasto ao plano do casal
         </Text>
 
         {error ? (
           <View style={styles.errorBox}>
+            <MaterialIcons name="error-outline" size={18} color={C.error} />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
 
+        {/* Description */}
         <View style={styles.field}>
           <Text style={styles.label}>Descrição</Text>
           <TextInput
@@ -118,10 +171,11 @@ export default function NewExpense() {
             value={description}
             onChangeText={setDescription}
             placeholder="Ex: Supermercado do mês"
-            placeholderTextColor="#999"
+            placeholderTextColor={C.outlineVariant}
           />
         </View>
 
+        {/* Amount */}
         <View style={styles.field}>
           <Text style={styles.label}>Valor (R$)</Text>
           <TextInput
@@ -130,58 +184,63 @@ export default function NewExpense() {
             onChangeText={setAmountText}
             placeholder="0,00"
             keyboardType="decimal-pad"
-            placeholderTextColor="#999"
+            placeholderTextColor={C.outlineVariant}
           />
         </View>
 
+        {/* Category */}
         <View style={styles.field}>
           <Text style={styles.label}>Categoria</Text>
           <Pressable
-            style={({ pressed }) => [
-              styles.categorySelector,
-              pressed && styles.categorySelectorPressed,
-            ]}
+            style={styles.selector}
             onPress={() => setShowCategories(!showCategories)}
           >
-            <Text style={styles.categorySelectorText}>
-              {category}
-            </Text>
-            <Text style={styles.categorySelectorArrow}>
-              {showCategories ? "\u25B2" : "\u25BC"}
-            </Text>
+            <Text style={styles.selectorText}>{category}</Text>
+            <MaterialIcons
+              name={showCategories ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+              size={20}
+              color={C.outline}
+            />
           </Pressable>
 
           {showCategories && (
             <View style={styles.categoryList}>
-              {DEFAULT_CATEGORIES.map((cat: { name: string; icon: string; type: string }) => (
-                <Pressable
-                  key={cat.name}
-                  style={({ pressed }) => [
-                    styles.categoryItem,
-                    category === cat.name && styles.categoryItemSelected,
-                    pressed && styles.categoryItemPressed,
-                  ]}
-                  onPress={() => {
-                    setCategory(cat.name);
-                    setShowCategories(false);
-                  }}
-                >
-                  <Text style={styles.categoryItemIcon}>{cat.icon}</Text>
-                  <Text
+              <ScrollView style={styles.categoryScroll} nestedScrollEnabled>
+                {DEFAULT_CATEGORIES.map((cat) => (
+                  <Pressable
+                    key={cat.name}
                     style={[
-                      styles.categoryItemText,
-                      category === cat.name && styles.categoryItemTextSelected,
+                      styles.categoryItem,
+                      category === cat.name && styles.categoryItemSelected,
                     ]}
+                    onPress={() => {
+                      setCategory(cat.name);
+                      setShowCategories(false);
+                    }}
                   >
-                    {cat.name}
-                  </Text>
-                  <Text style={styles.categoryItemType}>{cat.type}</Text>
-                </Pressable>
-              ))}
+                    <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                    <View style={styles.categoryInfo}>
+                      <Text
+                        style={[
+                          styles.categoryName,
+                          category === cat.name && styles.categoryNameSelected,
+                        ]}
+                      >
+                        {cat.name}
+                      </Text>
+                      <Text style={styles.categoryType}>{cat.type}</Text>
+                    </View>
+                    {category === cat.name && (
+                      <MaterialIcons name="check" size={18} color={C.primary} />
+                    )}
+                  </Pressable>
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
 
+        {/* Due Date */}
         <View style={styles.field}>
           <Text style={styles.label}>Data de vencimento (opcional)</Text>
           <TextInput
@@ -189,12 +248,13 @@ export default function NewExpense() {
             value={dueDate}
             onChangeText={handleDateChange}
             placeholder="AAAA-MM-DD"
-            placeholderTextColor="#999"
+            placeholderTextColor={C.outlineVariant}
             keyboardType="number-pad"
             maxLength={10}
           />
         </View>
 
+        {/* Paid By */}
         <View style={styles.field}>
           <Text style={styles.label}>Quem pagou?</Text>
           <View style={styles.paidByRow}>
@@ -215,17 +275,19 @@ export default function NewExpense() {
                     .toUpperCase() ?? "EU"}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.paidByName,
-                  paidBy === user?.id && styles.paidByNameSelected,
-                ]}
-                numberOfLines={1}
-              >
-                {profile?.full_name ?? "Você"}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.paidByName,
+                    paidBy === user?.id && styles.paidByNameSelected,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {profile?.full_name ?? "Você"}
+                </Text>
+              </View>
               {paidBy === user?.id && (
-                <Text style={styles.paidByCheck}>✓</Text>
+                <MaterialIcons name="check-circle" size={20} color={C.primary} />
               )}
             </Pressable>
             {partnerInfo && (
@@ -246,25 +308,28 @@ export default function NewExpense() {
                       .toUpperCase() ?? "??"}
                   </Text>
                 </View>
-                <Text
-                  style={[
-                    styles.paidByName,
-                    paidBy === partnerInfo.id && styles.paidByNameSelected,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {partnerInfo.full_name}
-                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.paidByName,
+                      paidBy === partnerInfo.id && styles.paidByNameSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {partnerInfo.full_name}
+                  </Text>
+                </View>
                 {paidBy === partnerInfo.id && (
-                  <Text style={styles.paidByCheck}>✓</Text>
+                  <MaterialIcons name="check-circle" size={20} color={C.primary} />
                 )}
               </Pressable>
             )}
           </View>
         </View>
 
-        <View style={styles.switchRow}>
-          <View>
+        {/* Recurring Toggle */}
+        <View style={[styles.switchCard, shadowSm]}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.switchLabel}>Despesa recorrente</Text>
             <Text style={styles.switchHint}>
               {isRecurring
@@ -275,43 +340,47 @@ export default function NewExpense() {
           <Switch
             value={isRecurring}
             onValueChange={setIsRecurring}
-            trackColor={{ false: "#E0E0E0", true: "#C8E6C9" }}
-            thumbColor={isRecurring ? "#4CAF50" : "#FAFAFA"}
+            trackColor={{ false: C.surfaceVariant, true: C.primaryFixedDim }}
+            thumbColor={isRecurring ? C.primary : C.surfaceContainerLowest}
           />
         </View>
 
-        <View style={styles.switchRow}>
+        {/* Paid Toggle */}
+        <View style={[styles.switchCard, shadowSm]}>
           <Text style={styles.switchLabel}>Já foi pago?</Text>
           <Switch
             value={paid}
             onValueChange={setPaid}
-            trackColor={{ false: "#E0E0E0", true: "#C8E6C9" }}
-            thumbColor={paid ? "#4CAF50" : "#FAFAFA"}
+            trackColor={{ false: C.surfaceVariant, true: C.primaryFixedDim }}
+            thumbColor={paid ? C.primary : C.surfaceContainerLowest}
           />
         </View>
 
+        {/* Save Button */}
         <Pressable
           style={({ pressed }) => [
-            styles.saveButton,
-            saving && styles.saveButtonDisabled,
-            pressed && styles.saveButtonPressed,
+            styles.saveBtn,
+            saving && styles.saveBtnDisabled,
+            pressed && styles.saveBtnPressed,
           ]}
           onPress={handleSave}
           disabled={saving}
         >
-          <Text style={styles.saveButtonText}>
+          <MaterialIcons name="save" size={20} color={C.onPrimary} />
+          <Text style={styles.saveBtnText}>
             {saving ? "Salvando..." : "Salvar despesa"}
           </Text>
         </Pressable>
 
+        {/* Cancel */}
         <Pressable
           style={({ pressed }) => [
-            styles.cancelButton,
-            pressed && styles.cancelButtonPressed,
+            styles.cancelBtn,
+            pressed && styles.cancelBtnPressed,
           ]}
           onPress={() => router.back()}
         >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
+          <Text style={styles.cancelBtnText}>Cancelar</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -319,81 +388,118 @@ export default function NewExpense() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
+  root: {
+    flex: 1,
+    backgroundColor: C.surface,
   },
-  title: {
-    fontSize: 24,
+  /* Header */
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: C.surface,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.surfaceContainerHigh,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
     fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 6,
+    color: C.onSurface,
+  },
+  /* Scroll */
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#666",
+    color: C.onSurfaceVariant,
     marginBottom: 24,
   },
+  /* Error */
   errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: C.errorContainer,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
   },
   errorText: {
-    color: "#D32F2F",
+    flex: 1,
+    color: C.onErrorContainer,
     fontSize: 14,
+    fontWeight: "500",
   },
+  /* Fields */
   field: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.onSurfaceVariant,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: "#FFF",
+    backgroundColor: C.surfaceContainerLowest,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
+    borderColor: C.outlineVariant,
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#1A1A1A",
+    fontWeight: "500",
+    color: C.onSurface,
   },
-  categorySelector: {
-    backgroundColor: "#FFF",
+  /* Selector (Category) */
+  selector: {
+    backgroundColor: C.surfaceContainerLowest,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
+    borderColor: C.outlineVariant,
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  categorySelectorPressed: {
-    opacity: 0.7,
-  },
-  categorySelectorText: {
+  selectorText: {
     fontSize: 16,
-    color: "#1A1A1A",
+    fontWeight: "500",
+    color: C.onSurface,
+    flex: 1,
   },
-  categorySelectorArrow: {
-    fontSize: 12,
-    color: "#999",
-  },
+  /* Category List */
   categoryList: {
     marginTop: 4,
-    backgroundColor: "#FFF",
-    borderRadius: 10,
+    backgroundColor: C.surfaceContainerLowest,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    maxHeight: 240,
+    borderColor: C.outlineVariant,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+      },
+      default: { elevation: 4 },
+    }),
+  },
+  categoryScroll: {
+    maxHeight: 280,
   },
   categoryItem: {
     flexDirection: "row",
@@ -401,133 +507,145 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
+    borderBottomColor: "#F3F3F8",
+    gap: 12,
   },
   categoryItemSelected: {
-    backgroundColor: "#FFF0F0",
+    backgroundColor: C.surfaceContainerLow,
   },
-  categoryItemPressed: {
-    opacity: 0.7,
+  categoryIcon: {
+    fontSize: 20,
+    width: 28,
+    textAlign: "center",
   },
-  categoryItemIcon: {
-    fontSize: 18,
-    marginRight: 10,
-  },
-  categoryItemText: {
+  categoryInfo: {
     flex: 1,
-    fontSize: 14,
-    color: "#333",
   },
-  categoryItemTextSelected: {
-    color: "#FF6B6B",
+  categoryName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: C.onSurface,
+  },
+  categoryNameSelected: {
+    color: C.primary,
     fontWeight: "600",
   },
-  categoryItemType: {
+  categoryType: {
     fontSize: 11,
-    color: "#999",
+    color: C.onSurfaceVariant,
+    marginTop: 1,
   },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 28,
-  },
-  switchLabel: {
-    fontSize: 16,
-    color: "#333",
-  },
-  switchHint: {
-    fontSize: 11,
-    color: "#999",
-    marginTop: 2,
-    maxWidth: 220,
-  },
+  /* Paid By */
   paidByRow: {
     flexDirection: "row",
     gap: 12,
   },
   paidByOption: {
     flex: 1,
-    backgroundColor: "#FFF",
+    backgroundColor: C.surfaceContainerLowest,
     borderWidth: 2,
-    borderColor: "#E0E0E0",
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderColor: C.outlineVariant,
+    borderRadius: 14,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
   },
   paidByOptionSelected: {
-    borderColor: "#FF6B6B",
-    backgroundColor: "#FFF5F5",
+    borderColor: C.primary,
+    backgroundColor: C.surfaceContainerLow,
   },
   paidByAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#FF6B6B",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.avatarRed,
     justifyContent: "center",
     alignItems: "center",
   },
   paidByAvatarPartner: {
-    backgroundColor: "#4ECDC4",
+    backgroundColor: C.avatarTeal,
   },
   paidByAvatarText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  paidByName: {
-    flex: 1,
-    fontSize: 13,
-    color: "#666",
-    fontWeight: "500",
-  },
-  paidByNameSelected: {
-    color: "#FF6B6B",
-    fontWeight: "600",
-  },
-  paidByCheck: {
-    color: "#FF6B6B",
+    color: "#fff",
     fontSize: 16,
     fontWeight: "700",
   },
-  saveButton: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginBottom: 12,
-    boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
+  paidByName: {
+    fontSize: 14,
+    color: C.onSurfaceVariant,
+    fontWeight: "500",
   },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonPressed: {
-    opacity: 0.85,
-  },
-  saveButtonText: {
-    color: "#FFF",
-    fontSize: 17,
+  paidByNameSelected: {
+    color: C.primary,
     fontWeight: "600",
   },
-  cancelButton: {
+  /* Switches */
+  switchCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    backgroundColor: C.surfaceContainerLowest,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 20,
   },
-  cancelButtonPressed: {
+  switchLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: C.onSurface,
+  },
+  switchHint: {
+    fontSize: 12,
+    color: C.onSurfaceVariant,
+    marginTop: 2,
+    maxWidth: 230,
+  },
+  /* Save */
+  saveBtn: {
+    flexDirection: "row",
+    backgroundColor: C.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      default: { elevation: 4 },
+    }),
+  },
+  saveBtnDisabled: {
+    opacity: 0.6,
+  },
+  saveBtnPressed: {
+    opacity: 0.85,
+  },
+  saveBtnText: {
+    color: C.onPrimary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  /* Cancel */
+  cancelBtn: {
+    alignItems: "center",
+    paddingVertical: 14,
+    marginBottom: 20,
+  },
+  cancelBtnPressed: {
     opacity: 0.7,
   },
-  cancelButtonText: {
-    color: "#999",
-    fontSize: 15,
+  cancelBtnText: {
+    color: C.onSurfaceVariant,
+    fontSize: 14,
     fontWeight: "600",
   },
 });
