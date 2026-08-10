@@ -1,12 +1,13 @@
 import { Stack } from "expo-router/stack";
 import { AuthProvider, useAuth } from "../src/lib/auth-context";
 import { View, ActivityIndicator, Text } from "react-native";
+import { styles } from "./_layout.styles";
 
 function LoadingScreen() {
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FAFAFA" }}>
+    <View style={styles.loading}>
       <ActivityIndicator size="large" color="#FF6B6B" />
-      <Text style={{ marginTop: 16, color: "#666", fontSize: 14 }}>Carregando...</Text>
+      <Text style={styles.loadingText}>Carregando...</Text>
     </View>
   );
 }

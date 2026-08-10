@@ -5,13 +5,14 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useAuth } from "../src/lib/auth-context";
+import { useAuth } from "../../src/lib/auth-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { styles } from "./styles";
+import { C } from "../../src/theme/colors";
 
 const REGISTRATION_STEP_KEY = "@registration_step";
 
@@ -97,7 +98,7 @@ export default function VerifyEmail() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      style={{ flex: 1, backgroundColor: C.surface }}
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -160,92 +161,3 @@ export default function VerifyEmail() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 40,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  form: {
-    flex: 1,
-    alignItems: "center",
-  },
-  step: {
-    fontSize: 13,
-    color: "#FF6B6B",
-    fontWeight: "600",
-    marginBottom: 32,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 24,
-    width: "100%",
-  },
-  errorText: {
-    color: "#D32F2F",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  codeRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 32,
-  },
-  codeInput: {
-    width: 48,
-    height: 56,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: "#E0E0E0",
-    backgroundColor: "#FFF",
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  codeInputFilled: {
-    borderColor: "#FF6B6B",
-  },
-  resendButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  resendButtonDisabled: {
-    opacity: 0.5,
-  },
-  resendButtonPressed: {
-    opacity: 0.7,
-  },
-  resendText: {
-    fontSize: 14,
-    color: "#FF6B6B",
-    fontWeight: "600",
-  },
-  verifying: {
-    fontSize: 14,
-    color: "#999",
-    marginTop: 16,
-  },
-});

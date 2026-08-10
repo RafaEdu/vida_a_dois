@@ -1,0 +1,337 @@
+import { StyleSheet } from "react-native";
+import { C } from "../../src/theme/colors";
+import { shadowSm } from "../../src/theme/shadows";
+
+export const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: 32,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: C.onSurface,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: C.onSurfaceVariant,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  avatarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: C.avatarRed,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarEmpty: {
+    backgroundColor: C.outlineVariant,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: C.outlineVariant,
+  },
+  avatarPending: {
+    backgroundColor: "#FFB347",
+  },
+  avatarText: {
+    color: C.onPrimary,
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  connectionLine: {
+    width: 48,
+    height: 2,
+    backgroundColor: C.outlineVariant,
+    marginHorizontal: 8,
+  },
+  connectionLineDashed: {
+    backgroundColor: "transparent",
+    borderTopWidth: 2,
+    borderStyle: "dashed",
+    borderColor: C.outlineVariant,
+  },
+  connectionLineSolid: {
+    backgroundColor: C.primary,
+  },
+  pendingBadge: {
+    position: "absolute",
+    bottom: -20,
+    backgroundColor: "#FFF3E0",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  pendingBadgeText: {
+    fontSize: 10,
+    color: "#E65100",
+    fontWeight: "600",
+  },
+  waitingText: {
+    fontSize: 16,
+    color: C.onSurfaceVariant,
+    textAlign: "center",
+    marginBottom: 24,
+    fontStyle: "italic",
+  },
+  inviteText: {
+    fontSize: 18,
+    color: C.onSurface,
+    textAlign: "center",
+    marginBottom: 24,
+    fontWeight: "500",
+    lineHeight: 26,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: C.progressGreen,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    ...shadowSm,
+  },
+  acceptButtonText: {
+    color: C.onPrimary,
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: C.surfaceContainerLowest,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: C.outlineVariant,
+  },
+  rejectButtonText: {
+    color: C.outline,
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  confirmedText: {
+    fontSize: 16,
+    color: C.onSurfaceVariant,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  checkmarkContainer: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  checkmark: {
+    fontSize: 48,
+  },
+  linkedBadge: {
+    backgroundColor: "#E8F5E9",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  linkedBadgeText: {
+    color: C.progressGreen,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  codeDisplay: {
+    alignItems: "center",
+    marginBottom: 24,
+    backgroundColor: C.surfaceContainerLowest,
+    borderRadius: 16,
+    padding: 24,
+    ...shadowSm,
+  },
+  codeLabel: {
+    fontSize: 13,
+    color: C.outline,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  codeValue: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: C.onSurface,
+    letterSpacing: 4,
+    fontVariant: ["tabular-nums"],
+    marginBottom: 12,
+  },
+  copyButton: {
+    backgroundColor: "#FFF0F0",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  copyButtonPressed: {
+    opacity: 0.7,
+  },
+  copyButtonText: {
+    color: C.primary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  instruction: {
+    fontSize: 14,
+    color: C.onSurfaceVariant,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  errorBox: {
+    backgroundColor: C.errorContainer,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: C.error,
+    fontSize: 14,
+  },
+  field: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.onSurfaceVariant,
+    marginBottom: 6,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: C.surfaceContainerLowest,
+    borderWidth: 1,
+    borderColor: C.outlineVariant,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: C.onSurface,
+    letterSpacing: 2,
+  },
+  codeInputRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  lookupButton: {
+    backgroundColor: C.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    justifyContent: "center",
+  },
+  lookupButtonDisabled: {
+    backgroundColor: C.primaryFixedDim,
+  },
+  lookupButtonPressed: {
+    opacity: 0.85,
+  },
+  lookupButtonText: {
+    color: C.onPrimary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  partnerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0FFF0",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  partnerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.progressGreen,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  partnerAvatarText: {
+    color: C.onPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  partnerInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  partnerName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: C.onSurface,
+  },
+  partnerStatus: {
+    fontSize: 12,
+    color: C.progressGreen,
+  },
+  confirmButton: {
+    backgroundColor: C.progressGreen,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  confirmButtonDisabled: {
+    backgroundColor: "#A5D6A7",
+  },
+  confirmButtonPressed: {
+    opacity: 0.85,
+  },
+  confirmButtonText: {
+    color: C.onPrimary,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  button: {
+    backgroundColor: C.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 8,
+    ...shadowSm,
+  },
+  buttonText: {
+    color: C.onPrimary,
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  secondaryButton: {
+    alignItems: "center",
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  secondaryButtonPressed: {
+    opacity: 0.7,
+  },
+  secondaryButtonText: {
+    color: C.primary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+});

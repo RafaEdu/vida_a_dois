@@ -5,13 +5,14 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useAuth } from "../src/lib/auth-context";
+import { useAuth } from "../../src/lib/auth-context";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { styles } from "./styles";
+import { C } from "../../src/theme/colors";
 
 const REGISTRATION_STEP_KEY = "@registration_step";
 const DRAFT_NAME_KEY = "@profile_draft_name";
@@ -136,7 +137,7 @@ export default function ProfileSetup() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      style={{ flex: 1, backgroundColor: C.surface }}
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -216,94 +217,3 @@ export default function ProfileSetup() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 32,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  form: {
-    flex: 1,
-  },
-  step: {
-    fontSize: 13,
-    color: "#FF6B6B",
-    fontWeight: "600",
-    marginBottom: 20,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: "#D32F2F",
-    fontSize: 14,
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#1A1A1A",
-  },
-  optionalHint: {
-    fontSize: 12,
-    color: "#999",
-    marginTop: 6,
-    fontStyle: "italic",
-  },
-  button: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
-    boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
-  },
-  buttonDisabled: {
-    backgroundColor: "#FFB3B3",
-    boxShadow: "none",
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-});

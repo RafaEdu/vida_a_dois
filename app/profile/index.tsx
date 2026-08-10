@@ -5,13 +5,14 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { Stack } from "expo-router/stack";
-import { useAuth } from "../src/lib/auth-context";
-import { supabase } from "../src/lib/supabase";
+import { useAuth } from "../../src/lib/auth-context";
+import { supabase } from "../../src/lib/supabase";
+import { styles } from "./styles";
+import { C } from "../../src/theme/colors";
 
 function formatCurrency(value: number | null): string {
   if (!value) return "R$ 0,00";
@@ -78,7 +79,7 @@ export default function Profile() {
       <Stack.Screen options={{ title: "Meu perfil" }} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+        style={{ flex: 1, backgroundColor: C.surface }}
       >
         <ScrollView
           contentContainerStyle={styles.container}
@@ -212,146 +213,3 @@ export default function Profile() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  avatarContainer: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#FF6B6B",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    color: "#FFF",
-    fontSize: 32,
-    fontWeight: "700",
-  },
-  infoCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 20,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    marginBottom: 24,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: "#999",
-  },
-  infoValue: {
-    fontSize: 15,
-    color: "#1A1A1A",
-    fontWeight: "500",
-  },
-  errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: "#D32F2F",
-    fontSize: 14,
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#1A1A1A",
-  },
-  editButtons: {
-    gap: 12,
-  },
-  saveButton: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
-  },
-  buttonDisabled: {
-    backgroundColor: "#FFB3B3",
-    boxShadow: "none",
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  cancelButton: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  cancelButtonPressed: {
-    opacity: 0.7,
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  editButton: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginBottom: 12,
-    boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
-  },
-  editButtonPressed: {
-    opacity: 0.85,
-  },
-  editButtonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  signOutButton: {
-    alignItems: "center",
-    paddingVertical: 16,
-  },
-  signOutButtonPressed: {
-    opacity: 0.7,
-  },
-  signOutText: {
-    color: "#999",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-});

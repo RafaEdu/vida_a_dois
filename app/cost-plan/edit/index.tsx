@@ -5,13 +5,14 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { useAuth } from "../../src/lib/auth-context";
-import type { IdealSplit } from "../../src/types/database";
+import { useAuth } from "../../../src/lib/auth-context";
+import type { IdealSplit } from "../../../src/types/database";
+import { C } from "../../../src/theme/colors";
+import { styles } from "./styles";
 
 export default function EditCostPlan() {
   const { couple, profile, partnerInfo, updateCostPlan, fetchIdealSplit } = useAuth();
@@ -85,7 +86,7 @@ export default function EditCostPlan() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      style={{ flex: 1, backgroundColor: C.surface }}
     >
       <ScrollView
         contentContainerStyle={styles.container}
@@ -251,208 +252,3 @@ export default function EditCostPlan() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: "#D32F2F",
-    fontSize: 14,
-  },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 24,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 4,
-  },
-  cardDescription: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 16,
-  },
-  currencyInput: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  currencySymbol: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#666",
-    marginRight: 8,
-  },
-  budgetInput: {
-    flex: 1,
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    paddingVertical: 4,
-  },
-  splitContainer: {
-    alignItems: "center",
-  },
-  splitPerson: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  splitAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#FF6B6B",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  splitAvatarPartner: {
-    backgroundColor: "#4ECDC4",
-  },
-  splitAvatarText: {
-    color: "#FFF",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  splitName: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
-    marginBottom: 8,
-    maxWidth: 140,
-  },
-  percentInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  percentField: {
-    fontSize: 36,
-    fontWeight: "700",
-    color: "#FF6B6B",
-    minWidth: 60,
-    textAlign: "center",
-    paddingVertical: 4,
-  },
-  percentReadonly: {
-    color: "#4ECDC4",
-  },
-  percentSymbol: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#666",
-    marginLeft: 4,
-  },
-  splitSeparator: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  splitLine: {
-    width: 60,
-    height: 1,
-    backgroundColor: "#E0E0E0",
-  },
-  splitOr: {
-    fontSize: 18,
-    color: "#CCC",
-    marginHorizontal: 12,
-    fontWeight: "300",
-  },
-  idealSuggestion: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    alignItems: "center",
-  },
-  idealSuggestionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#6C5CE7",
-    marginBottom: 4,
-  },
-  idealSuggestionText: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 2,
-  },
-  idealSuggestionHint: {
-    fontSize: 11,
-    color: "#999",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  useIdealButton: {
-    backgroundColor: "#6C5CE7",
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  useIdealButtonPressed: {
-    opacity: 0.8,
-  },
-  useIdealButtonText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  saveButton: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginBottom: 12,
-    marginTop: 8,
-    boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonPressed: {
-    opacity: 0.85,
-  },
-  saveButtonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  cancelButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  cancelButtonPressed: {
-    opacity: 0.7,
-  },
-  cancelButtonText: {
-    color: "#999",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-});

@@ -5,12 +5,13 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { Link, router } from "expo-router";
-import { useAuth } from "../src/lib/auth-context";
+import { useAuth } from "../../src/lib/auth-context";
+import { C } from "../../src/theme/colors";
+import { styles } from "./styles";
 
 export default function SignIn() {
   const { user, signIn } = useAuth();
@@ -34,30 +35,38 @@ export default function SignIn() {
 
   const handleSignIn = async () => {
     setError("");
-    if (!email || !password) {
-      setError("Preencha todos os campos.");
+    if (!email.trim()) {
+      setError("Insira seu e-mail.");
       return;
     }
+    if (!password) {
+      setError("Insira sua senha.");
+      return;
+    }
+
     setLoading(true);
-    const { error: signInError } = await signIn(email, password);
+    const { error: signInError } = await signIn(email.trim(), password);
     setLoading(false);
+
     if (signInError) {
-      setError("E-mail ou senha inválidos.");
+      setError(signInError);
     }
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      style={{ flex: 1, backgroundColor: C.surface }}
     >
       <ScrollView
         contentContainerStyle={styles.container}
         contentInsetAdjustmentBehavior="automatic"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Bem-vindo de volta</Text>
-          <Text style={styles.subtitle}>Entre para continuar</Text>
+          <Text style={styles.title}>Vida a Dois</Text>
+          <Text style={styles.subtitle}>
+            Assuma o controle financeiro do seu relacionamento
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -109,7 +118,7 @@ export default function SignIn() {
           </Pressable>
 
           <View style={styles.loginLink}>
-            <Text style={styles.loginText}>Não tem conta? </Text>
+            <Text style={styles.loginText}>Não tem uma conta? </Text>
             <Link href="/sign-up" style={styles.loginAction}>
               Criar conta
             </Link>
@@ -119,92 +128,3 @@ export default function SignIn() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 40,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-  },
-  form: {
-    flex: 1,
-  },
-  errorBox: {
-    backgroundColor: "#FFF0F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: "#D32F2F",
-    fontSize: 14,
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#1A1A1A",
-  },
-  button: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
-    boxShadow: "0 2px 8px rgba(255, 107, 107, 0.3)",
-  },
-  buttonDisabled: {
-    backgroundColor: "#FFB3B3",
-    boxShadow: "none",
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  loginLink: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  loginText: {
-    color: "#666",
-    fontSize: 14,
-  },
-  loginAction: {
-    color: "#FF6B6B",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-});
