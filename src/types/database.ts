@@ -42,7 +42,7 @@ export interface ExpenseInput {
   category: string;
   due_date?: string;
   paid?: boolean;
-  paid_at?: string;
+  paid_at?: string | null;
   paid_by?: string;
   is_recurring?: boolean;
 }
@@ -51,6 +51,10 @@ export interface PartnerInfo {
   id: string;
   full_name: string;
   monthly_income: number | null;
+}
+
+export interface PartnerLookup {
+  full_name: string;
 }
 
 export interface Income {

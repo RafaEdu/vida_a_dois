@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { Stack } from "expo-router/stack";
 import { useAuth } from "../../src/lib/auth-context";
-import { supabase } from "../../src/lib/supabase";
 import { styles } from "./styles";
 import { C } from "../../src/theme/colors";
 
@@ -20,7 +19,7 @@ function formatCurrency(value: number | null): string {
 }
 
 export default function Profile() {
-  const { profile, signOut, refreshProfile } = useAuth();
+  const { profile, signOut, updateProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [income, setIncome] = useState("");
@@ -53,18 +52,14 @@ export default function Profile() {
     setError("");
 
     try {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          full_name: name.trim(),
-          monthly_income: income ? parseCurrencyInput(income) : null,
-        })
-        .eq("id", profile?.id);
+      const { error: updateError } = await updateProfile({
+        full_name: name.trim(),
+        monthly_income: income ? parseCurrencyInput(income) : null,
+      });
 
       if (updateError) {
-        setError(updateError.message);
+        setError(updateError);
       } else {
-        await refreshProfile();
         setEditing(false);
       }
     } catch {

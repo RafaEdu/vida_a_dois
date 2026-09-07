@@ -7,12 +7,24 @@ import {
   useRef,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import * as authService from "../services/auth";
+import * as profileService from "../services/profile";
+import * as coupleService from "../services/couple";
+import * as expenseService from "../services/expense";
+import * as incomeService from "../services/income";
+import {
+  applyExpenseDelta,
+  applyIncomeDelta,
+  type RealtimePayload,
+} from "../services/realtime";
 import type {
   Profile,
   Couple,
   UserState,
   PartnerInfo,
+  PartnerLookup,
   Expense,
   ExpenseInput,
   Income,
@@ -20,19 +32,24 @@ import type {
   CloseMonthResult,
   IdealSplit,
 } from "../types/database";
+import type { CostPlanInput } from "../services/couple";
 
 interface AuthContextType {
-  session: any;
-  user: any;
+  session: Session | null;
+  user: User | null;
   profile: Profile | null;
   couple: Couple | null;
   userState: UserState;
   partnerInfo: PartnerInfo | null;
   loading: boolean;
+  expensesLoading: boolean;
+  incomesLoading: boolean;
+  expensesError: string | null;
+  incomesError: string | null;
   signUp: (
     email: string,
     password: string,
-  ) => Promise<{ error?: string; session?: any; user?: any }>;
+  ) => Promise<{ error?: string; session?: Session | null; user?: User | null }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<{ error?: string }>;
@@ -42,9 +59,13 @@ interface AuthContextType {
     birth_date: string;
     monthly_income?: number;
   }) => Promise<{ error?: string; inviteCode?: string }>;
+  updateProfile: (data: {
+    full_name: string;
+    monthly_income: number | null;
+  }) => Promise<{ error?: string }>;
   lookupPartner: (
     inviteCode: string,
-  ) => Promise<{ error?: string; partner?: PartnerInfo }>;
+  ) => Promise<{ error?: string; partner?: PartnerLookup }>;
   linkPartner: (inviteCode: string) => Promise<{ error?: string }>;
   acceptInvitation: (coupleId: string) => Promise<{ error?: string }>;
   rejectInvitation: (coupleId: string) => Promise<{ error?: string }>;
@@ -67,33 +88,24 @@ interface AuthContextType {
   fetchIncomes: () => Promise<void>;
   closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
   fetchIdealSplit: () => Promise<IdealSplit | null>;
-  updateCostPlan: (data: {
-    monthly_budget?: number;
-    split_ratio_a?: number;
-    split_ratio_b?: number;
-  }) => Promise<{ error?: string }>;
+  updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-function generateInviteCode(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [expensesLoading, setExpensesLoading] = useState(false);
+  const [incomesLoading, setIncomesLoading] = useState(false);
+  const [expensesError, setExpensesError] = useState<string | null>(null);
+  const [incomesError, setIncomesError] = useState<string | null>(null);
   const refreshingRef = useRef(false);
 
   const getUserState = useCallback(
@@ -107,44 +119,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const fetchCouple = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("couples")
-      .select("*")
-      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
-      .maybeSingle();
+    const data = await coupleService.fetchCouple(userId);
 
     if (data) {
       setCouple(data);
+      const partner = await coupleService.fetchPartner(data, userId);
+      setPartnerInfo(partner);
+
       if (data.status === "active") {
-        const partnerId = data.user_a === userId ? data.user_b : data.user_a;
-        const [partnerRes, expensesRes, incomesRes] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id, full_name, monthly_income")
-            .eq("id", partnerId)
-            .single(),
-          supabase
-            .from("expenses")
-            .select("*")
-            .eq("couple_id", data.id)
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("incomes")
-            .select("*")
-            .eq("couple_id", data.id)
-            .order("received_at", { ascending: false }),
+        const [exp, inc] = await Promise.all([
+          expenseService.fetchExpenses(data.id),
+          incomeService.fetchIncomes(data.id),
         ]);
-        setPartnerInfo(partnerRes.data);
-        if (expensesRes.data) setExpenses(expensesRes.data as Expense[]);
-        if (incomesRes.data) setIncomes(incomesRes.data as Income[]);
-      } else if (data.status === "pending") {
-        const partnerId = data.user_a === userId ? data.user_b : data.user_a;
-        const { data: pp } = await supabase
-          .from("profiles")
-          .select("id, full_name, monthly_income")
-          .eq("id", partnerId)
-          .single();
-        setPartnerInfo(pp);
+        setExpenses(exp);
+        setIncomes(inc);
       }
     } else {
       setCouple(null);
@@ -162,11 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       refreshingRef.current = true;
       try {
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", uid)
-          .single();
+        const p = await profileService.fetchProfile(uid);
         setProfile(p);
         if (p) {
           await fetchCouple(uid);
@@ -179,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    authService.getSession().then((session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -188,9 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const unsubscribe = authService.onAuthStateChange((session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -199,10 +181,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setCouple(null);
         setPartnerInfo(null);
+        setExpenses([]);
+        setIncomes([]);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return unsubscribe;
   }, [refreshProfile]);
 
   useEffect(() => {
@@ -298,6 +282,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!couple || couple.status !== "active" || !user) return;
 
+    const handleExpenseChange = (payload: RealtimePayload<Expense>) => {
+      setExpenses((prev) => applyExpenseDelta(prev, payload));
+    };
+
     const expensesChannel = supabase
       .channel(`expenses-${couple.id}`)
       .on(
@@ -308,9 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "expenses",
           filter: `couple_id=eq.${couple.id}`,
         },
-        () => {
-          fetchExpenses();
-        },
+        (payload) => handleExpenseChange(payload as unknown as RealtimePayload<Expense>),
       )
       .on(
         "postgres_changes",
@@ -320,9 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "expenses",
           filter: `couple_id=eq.${couple.id}`,
         },
-        () => {
-          fetchExpenses();
-        },
+        (payload) => handleExpenseChange(payload as unknown as RealtimePayload<Expense>),
       )
       .on(
         "postgres_changes",
@@ -332,9 +316,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "expenses",
           filter: `couple_id=eq.${couple.id}`,
         },
-        () => {
-          fetchExpenses();
-        },
+        (payload) => handleExpenseChange(payload as unknown as RealtimePayload<Expense>),
       )
       .subscribe();
 
@@ -346,6 +328,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!couple || couple.status !== "active" || !user) return;
 
+    const handleIncomeChange = (payload: RealtimePayload<Income>) => {
+      setIncomes((prev) => applyIncomeDelta(prev, payload));
+    };
+
     const incomesChannel = supabase
       .channel(`incomes-${couple.id}`)
       .on(
@@ -356,9 +342,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "incomes",
           filter: `couple_id=eq.${couple.id}`,
         },
-        () => {
-          fetchIncomes();
-        },
+        (payload) => handleIncomeChange(payload as unknown as RealtimePayload<Income>),
       )
       .on(
         "postgres_changes",
@@ -368,9 +352,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "incomes",
           filter: `couple_id=eq.${couple.id}`,
         },
-        () => {
-          fetchIncomes();
-        },
+        (payload) => handleIncomeChange(payload as unknown as RealtimePayload<Income>),
       )
       .on(
         "postgres_changes",
@@ -380,9 +362,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           table: "incomes",
           filter: `couple_id=eq.${couple.id}`,
         },
-        () => {
-          fetchIncomes();
-        },
+        (payload) => handleIncomeChange(payload as unknown as RealtimePayload<Income>),
       )
       .subscribe();
 
@@ -392,16 +372,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [couple?.id, couple?.status, user]);
 
   const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    return { error: error?.message, session: data.session, user: data.user };
+    return authService.signUp(email, password);
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error?.message };
+    return authService.signIn(email, password);
   };
 
   const signOut = async () => {
@@ -411,24 +386,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       "@profile_draft_birthdate",
       "@profile_draft_income",
     ]).catch(() => {});
-    await supabase.auth.signOut();
+    await authService.signOut();
   };
 
   const verifyOtp = async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: "signup",
-    });
-    return { error: error?.message };
+    return authService.verifyOtp(email, token);
   };
 
   const resendVerification = async (email: string) => {
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-    });
-    return { error: error?.message };
+    return authService.resendVerification(email);
   };
 
   const saveProfile = async (data: {
@@ -438,110 +404,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     if (!user) return { error: "No user" };
 
-    try {
-      const inviteCode = generateInviteCode();
-      const isNewProfile = !profile;
+    const { error, profile: savedProfile } = await profileService.saveProfile(
+      user.id,
+      data,
+    );
+    if (error) return { error };
 
-      const { error: upsertError } = await supabase.from("profiles").upsert({
-        id: user.id,
-        full_name: data.full_name,
-        birth_date: data.birth_date,
-        monthly_income: data.monthly_income ?? null,
-        invite_code: isNewProfile ? inviteCode : profile?.invite_code ?? inviteCode,
-      }, { onConflict: "id" });
+    await refreshProfile();
+    return { inviteCode: savedProfile?.invite_code ?? undefined };
+  };
 
-      if (upsertError) return { error: upsertError.message };
+  const updateProfile = async (data: {
+    full_name: string;
+    monthly_income: number | null;
+  }) => {
+    if (!user) return { error: "No user" };
 
-      return { inviteCode: isNewProfile ? inviteCode : profile?.invite_code ?? inviteCode };
-    } catch (err: any) {
-      return { error: err.message };
-    } finally {
-      refreshProfile().catch(() => {});
-    }
+    const { error } = await profileService.updateProfile(user.id, data);
+    if (error) return { error };
+
+    await refreshProfile();
+    return {};
   };
 
   const lookupPartner = async (inviteCode: string) => {
-    const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "lookup_partner",
-      { p_invite_code: inviteCode },
-    );
-
-    if (rpcError) return { error: rpcError.message };
-    if (!rpcData || (Array.isArray(rpcData) && rpcData.length === 0))
-      return { error: "Código inválido. Verifique e tente novamente." };
-
-    const partner = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-    return { partner: partner as PartnerInfo };
+    return coupleService.lookupPartner(inviteCode);
   };
 
   const linkPartner = async (inviteCode: string) => {
     if (!user) return { error: "No user" };
-    const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "link_partner",
-      { p_invite_code: inviteCode, p_current_user_id: user.id },
-    );
-
-    if (rpcError) return { error: rpcError.message };
-    if (rpcData && (rpcData as any).error)
-      return { error: (rpcData as any).error };
-
+    const result = await coupleService.linkPartner(inviteCode);
     await refreshProfile();
-    return {};
+    return result;
   };
 
   const acceptInvitation = async (coupleId: string) => {
     if (!user) return { error: "No user" };
-    const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "accept_invitation",
-      { p_couple_id: coupleId, p_current_user_id: user.id },
-    );
-
-    if (rpcError) return { error: rpcError.message };
-    if (rpcData && (rpcData as any).error)
-      return { error: (rpcData as any).error };
-
+    const result = await coupleService.acceptInvitation(coupleId);
     await refreshProfile();
-    return {};
+    return result;
   };
 
   const rejectInvitation = async (coupleId: string) => {
     if (!user) return { error: "No user" };
-    const { data: rpcData, error: rpcError } = await supabase.rpc(
-      "reject_invitation",
-      { p_couple_id: coupleId, p_current_user_id: user.id },
-    );
-
-    if (rpcError) return { error: rpcError.message };
-    if (rpcData && (rpcData as any).error)
-      return { error: (rpcData as any).error };
-
+    const result = await coupleService.rejectInvitation(coupleId);
     setCouple(null);
     setPartnerInfo(null);
-    return {};
+    return result;
   };
 
   const fetchExpenses = useCallback(async () => {
     if (!couple) return;
-    const { data } = await supabase
-      .from("expenses")
-      .select("*")
-      .eq("couple_id", couple.id)
-      .order("created_at", { ascending: false });
-    if (data) setExpenses(data as Expense[]);
+    setExpensesLoading(true);
+    setExpensesError(null);
+    try {
+      const data = await expenseService.fetchExpenses(couple.id);
+      setExpenses(data);
+    } catch (err: any) {
+      setExpensesError(err?.message ?? "Erro ao carregar despesas.");
+    } finally {
+      setExpensesLoading(false);
+    }
   }, [couple]);
 
   const addExpense = async (data: ExpenseInput) => {
     if (!user || !couple) return { error: "No user or couple" };
     try {
-      const { error } = await supabase.from("expenses").insert({
-        ...data,
-        couple_id: couple.id,
-        created_by: user.id,
-        paid: data.paid ?? false,
-        paid_by: data.paid_by || user.id,
-        is_recurring: data.is_recurring ?? false,
-      });
-      if (error) return { error: error.message };
+      const { error } = await expenseService.createExpense(couple.id, user.id, data);
+      if (error) return { error };
       return {};
     } catch (err: any) {
       return { error: err.message };
@@ -552,45 +482,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateExpense = async (id: string, data: Partial<ExpenseInput>) => {
     try {
-      const { error } = await supabase.from("expenses").update(data).eq("id", id);
-      if (error) return { error: error.message };
-
-      if (data.paid) {
-        const { data: updated } = await supabase
-          .from("expenses")
-          .select("is_recurring, due_date")
-          .eq("id", id)
-          .single();
-
-        if (updated?.is_recurring) {
-          const { data: original } = await supabase
-            .from("expenses")
-            .select("*")
-            .eq("id", id)
-            .single();
-
-          if (original) {
-            const nextDueDate = original.due_date
-              ? new Date(original.due_date)
-              : new Date();
-            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-
-            await supabase.from("expenses").insert({
-              couple_id: original.couple_id,
-              created_by: original.created_by,
-              description: original.description,
-              amount: original.amount,
-              category: original.category,
-              due_date: nextDueDate.toISOString().slice(0, 10),
-              paid: false,
-              paid_at: null,
-              paid_by: original.paid_by,
-              is_recurring: true,
-            });
-          }
-        }
-      }
-
+      const { error } = await expenseService.updateExpense(id, data);
+      if (error) return { error };
       return {};
     } catch (err: any) {
       return { error: err.message };
@@ -600,34 +493,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteExpense = async (id: string) => {
-    const { error } = await supabase.from("expenses").delete().eq("id", id);
-    if (error) return { error: error.message };
+    const { error } = await expenseService.deleteExpense(id);
+    if (error) return { error };
     await fetchExpenses();
     return {};
   };
 
   const fetchIncomes = useCallback(async () => {
     if (!couple) return;
-    const { data } = await supabase
-      .from("incomes")
-      .select("*")
-      .eq("couple_id", couple.id)
-      .order("received_at", { ascending: false });
-    if (data) setIncomes(data as Income[]);
+    setIncomesLoading(true);
+    setIncomesError(null);
+    try {
+      const data = await incomeService.fetchIncomes(couple.id);
+      setIncomes(data);
+    } catch (err: any) {
+      setIncomesError(err?.message ?? "Erro ao carregar receitas.");
+    } finally {
+      setIncomesLoading(false);
+    }
   }, [couple]);
 
   const addIncome = async (data: IncomeInput) => {
     if (!user || !couple) return { error: "No user or couple" };
     try {
-      const { error } = await supabase.from("incomes").insert({
-        couple_id: couple.id,
-        user_id: user.id,
-        description: data.description,
-        amount: data.amount,
-        is_extra: data.is_extra ?? true,
-        received_at: data.received_at || new Date().toISOString(),
-      });
-      if (error) return { error: error.message };
+      const { error } = await incomeService.createIncome(couple.id, user.id, data);
+      if (error) return { error };
       return {};
     } catch (err: any) {
       return { error: err.message };
@@ -637,15 +527,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateIncome = async (id: string, data: Partial<IncomeInput>) => {
-    const { error } = await supabase.from("incomes").update(data).eq("id", id);
-    if (error) return { error: error.message };
+    const { error } = await incomeService.updateIncome(id, data);
+    if (error) return { error };
     await fetchIncomes();
     return {};
   };
 
   const deleteIncome = async (id: string) => {
-    const { error } = await supabase.from("incomes").delete().eq("id", id);
-    if (error) return { error: error.message };
+    const { error } = await incomeService.deleteIncome(id);
+    if (error) return { error };
     await fetchIncomes();
     return {};
   };
@@ -653,14 +543,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const closeMonth = async () => {
     if (!couple) return { error: "No couple" };
     try {
-      const { data: rpcData, error: rpcError } = await supabase.rpc(
-        "close_month",
-        { p_couple_id: couple.id },
-      );
-      if (rpcError) return { error: rpcError.message };
-      if (rpcData && (rpcData as any).error)
-        return { error: (rpcData as any).error };
-      return { result: rpcData as CloseMonthResult };
+      const { error, result } = await coupleService.closeMonth(couple.id);
+      if (error) return { error };
+      return { result };
     } catch (err: any) {
       return { error: err.message };
     } finally {
@@ -670,49 +555,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchIdealSplit = useCallback(async () => {
     if (!couple) return null;
-    const { data: coupleData } = await supabase
-      .from("couples")
-      .select("user_a, user_b")
-      .eq("id", couple.id)
-      .single();
-
-    if (!coupleData) return null;
-
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, monthly_income")
-      .in("id", [coupleData.user_a, coupleData.user_b]);
-
-    if (!profiles || profiles.length < 2) return null;
-
-    const incomeA = profiles.find(
-      (p) => p.id === coupleData.user_a,
-    )?.monthly_income;
-    const incomeB = profiles.find(
-      (p) => p.id === coupleData.user_b,
-    )?.monthly_income;
-
-    if (!incomeA || !incomeB || incomeA + incomeB === 0) return null;
-
-    const ratioA =
-      Math.round((incomeA / (incomeA + incomeB)) * 100 * 100) / 100;
-    const ratioB = 100 - ratioA;
-
-    return { ratio_a: ratioA, ratio_b: ratioB, calculated: true } as IdealSplit;
+    return coupleService.fetchIdealSplit(couple.id);
   }, [couple]);
 
-  const updateCostPlan = async (data: {
-    monthly_budget?: number;
-    split_ratio_a?: number;
-    split_ratio_b?: number;
-  }) => {
+  const updateCostPlan = async (data: CostPlanInput) => {
     if (!couple) return { error: "No couple" };
     try {
-      const { error } = await supabase
-        .from("couples")
-        .update(data)
-        .eq("id", couple.id);
-      if (error) return { error: error.message };
+      const { error } = await coupleService.updateCostPlan(couple.id, data);
+      if (error) return { error };
       return {};
     } catch (err: any) {
       return { error: err.message };
@@ -733,12 +583,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userState,
         partnerInfo,
         loading,
+        expensesLoading,
+        incomesLoading,
+        expensesError,
+        incomesError,
         signUp,
         signIn,
         signOut,
         verifyOtp,
         resendVerification,
         saveProfile,
+        updateProfile,
         lookupPartner,
         linkPartner,
         acceptInvitation,

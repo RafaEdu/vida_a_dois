@@ -11,6 +11,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { Link, router } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
+import type { PartnerLookup } from "../../src/types/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { styles } from "./styles";
 import { C } from "../../src/theme/colors";
@@ -49,7 +50,7 @@ export default function LinkPartner() {
   const [linking, setLinking] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [rejecting, setRejecting] = useState(false);
-  const [foundPartner, setFoundPartner] = useState<{ id: string; full_name: string } | null>(null);
+  const [foundPartner, setFoundPartner] = useState<PartnerLookup | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const hasNavigated = useRef(false);

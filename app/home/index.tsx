@@ -270,7 +270,7 @@ export default function Home() {
           <>
             <View style={styles.expenseHeader}>
               <Text style={styles.sectionTitle}>Despesas recentes</Text>
-              <Link href="/expense/new" asChild>
+              <Link href="/expenses" asChild>
                 <Pressable>
                   <Text style={styles.seeAllText}>VER TUDO</Text>
                 </Pressable>
@@ -363,11 +363,13 @@ export default function Home() {
           <MaterialIcons name="home" size={22} color={C.onPrimaryContainer} />
           <Text style={styles.navLabelActive}>Início</Text>
         </View>
-        <Pressable style={styles.navItem}>
-          <MaterialIcons name="history" size={22} color={C.onSurfaceVariant} />
-          <Text style={styles.navLabel}>Histórico</Text>
-        </Pressable>
-        <Pressable style={styles.navItem}>
+        <Link href="/expenses" asChild>
+          <Pressable style={styles.navItem}>
+            <MaterialIcons name="history" size={22} color={C.onSurfaceVariant} />
+            <Text style={styles.navLabel}>Histórico</Text>
+          </Pressable>
+        </Link>
+        <Pressable style={[styles.navItem, { opacity: 0.4 }]} disabled>
           <MaterialIcons name="leaderboard" size={22} color={C.onSurfaceVariant} />
           <Text style={styles.navLabel}>Gráficos</Text>
         </Pressable>

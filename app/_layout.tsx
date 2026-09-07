@@ -1,7 +1,7 @@
 import { Stack } from "expo-router/stack";
 import { AuthProvider, useAuth } from "../src/lib/auth-context";
 import { View, ActivityIndicator, Text } from "react-native";
-import { styles } from "./_layout.styles";
+import { styles } from "../src/theme/layout.styles";
 
 function LoadingScreen() {
   return (
@@ -27,6 +27,7 @@ function AppNavigator() {
       <Stack.Screen name="link-partner" options={{ title: "Vincular parceiro", gestureEnabled: false }} />
       <Stack.Screen name="home" options={{ title: "Vida a Dois", gestureEnabled: false }} />
       <Stack.Screen name="profile" options={{ title: "Meu perfil", presentation: "modal" }} />
+      <Stack.Screen name="expenses" options={{ title: "Histórico" }} />
       <Stack.Screen name="expense/new" options={{ title: "Nova despesa", headerShown: false }} />
       <Stack.Screen name="income/new" options={{ title: "Nova receita", headerShown: false }} />
       <Stack.Screen name="cost-plan" options={{ title: "Plano de custos" }} />
