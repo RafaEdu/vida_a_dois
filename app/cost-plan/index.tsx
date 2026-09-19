@@ -22,7 +22,7 @@ export default function CostPlan() {
   const [idealSplit, setIdealSplit] = useState<IdealSplit | null>(null);
 
   useEffect(() => {
-    fetchIdealSplit().then(setIdealSplit);
+    fetchIdealSplit().then((result) => setIdealSplit(result.data));
   }, [fetchIdealSplit]);
 
   const summary = useMemo(() => {

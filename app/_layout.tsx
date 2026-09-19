@@ -1,6 +1,6 @@
 import { Stack } from "expo-router/stack";
 import { AuthProvider, useAuth } from "../src/lib/auth-context";
-import { View, ActivityIndicator, Text } from "react-native";
+import { View, ActivityIndicator, Text, Pressable } from "react-native";
 import { styles } from "../src/theme/layout.styles";
 
 function LoadingScreen() {
@@ -12,10 +12,44 @@ function LoadingScreen() {
   );
 }
 
+function BootstrapErrorScreen({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <View style={styles.loading}>
+      <Text style={styles.errorTitle}>
+        Não foi possível carregar seus dados.
+      </Text>
+      <Text style={styles.errorMessage}>{message}</Text>
+      <Pressable
+        onPress={onRetry}
+        style={styles.retryButton}
+        accessibilityRole="button"
+        accessibilityLabel="Tentar carregar novamente"
+      >
+        <Text style={styles.retryButtonText}>Tentar novamente</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function AppNavigator() {
-  const { loading } = useAuth();
+  const { loading, bootstrapStatus, bootstrapError, retryBootstrap } = useAuth();
 
   if (loading) return <LoadingScreen />;
+
+  if (bootstrapStatus === "error") {
+    return (
+      <BootstrapErrorScreen
+        message={bootstrapError ?? "Erro inesperado ao inicializar."}
+        onRetry={retryBootstrap}
+      />
+    );
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

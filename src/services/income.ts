@@ -1,13 +1,21 @@
 import { supabase } from "../lib/supabase";
 import type { Income, IncomeInput } from "../types/database";
+import { fail, ok, toAppError } from "../utils/result";
+import type { ServiceResult } from "../utils/result";
 
-export async function fetchIncomes(coupleId: string): Promise<Income[]> {
-  const { data } = await supabase
+export async function fetchIncomes(
+  coupleId: string,
+): Promise<ServiceResult<Income[]>> {
+  const { data, error } = await supabase
     .from("incomes")
     .select("*")
     .eq("couple_id", coupleId)
     .order("received_at", { ascending: false });
-  return (data as Income[]) ?? [];
+
+  if (error) {
+    return fail(toAppError(error, "Não foi possível carregar as receitas."));
+  }
+  return ok((data as Income[]) ?? []);
 }
 
 export async function createIncome(

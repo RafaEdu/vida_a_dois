@@ -1,13 +1,21 @@
 import { supabase } from "../lib/supabase";
 import type { Profile } from "../types/database";
+import { fail, ok, toAppError } from "../utils/result";
+import type { ServiceResult } from "../utils/result";
 
-export async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data } = await supabase
+export async function fetchProfile(
+  userId: string,
+): Promise<ServiceResult<Profile | null>> {
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
-  return (data as Profile) ?? null;
+    .maybeSingle();
+
+  if (error) {
+    return fail(toAppError(error, "Não foi possível carregar o perfil."));
+  }
+  return ok((data as Profile) ?? null);
 }
 
 export interface SaveProfileInput {

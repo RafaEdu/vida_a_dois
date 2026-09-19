@@ -9,6 +9,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { deriveUserState } from "./user-state";
+import { ok, toAppError, type ServiceResult } from "../utils/result";
 import * as authService from "../services/auth";
 import * as profileService from "../services/profile";
 import * as coupleService from "../services/couple";
@@ -34,6 +36,8 @@ import type {
 } from "../types/database";
 import type { CostPlanInput } from "../services/couple";
 
+export type BootstrapStatus = "loading" | "ready" | "error";
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -42,6 +46,9 @@ interface AuthContextType {
   userState: UserState;
   partnerInfo: PartnerInfo | null;
   loading: boolean;
+  bootstrapStatus: BootstrapStatus;
+  bootstrapError: string | null;
+  retryBootstrap: () => void;
   expensesLoading: boolean;
   incomesLoading: boolean;
   expensesError: string | null;
@@ -87,7 +94,7 @@ interface AuthContextType {
   deleteIncome: (id: string) => Promise<{ error?: string }>;
   fetchIncomes: () => Promise<void>;
   closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
-  fetchIdealSplit: () => Promise<IdealSplit | null>;
+  fetchIdealSplit: () => Promise<ServiceResult<IdealSplit | null>>;
   updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
 }
 
@@ -99,84 +106,145 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [bootstrapStatus, setBootstrapStatus] =
+    useState<BootstrapStatus>("loading");
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(false);
   const [incomesLoading, setIncomesLoading] = useState(false);
   const [expensesError, setExpensesError] = useState<string | null>(null);
   const [incomesError, setIncomesError] = useState<string | null>(null);
-  const refreshingRef = useRef(false);
+  const userRef = useRef<User | null>(null);
+  const refreshPromiseRef = useRef<Promise<void> | null>(null);
 
-  const getUserState = useCallback(
-    (profile: Profile | null, couple: Couple | null): UserState => {
-      if (!profile) return "profile_incomplete";
-      if (!couple) return "awaiting_partner";
-      if (couple.status === "pending") return "awaiting_partner";
-      return "linked";
+  const setCurrentUser = useCallback((nextUser: User | null) => {
+    userRef.current = nextUser;
+    setUser(nextUser);
+  }, []);
+
+  const fetchCouple = useCallback(
+    async (userId: string): Promise<Couple | null> => {
+      const coupleResult = await coupleService.fetchCouple(userId);
+      if (coupleResult.error) {
+        throw new Error(coupleResult.error.message);
+      }
+
+      const data = coupleResult.data;
+
+      if (data) {
+        setCouple(data);
+
+        const partnerResult = await coupleService.fetchPartner(data, userId);
+        if (partnerResult.error) {
+          throw new Error(partnerResult.error.message);
+        }
+        setPartnerInfo(partnerResult.data);
+
+        if (data.status === "active") {
+          const [expenseResult, incomeResult] = await Promise.all([
+            expenseService.fetchExpenses(data.id),
+            incomeService.fetchIncomes(data.id),
+          ]);
+
+          if (expenseResult.error) {
+            setExpensesError(expenseResult.error.message);
+          } else {
+            setExpenses(expenseResult.data);
+            setExpensesError(null);
+          }
+
+          if (incomeResult.error) {
+            setIncomesError(incomeResult.error.message);
+          } else {
+            setIncomes(incomeResult.data);
+            setIncomesError(null);
+          }
+        }
+      } else {
+        setCouple(null);
+        setPartnerInfo(null);
+        setExpenses([]);
+        setIncomes([]);
+      }
+      return data;
     },
     [],
   );
 
-  const fetchCouple = useCallback(async (userId: string) => {
-    const data = await coupleService.fetchCouple(userId);
-
-    if (data) {
-      setCouple(data);
-      const partner = await coupleService.fetchPartner(data, userId);
-      setPartnerInfo(partner);
-
-      if (data.status === "active") {
-        const [exp, inc] = await Promise.all([
-          expenseService.fetchExpenses(data.id),
-          incomeService.fetchIncomes(data.id),
-        ]);
-        setExpenses(exp);
-        setIncomes(inc);
-      }
-    } else {
-      setCouple(null);
-      setPartnerInfo(null);
-      setExpenses([]);
-      setIncomes([]);
-    }
-    return data;
-  }, []);
-
   const refreshProfile = useCallback(
-    async (userId?: string) => {
-      if (refreshingRef.current) return;
-      const uid = userId || user?.id;
+    async (userId?: string): Promise<void> => {
+      const uid = userId ?? userRef.current?.id;
       if (!uid) return;
-      refreshingRef.current = true;
-      try {
-        const p = await profileService.fetchProfile(uid);
-        setProfile(p);
-        if (p) {
-          await fetchCouple(uid);
+      if (refreshPromiseRef.current) return refreshPromiseRef.current;
+
+      const task = (async () => {
+        const profileResult = await profileService.fetchProfile(uid);
+        if (profileResult.error) {
+          throw new Error(profileResult.error.message);
         }
-      } finally {
-        refreshingRef.current = false;
-      }
+
+        setProfile(profileResult.data);
+        if (profileResult.data) {
+          await fetchCouple(uid);
+        } else {
+          setCouple(null);
+          setPartnerInfo(null);
+          setExpenses([]);
+          setIncomes([]);
+        }
+      })().finally(() => {
+        refreshPromiseRef.current = null;
+      });
+
+      refreshPromiseRef.current = task;
+      return task;
     },
-    [user, fetchCouple],
+    [fetchCouple],
   );
 
   useEffect(() => {
-    authService.getSession().then((session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        refreshProfile(session.user.id);
-      }
-      setLoading(false);
-    });
+    let active = true;
 
-    const unsubscribe = authService.onAuthStateChange((session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        refreshProfile(session.user.id);
+    const bootstrap = async () => {
+      setBootstrapStatus("loading");
+      setBootstrapError(null);
+
+      try {
+        const currentSession = await authService.getSession();
+        if (!active) return;
+
+        setSession(currentSession);
+        setCurrentUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          await refreshProfile(currentSession.user.id);
+        }
+
+        if (!active) return;
+        setBootstrapStatus("ready");
+      } catch (err) {
+        if (!active) return;
+        setBootstrapError(
+          err instanceof Error ? err.message : "Erro ao inicializar a sessão.",
+        );
+        setBootstrapStatus("error");
+      }
+    };
+
+    bootstrap();
+
+    const unsubscribe = authService.onAuthStateChange((newSession) => {
+      setSession(newSession);
+      setCurrentUser(newSession?.user ?? null);
+
+      if (newSession?.user) {
+        refreshProfile(newSession.user.id).catch((err) => {
+          setBootstrapError(
+            err instanceof Error ? err.message : "Erro ao carregar seus dados.",
+          );
+        });
       } else {
         setProfile(null);
         setCouple(null);
@@ -186,8 +254,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return unsubscribe;
-  }, [refreshProfile]);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [refreshProfile, setCurrentUser, bootstrapAttempt]);
 
   useEffect(() => {
     if (!couple || !user) return;
@@ -206,7 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const updated = payload.new as Couple;
           setCouple(updated);
           if (updated.status === "active") {
-            refreshProfile();
+            refreshProfile().catch(() => {});
           }
         },
       )
@@ -231,7 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           filter: `user_a=eq.${user.id}`,
         },
         () => {
-          refreshProfile();
+          refreshProfile().catch(() => {});
         },
       )
       .on(
@@ -243,7 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           filter: `user_b=eq.${user.id}`,
         },
         () => {
-          refreshProfile();
+          refreshProfile().catch(() => {});
         },
       )
       .on(
@@ -410,7 +481,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     if (error) return { error };
 
-    await refreshProfile();
+    await refreshProfile().catch(() => {});
     return { inviteCode: savedProfile?.invite_code ?? undefined };
   };
 
@@ -423,7 +494,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await profileService.updateProfile(user.id, data);
     if (error) return { error };
 
-    await refreshProfile();
+    await refreshProfile().catch(() => {});
     return {};
   };
 
@@ -434,14 +505,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const linkPartner = async (inviteCode: string) => {
     if (!user) return { error: "No user" };
     const result = await coupleService.linkPartner(inviteCode);
-    await refreshProfile();
+    await refreshProfile().catch(() => {});
     return result;
   };
 
   const acceptInvitation = async (coupleId: string) => {
     if (!user) return { error: "No user" };
     const result = await coupleService.acceptInvitation(coupleId);
-    await refreshProfile();
+    await refreshProfile().catch(() => {});
     return result;
   };
 
@@ -458,10 +529,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setExpensesLoading(true);
     setExpensesError(null);
     try {
-      const data = await expenseService.fetchExpenses(couple.id);
-      setExpenses(data);
-    } catch (err: any) {
-      setExpensesError(err?.message ?? "Erro ao carregar despesas.");
+      const result = await expenseService.fetchExpenses(couple.id);
+      if (result.error) {
+        setExpensesError(result.error.message);
+        return;
+      }
+      setExpenses(result.data);
+    } catch (err) {
+      setExpensesError(toAppError(err, "Erro ao carregar despesas.").message);
     } finally {
       setExpensesLoading(false);
     }
@@ -504,10 +579,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIncomesLoading(true);
     setIncomesError(null);
     try {
-      const data = await incomeService.fetchIncomes(couple.id);
-      setIncomes(data);
-    } catch (err: any) {
-      setIncomesError(err?.message ?? "Erro ao carregar receitas.");
+      const result = await incomeService.fetchIncomes(couple.id);
+      if (result.error) {
+        setIncomesError(result.error.message);
+        return;
+      }
+      setIncomes(result.data);
+    } catch (err) {
+      setIncomesError(toAppError(err, "Erro ao carregar receitas.").message);
     } finally {
       setIncomesLoading(false);
     }
@@ -554,7 +633,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchIdealSplit = useCallback(async () => {
-    if (!couple) return null;
+    if (!couple) return ok(null);
     return coupleService.fetchIdealSplit(couple.id);
   }, [couple]);
 
@@ -571,7 +650,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const userState = getUserState(profile, couple);
+  const userState = deriveUserState(profile, couple);
+  const loading = bootstrapStatus === "loading";
+
+  const retryBootstrap = useCallback(() => {
+    setBootstrapAttempt((attempt) => attempt + 1);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -583,6 +667,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userState,
         partnerInfo,
         loading,
+        bootstrapStatus,
+        bootstrapError,
+        retryBootstrap,
         expensesLoading,
         incomesLoading,
         expensesError,

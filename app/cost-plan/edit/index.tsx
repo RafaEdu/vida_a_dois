@@ -28,7 +28,7 @@ export default function EditCostPlan() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchIdealSplit().then(setIdealSplit);
+    fetchIdealSplit().then((result) => setIdealSplit(result.data));
   }, [fetchIdealSplit]);
 
   const splitB = String(100 - (parseFloat(splitA) || 0));

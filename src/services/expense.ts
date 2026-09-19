@@ -1,13 +1,21 @@
 import { supabase } from "../lib/supabase";
 import type { Expense, ExpenseInput } from "../types/database";
+import { fail, ok, toAppError } from "../utils/result";
+import type { ServiceResult } from "../utils/result";
 
-export async function fetchExpenses(coupleId: string): Promise<Expense[]> {
-  const { data } = await supabase
+export async function fetchExpenses(
+  coupleId: string,
+): Promise<ServiceResult<Expense[]>> {
+  const { data, error } = await supabase
     .from("expenses")
     .select("*")
     .eq("couple_id", coupleId)
     .order("created_at", { ascending: false });
-  return (data as Expense[]) ?? [];
+
+  if (error) {
+    return fail(toAppError(error, "Não foi possível carregar as despesas."));
+  }
+  return ok((data as Expense[]) ?? []);
 }
 
 export async function createExpense(
