@@ -1,0 +1,7 @@
+node_modules/
+.expo/
+dist/
+web-build/
+supabase/
+package-lock.json
+expo-env.d.ts
