@@ -33,6 +33,7 @@ export interface Expense {
   paid: boolean;
   paid_at: string | null;
   is_recurring: boolean;
+  recurrence_series_id: string | null;
   created_at: string;
 }
 

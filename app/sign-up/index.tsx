@@ -12,7 +12,7 @@ import { Link, router } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { C } from "../../src/theme/colors";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/sign-up";
 
 const REGISTRATION_STEP_KEY = "@registration_step";
 

@@ -11,7 +11,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/verify-email";
 import { C } from "../../src/theme/colors";
 
 const REGISTRATION_STEP_KEY = "@registration_step";

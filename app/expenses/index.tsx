@@ -17,7 +17,7 @@ import { useAuth } from "../../src/lib/auth-context";
 import { DEFAULT_CATEGORIES, type Expense, type Income } from "../../src/types/database";
 import { formatCurrency, parseDecimalInput } from "../../src/utils/currency";
 import { C } from "../../src/theme/colors";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/expenses";
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
@@ -38,6 +38,7 @@ export default function ExpensesList() {
     expenses,
     incomes,
     updateExpense,
+    markExpensePaid,
     deleteExpense,
     updateIncome,
     deleteIncome,
@@ -62,7 +63,7 @@ export default function ExpensesList() {
     if (expense.paid) {
       await updateExpense(expense.id, { paid: false, paid_at: null });
     } else {
-      await updateExpense(expense.id, { paid: true, paid_at: new Date().toISOString() });
+      await markExpensePaid(expense.id);
     }
   };
 

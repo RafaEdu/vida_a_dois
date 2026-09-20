@@ -17,7 +17,7 @@ import {
   selectExpensesByMonth,
   selectIncomesByMonth,
 } from "../../src/domain/finance/selectors";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/monthly-closing";
 
 export default function MonthlyClosing() {
   const { couple, expenses, incomes, closeMonth } = useAuth();

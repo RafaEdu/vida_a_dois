@@ -17,7 +17,7 @@ import {
 } from "../../src/domain/finance/selectors";
 import { C } from "../../src/theme/colors";
 import { shadow, shadowNav } from "../../src/theme/shadows";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/home";
 
 function getInitials(name: string | undefined | null): string {
   if (!name) return "??";
@@ -54,7 +54,7 @@ export default function Home() {
     expenses,
     incomes,
     fetchExpenses,
-    updateExpense,
+    markExpensePaid,
     signOut,
   } = useAuth();
   const hasNavigated = useRef(false);
@@ -96,10 +96,7 @@ export default function Home() {
   ).percentage;
 
   const handleConfirmPayment = async (expenseId: string) => {
-    await updateExpense(expenseId, {
-      paid: true,
-      paid_at: new Date().toISOString(),
-    });
+    await markExpensePaid(expenseId);
   };
 
   const getPayerName = (paidBy: string | null | undefined): string | null => {

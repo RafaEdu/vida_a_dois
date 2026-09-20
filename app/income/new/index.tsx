@@ -16,7 +16,7 @@ import { useAuth } from "../../../src/lib/auth-context";
 import { parseDecimalInput } from "../../../src/utils/currency";
 import { formatDateInput, isValidDateOnly } from "../../../src/utils/date";
 import { C } from "../../../src/theme/colors";
-import { styles } from "./styles";
+import { styles } from "../../../src/styles/income-new";
 
 export default function NewIncome() {
   const insets = useSafeAreaInsets();

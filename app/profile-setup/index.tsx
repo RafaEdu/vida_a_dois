@@ -19,7 +19,7 @@ import {
   formatBirthDateInput,
   parseBirthDateToISO,
 } from "../../src/utils/date";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/profile-setup";
 import { C } from "../../src/theme/colors";
 
 const REGISTRATION_STEP_KEY = "@registration_step";

@@ -11,7 +11,7 @@ import {
 import { Link, router } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
 import { C } from "../../src/theme/colors";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/sign-in";
 
 export default function SignIn() {
   const { user, signIn } = useAuth();

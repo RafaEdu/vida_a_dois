@@ -15,7 +15,7 @@ import {
   selectExpensesByMonth,
   sumExpenses,
 } from "../../src/domain/finance/selectors";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/cost-plan";
 
 export default function CostPlan() {
   const { couple, profile, partnerInfo, expenses, fetchIdealSplit } = useAuth();

@@ -33,6 +33,7 @@ function makeExpense(overrides: Partial<Expense> = {}): Expense {
     paid: false,
     paid_at: null,
     is_recurring: false,
+    recurrence_series_id: null,
     created_at: augustTimestamp,
     ...overrides,
   };

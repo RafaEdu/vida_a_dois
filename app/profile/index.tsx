@@ -16,7 +16,7 @@ import {
   parseCurrencyInput,
 } from "../../src/utils/currency";
 import { formatDateOnlyForDisplay } from "../../src/utils/date";
-import { styles } from "./styles";
+import { styles } from "../../src/styles/profile";
 import { C } from "../../src/theme/colors";
 
 export default function Profile() {

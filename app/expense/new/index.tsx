@@ -18,7 +18,7 @@ import { parseDecimalInput } from "../../../src/utils/currency";
 import { formatDateInput, isValidDateOnly } from "../../../src/utils/date";
 import { C } from "../../../src/theme/colors";
 import { shadowSm } from "../../../src/theme/shadows";
-import { styles } from "./styles";
+import { styles } from "../../../src/styles/expense-new";
 
 export default function NewExpense() {
   const insets = useSafeAreaInsets();
@@ -52,6 +52,10 @@ export default function NewExpense() {
     }
     if (dueDate && !isValidDateOnly(dueDate)) {
       setError("Data inválida. Use o formato AAAA-MM-DD.");
+      return;
+    }
+    if (isRecurring && !dueDate) {
+      setError("Despesa recorrente precisa de uma data de vencimento.");
       return;
     }
 

@@ -28,6 +28,20 @@ Não substitui os testes automatizados; valida o fluxo real do aplicativo.
 - [ ] 15. Entrar novamente.
 - [ ] 16. Fechar/reabrir o app e confirmar persistência da sessão.
 
+## Recorrência e idempotência (Fase 5)
+
+Executar com a migration `008` aplicada. Nenhum caso pode criar duas
+ocorrências do mesmo mês para a mesma série.
+
+- [ ] 1. Pagar uma despesa recorrente uma vez e confirmar a próxima ocorrência.
+- [ ] 2. Tocar duas vezes rapidamente em "Pagar" e confirmar uma só ocorrência.
+- [ ] 3. Chamar a RPC `mark_expense_paid` duas vezes com o mesmo id.
+- [ ] 4. Pagar a mesma despesa em dois aparelhos.
+- [ ] 5. Ficar offline após o pagamento e reconectar.
+- [ ] 6. Receber `update` (paga) e `insert` (próxima) via Realtime.
+- [ ] 7. Marcar como não paga e pagar novamente.
+- [ ] 8. Confirmar que despesa não recorrente não gera próxima ocorrência.
+
 ## Registro da execução
 
 | Data | Responsável | Versão/commit | Resultado | Observações |

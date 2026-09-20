@@ -13,7 +13,7 @@ import { useAuth } from "../../../src/lib/auth-context";
 import type { IdealSplit } from "../../../src/types/database";
 import { formatCurrency, parseDecimalInput } from "../../../src/utils/currency";
 import { C } from "../../../src/theme/colors";
-import { styles } from "./styles";
+import { styles } from "../../../src/styles/cost-plan-edit";
 
 export default function EditCostPlan() {
   const { couple, profile, partnerInfo, updateCostPlan, fetchIdealSplit } = useAuth();

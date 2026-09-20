@@ -83,6 +83,7 @@ interface AuthContextType {
     id: string,
     data: Partial<ExpenseInput>,
   ) => Promise<{ error?: string }>;
+  markExpensePaid: (id: string) => Promise<{ error?: string }>;
   deleteExpense: (id: string) => Promise<{ error?: string }>;
   fetchExpenses: () => Promise<void>;
   incomes: Income[];
@@ -567,6 +568,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const markExpensePaid = async (id: string) => {
+    try {
+      const { error, result } = await expenseService.markExpensePaid(id);
+      if (error) return { error };
+
+      if (result) {
+        setExpenses((prev) => {
+          let next = applyExpenseDelta(prev, {
+            eventType: "UPDATE",
+            new: result.expense,
+            old: { id: result.expense.id },
+          });
+
+          if (result.nextExpense) {
+            next = applyExpenseDelta(next, {
+              eventType: "INSERT",
+              new: result.nextExpense,
+              old: { id: result.nextExpense.id },
+            });
+          }
+
+          return next;
+        });
+      }
+
+      return {};
+    } catch (err) {
+      return {
+        error: toAppError(err, "Não foi possível confirmar o pagamento.")
+          .message,
+      };
+    }
+  };
+
   const deleteExpense = async (id: string) => {
     const { error } = await expenseService.deleteExpense(id);
     if (error) return { error };
@@ -689,6 +724,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         expenses,
         addExpense,
         updateExpense,
+        markExpensePaid,
         deleteExpense,
         fetchExpenses,
         incomes,

@@ -1,6 +1,6 @@
 import { StyleSheet, Platform } from "react-native";
-import { C } from "../../../src/theme/colors";
-import { shadowSm } from "../../../src/theme/shadows";
+import { C } from "../theme/colors";
+import { shadowSm } from "../theme/shadows";
 
 export const styles = StyleSheet.create({
   root: {

@@ -1,6 +1,12 @@
 import { supabase } from "../lib/supabase";
 import type { Expense, ExpenseInput } from "../types/database";
-import { fail, ok, toAppError } from "../utils/result";
+import {
+  extractDomainError,
+  fail,
+  ok,
+  rpcToAppError,
+  toAppError,
+} from "../utils/result";
 import type { ServiceResult } from "../utils/result";
 
 export async function fetchExpenses(
@@ -39,45 +45,50 @@ export async function updateExpense(
   data: Partial<ExpenseInput>,
 ): Promise<{ error?: string }> {
   const { error } = await supabase.from("expenses").update(data).eq("id", id);
-  if (error) return { error: error.message };
+  return { error: error?.message };
+}
 
-  if (data.paid) {
-    const { data: updated } = await supabase
-      .from("expenses")
-      .select("is_recurring")
-      .eq("id", id)
-      .single();
+export interface MarkExpensePaidResult {
+  status: "paid" | "already_paid";
+  expense: Expense;
+  nextExpense: Expense | null;
+}
 
-    if (updated?.is_recurring) {
-      const { data: original } = await supabase
-        .from("expenses")
-        .select("*")
-        .eq("id", id)
-        .single();
+interface MarkExpensePaidPayload {
+  status?: string;
+  expense?: Expense;
+  next_expense?: Expense | null;
+}
 
-      if (original) {
-        const nextDueDate = original.due_date
-          ? new Date(original.due_date)
-          : new Date();
-        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+export async function markExpensePaid(
+  id: string,
+): Promise<{ error?: string; result?: MarkExpensePaidResult }> {
+  const { data, error } = await supabase.rpc("mark_expense_paid", {
+    p_expense_id: id,
+  });
 
-        await supabase.from("expenses").insert({
-          couple_id: original.couple_id,
-          created_by: original.created_by,
-          description: original.description,
-          amount: original.amount,
-          category: original.category,
-          due_date: nextDueDate.toISOString().slice(0, 10),
-          paid: false,
-          paid_at: null,
-          paid_by: original.paid_by,
-          is_recurring: true,
-        });
-      }
-    }
+  if (error || extractDomainError(data)) {
+    return {
+      error: rpcToAppError(
+        data,
+        error,
+        "Não foi possível confirmar o pagamento.",
+      ).message,
+    };
   }
 
-  return {};
+  const payload = (data ?? {}) as MarkExpensePaidPayload;
+  if (!payload.expense) {
+    return { error: "Resposta inválida ao confirmar o pagamento." };
+  }
+
+  return {
+    result: {
+      status: payload.status === "already_paid" ? "already_paid" : "paid",
+      expense: payload.expense,
+      nextExpense: payload.next_expense ?? null,
+    },
+  };
 }
 
 export async function deleteExpense(id: string): Promise<{ error?: string }> {
