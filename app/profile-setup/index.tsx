@@ -11,6 +11,14 @@ import {
 import { useAuth } from "../../src/lib/auth-context";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  formatCurrencyInput,
+  parseCurrencyInput,
+} from "../../src/utils/currency";
+import {
+  formatBirthDateInput,
+  parseBirthDateToISO,
+} from "../../src/utils/date";
 import { styles } from "./styles";
 import { C } from "../../src/theme/colors";
 
@@ -18,20 +26,6 @@ const REGISTRATION_STEP_KEY = "@registration_step";
 const DRAFT_NAME_KEY = "@profile_draft_name";
 const DRAFT_BIRTHDATE_KEY = "@profile_draft_birthdate";
 const DRAFT_INCOME_KEY = "@profile_draft_income";
-
-function formatCurrency(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  const number = Number(digits) / 100;
-  if (number === 0 && digits.length === 0) return "";
-  return number.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function parseCurrency(value: string): number {
-  return Number(value.replace(/\D/g, "")) / 100;
-}
 
 export default function ProfileSetup() {
   const { userState, saveProfile } = useAuth();
@@ -81,45 +75,24 @@ export default function ProfileSetup() {
     };
   }, [name, birthDate, income]);
 
-  const formatBirthDate = (text: string) => {
-    const digits = text.replace(/\D/g, "");
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
-  };
-
-  const isDateValid = (dateStr: string): boolean => {
-    if (dateStr.length !== 10) return false;
-    const [day, month, year] = dateStr.split("/").map(Number);
-    const date = new Date(year, month - 1, day);
-    return (
-      date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day &&
-      year > 1900 &&
-      year < new Date().getFullYear()
-    );
-  };
-
   const handleSave = async () => {
     setError("");
     if (!name.trim()) {
       setError("Informe seu nome completo.");
       return;
     }
-    if (!isDateValid(birthDate)) {
+    const isoDate = parseBirthDateToISO(birthDate);
+    if (!isoDate) {
       setError("Informe uma data de nascimento válida (DD/MM/AAAA).");
       return;
     }
 
     setLoading(true);
-    const [day, month, year] = birthDate.split("/").map(Number);
-    const isoDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
     const { error: saveError } = await saveProfile({
       full_name: name.trim(),
       birth_date: isoDate,
-      monthly_income: income ? parseCurrency(income) : undefined,
+      monthly_income: income ? parseCurrencyInput(income) : undefined,
     });
     setLoading(false);
 
@@ -176,7 +149,7 @@ export default function ProfileSetup() {
             <TextInput
               style={styles.input}
               value={birthDate}
-              onChangeText={(text) => setBirthDate(formatBirthDate(text))}
+              onChangeText={(text) => setBirthDate(formatBirthDateInput(text))}
               placeholder="DD/MM/AAAA"
               keyboardType="number-pad"
               maxLength={10}
@@ -189,7 +162,7 @@ export default function ProfileSetup() {
             <TextInput
               style={styles.input}
               value={income}
-              onChangeText={(text) => setIncome(formatCurrency(text))}
+              onChangeText={(text) => setIncome(formatCurrencyInput(text))}
               placeholder="R$ 0,00"
               keyboardType="number-pad"
               placeholderTextColor="#999"

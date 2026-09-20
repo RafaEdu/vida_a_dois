@@ -11,6 +11,7 @@ import {
 import { router } from "expo-router";
 import { useAuth } from "../../../src/lib/auth-context";
 import type { IdealSplit } from "../../../src/types/database";
+import { formatCurrency, parseDecimalInput } from "../../../src/utils/currency";
 import { C } from "../../../src/theme/colors";
 import { styles } from "./styles";
 
@@ -49,7 +50,7 @@ export default function EditCostPlan() {
 
   const handleSave = async () => {
     setError("");
-    const budget = parseFloat(budgetText.replace(/[^\d,.]/g, "").replace(",", ".")) || 0;
+    const budget = parseDecimalInput(budgetText);
     const ratioA = parseFloat(splitA) || 0;
 
     if (budget <= 0) {
@@ -129,7 +130,7 @@ export default function EditCostPlan() {
               onPress={handleUseIncomeBudget}
             >
               <Text style={styles.useIdealButtonText}>
-                Usar renda somada do casal (R$ {combinedIncome.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})
+                Usar renda somada do casal ({formatCurrency(combinedIncome)})
               </Text>
             </Pressable>
           )}

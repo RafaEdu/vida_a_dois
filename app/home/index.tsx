@@ -9,6 +9,12 @@ import { Link, router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../src/lib/auth-context";
+import { formatCurrency } from "../../src/utils/currency";
+import { getCurrentYearMonth } from "../../src/utils/date";
+import {
+  calculateBudgetProgress,
+  calculateMonthlySummary,
+} from "../../src/domain/finance/selectors";
 import { C } from "../../src/theme/colors";
 import { shadow, shadowNav } from "../../src/theme/shadows";
 import { styles } from "./styles";
@@ -21,13 +27,6 @@ function getInitials(name: string | undefined | null): string {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-}
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -53,6 +52,7 @@ export default function Home() {
     couple,
     userState,
     expenses,
+    incomes,
     fetchExpenses,
     updateExpense,
     signOut,
@@ -75,34 +75,25 @@ export default function Home() {
     }
   }, [couple?.status, fetchExpenses]);
 
-  const summary = useMemo(() => {
-    const budget = couple?.monthly_budget ?? 0;
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const monthExpenses = expenses.filter((e) => {
-      if (!e.due_date) return true;
-      const d = new Date(e.due_date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const totalSpent = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const remaining = budget - totalSpent;
-    const paid = monthExpenses.filter((e) => e.paid).reduce((s, e) => s + e.amount, 0);
-    const pending = monthExpenses.filter((e) => !e.paid).reduce((s, e) => s + e.amount, 0);
-
-    return { budget, totalSpent, remaining, paid, pending };
-  }, [expenses, couple?.monthly_budget]);
+  const summary = useMemo(
+    () =>
+      calculateMonthlySummary(
+        expenses,
+        incomes,
+        getCurrentYearMonth(),
+        couple?.monthly_budget ?? 0,
+      ),
+    [expenses, incomes, couple?.monthly_budget],
+  );
 
   const recentExpenses = useMemo(() => {
     return expenses.slice(0, 5);
   }, [expenses]);
 
-  const progressPct =
-    summary.budget > 0
-      ? Math.min((summary.totalSpent / summary.budget) * 100, 100)
-      : 0;
+  const progressPct = calculateBudgetProgress(
+    summary.totalExpenses,
+    summary.budget,
+  ).percentage;
 
   const handleConfirmPayment = async (expenseId: string) => {
     await updateExpense(expenseId, {
@@ -185,11 +176,11 @@ export default function Home() {
           </View>
           <View style={[styles.metricCard, { backgroundColor: C.secondaryContainer }]}>
             <Text style={styles.metricLabel}>GASTO MÊS</Text>
-            <Text style={styles.metricValue}>{formatCurrency(summary.totalSpent)}</Text>
+            <Text style={styles.metricValue}>{formatCurrency(summary.totalExpenses)}</Text>
           </View>
           <View style={[styles.metricCard, { backgroundColor: C.tertiaryContainer }]}>
             <Text style={styles.metricLabel}>SALDO</Text>
-            <Text style={styles.metricValue}>{formatCurrency(summary.remaining)}</Text>
+            <Text style={styles.metricValue}>{formatCurrency(summary.remainingBudget)}</Text>
           </View>
         </View>
 

@@ -10,13 +10,14 @@ import {
 } from "react-native";
 import { Stack } from "expo-router/stack";
 import { useAuth } from "../../src/lib/auth-context";
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  parseCurrencyInput,
+} from "../../src/utils/currency";
+import { formatDateOnlyForDisplay } from "../../src/utils/date";
 import { styles } from "./styles";
 import { C } from "../../src/theme/colors";
-
-function formatCurrency(value: number | null): string {
-  if (!value) return "R$ 0,00";
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 export default function Profile() {
   const { profile, signOut, updateProfile } = useAuth();
@@ -31,17 +32,6 @@ export default function Profile() {
       setName(profile.full_name);
     }
   }, [profile]);
-
-  const formatCurrencyInput = (value: string): string => {
-    const digits = value.replace(/\D/g, "");
-    const number = Number(digits) / 100;
-    if (number === 0 && digits.length === 0) return "";
-    return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  };
-
-  const parseCurrencyInput = (value: string): number => {
-    return Number(value.replace(/\D/g, "")) / 100;
-  };
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -166,7 +156,7 @@ export default function Profile() {
                   <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>Nascimento</Text>
                     <Text style={styles.infoValue}>
-                      {new Date(profile.birth_date).toLocaleDateString("pt-BR")}
+                      {formatDateOnlyForDisplay(profile.birth_date)}
                     </Text>
                   </View>
                 )}

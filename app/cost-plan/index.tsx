@@ -8,14 +8,14 @@ import {
 import { Link } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
 import type { IdealSplit } from "../../src/types/database";
+import { formatCurrency } from "../../src/utils/currency";
+import { getCurrentYearMonth } from "../../src/utils/date";
+import {
+  groupExpensesByCategory,
+  selectExpensesByMonth,
+  sumExpenses,
+} from "../../src/domain/finance/selectors";
 import { styles } from "./styles";
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
 
 export default function CostPlan() {
   const { couple, profile, partnerInfo, expenses, fetchIdealSplit } = useAuth();
@@ -27,29 +27,15 @@ export default function CostPlan() {
 
   const summary = useMemo(() => {
     const budget = couple?.monthly_budget ?? 0;
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const monthExpenses = selectExpensesByMonth(expenses, getCurrentYearMonth());
+    const totalSpent = sumExpenses(monthExpenses);
 
-    const monthExpenses = expenses.filter((e: any) => {
-      if (!e.due_date) return true;
-      const d = new Date(e.due_date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const totalSpent = monthExpenses.reduce((sum: number, e: any) => sum + e.amount, 0);
-    const remaining = budget - totalSpent;
-
-    const byCategory: Record<string, number> = {};
-    monthExpenses.forEach((e: any) => {
-      byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
-    });
-
-    const categoryBreakdown = Object.entries(byCategory)
-      .sort(([, a], [, b]) => b - a)
-      .map(([name, amount]) => ({ name, amount }));
-
-    return { budget, totalSpent, remaining, categoryBreakdown, monthExpenses };
+    return {
+      budget,
+      totalSpent,
+      remaining: budget - totalSpent,
+      categoryBreakdown: groupExpensesByCategory(monthExpenses),
+    };
   }, [expenses, couple?.monthly_budget]);
 
   const splitA = couple?.split_ratio_a ?? 50;

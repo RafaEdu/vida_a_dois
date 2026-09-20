@@ -8,62 +8,44 @@ import {
 import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
+import type { CloseMonthResult } from "../../src/types/database";
+import { formatCurrency } from "../../src/utils/currency";
+import { getCurrentYearMonth } from "../../src/utils/date";
+import {
+  calculateMonthlySummary,
+  compareMonthlySummaryWithCloseResult,
+  selectExpensesByMonth,
+  selectIncomesByMonth,
+} from "../../src/domain/finance/selectors";
 import { styles } from "./styles";
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
 
 export default function MonthlyClosing() {
   const { couple, expenses, incomes, closeMonth } = useAuth();
   const [closing, setClosing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<CloseMonthResult | null>(null);
   const [error, setError] = useState("");
 
-  const currentYearMonth = useMemo(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-  }, []);
+  const currentYearMonth = useMemo(() => getCurrentYearMonth(), []);
 
   const alreadyClosed = couple?.last_closed_month === currentYearMonth;
 
   const summary = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const monthExpenses = expenses.filter((e) => {
-      if (!e.due_date) return true;
-      const d = new Date(e.due_date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const monthIncomes = incomes.filter((i) => {
-      const d = new Date(i.received_at);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalIncomes = monthIncomes.reduce((sum, i) => sum + i.amount, 0);
-    const monthBalance = totalIncomes - totalExpenses;
-    const budget = couple?.monthly_budget ?? 0;
-    const sharedBalance = couple?.shared_balance ?? 0;
+    const monthExpenses = selectExpensesByMonth(expenses, currentYearMonth);
+    const monthIncomes = selectIncomesByMonth(incomes, currentYearMonth);
+    const totals = calculateMonthlySummary(
+      expenses,
+      incomes,
+      currentYearMonth,
+      couple?.monthly_budget ?? 0,
+    );
 
     return {
-      totalExpenses,
-      totalIncomes,
-      monthBalance,
-      budget,
-      sharedBalance,
+      ...totals,
+      sharedBalance: couple?.shared_balance ?? 0,
       monthExpenses,
       monthIncomes,
     };
-  }, [expenses, incomes, couple]);
+  }, [expenses, incomes, couple, currentYearMonth]);
 
   const handleCloseMonth = async () => {
     if (closing) return;
@@ -76,6 +58,17 @@ export default function MonthlyClosing() {
         setError(closeError);
       } else if (closeResult) {
         setResult(closeResult);
+
+        const divergences = compareMonthlySummaryWithCloseResult(
+          summary,
+          closeResult,
+        );
+        if (__DEV__ && divergences.length > 0) {
+          console.warn(
+            "Divergência entre o resumo do cliente e close_month:",
+            divergences,
+          );
+        }
       }
     } catch {
       setError("Erro inesperado ao fechar o mês.");
@@ -84,21 +77,13 @@ export default function MonthlyClosing() {
     }
   };
 
-  const currentMonth = useMemo(() => {
-    const now = new Date();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    return `${now.getFullYear()}-${mm}`;
-  }, []);
-
-  const monthAlreadyClosed = couple?.last_closed_month === currentMonth;
-
   const monthName = useMemo(() => {
     const months = [
       "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
       "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
     ];
-    return months[new Date().getMonth()];
-  }, []);
+    return months[Number(currentYearMonth.slice(5)) - 1];
+  }, [currentYearMonth]);
 
   return (
     <ScrollView
@@ -217,10 +202,10 @@ export default function MonthlyClosing() {
             style={[
               styles.rowValue,
               { fontWeight: "700", fontSize: 18 },
-              { color: summary.monthBalance >= 0 ? "#2E7D32" : "#D32F2F" },
+              { color: summary.balance >= 0 ? "#2E7D32" : "#D32F2F" },
             ]}
           >
-            {formatCurrency(summary.monthBalance)}
+            {formatCurrency(summary.balance)}
           </Text>
         </View>
 
@@ -235,12 +220,12 @@ export default function MonthlyClosing() {
           </Text>
         </View>
 
-        {summary.monthBalance !== 0 && (
+        {summary.balance !== 0 && (
           <View style={styles.projectionRow}>
             <Text style={styles.projectionText}>
-              {summary.monthBalance >= 0
-                ? `Ao fechar, o caixa comum será de ${formatCurrency(summary.sharedBalance + summary.monthBalance)}`
-                : `Ao fechar, o caixa comum será de ${formatCurrency(summary.sharedBalance + summary.monthBalance)}`}
+              {summary.balance >= 0
+                ? `Ao fechar, o caixa comum será de ${formatCurrency(summary.sharedBalance + summary.balance)}`
+                : `Ao fechar, o caixa comum será de ${formatCurrency(summary.sharedBalance + summary.balance)}`}
             </Text>
           </View>
         )}

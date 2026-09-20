@@ -15,18 +15,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../src/lib/auth-context";
 import { DEFAULT_CATEGORIES, type Expense, type Income } from "../../src/types/database";
+import { formatCurrency, parseDecimalInput } from "../../src/utils/currency";
 import { C } from "../../src/theme/colors";
 import { styles } from "./styles";
 
-function formatCurrency(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  if (dateOnly) return `${dateOnly[3]}/${dateOnly[2]}`;
   const d = new Date(dateStr);
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
@@ -251,10 +247,7 @@ function EditModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const parsedAmount = useMemo(() => {
-    const cleaned = amountText.replace(/[^\d,.]/g, "").replace(",", ".");
-    return parseFloat(cleaned) || 0;
-  }, [amountText]);
+  const parsedAmount = parseDecimalInput(amountText);
 
   const handleSave = async () => {
     setError("");

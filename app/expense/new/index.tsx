@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   View,
@@ -14,16 +14,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../../src/lib/auth-context";
 import { DEFAULT_CATEGORIES } from "../../../src/types/database";
+import { parseDecimalInput } from "../../../src/utils/currency";
+import { formatDateInput, isValidDateOnly } from "../../../src/utils/date";
 import { C } from "../../../src/theme/colors";
 import { shadowSm } from "../../../src/theme/shadows";
 import { styles } from "./styles";
-
-function formatCurrencyBR(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
 
 export default function NewExpense() {
   const insets = useSafeAreaInsets();
@@ -39,31 +34,7 @@ export default function NewExpense() {
   const [error, setError] = useState("");
   const [showCategories, setShowCategories] = useState(false);
 
-  const parsedAmount = useMemo(() => {
-    const cleaned = amountText.replace(/[^\d,.]/g, "").replace(",", ".");
-    return parseFloat(cleaned) || 0;
-  }, [amountText]);
-
-  const handleDateChange = (text: string) => {
-    const digits = text.replace(/\D/g, "").slice(0, 8);
-    let masked = digits;
-    if (digits.length > 4) {
-      masked = digits.slice(0, 4) + "-" + digits.slice(4);
-    }
-    if (digits.length > 6) {
-      masked = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
-    }
-    setDueDate(masked);
-  };
-
-  const isValidDate = (dateStr: string): boolean => {
-    if (!dateStr) return true;
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!regex.test(dateStr)) return false;
-    const d = new Date(dateStr + "T00:00:00");
-    const [y, m, day] = dateStr.split("-").map(Number);
-    return d.getFullYear() === y && d.getMonth() + 1 === m && d.getDate() === day;
-  };
+  const parsedAmount = parseDecimalInput(amountText);
 
   const handleSave = async () => {
     setError("");
@@ -79,7 +50,7 @@ export default function NewExpense() {
       setError("Nenhum casal vinculado.");
       return;
     }
-    if (dueDate && !isValidDate(dueDate)) {
+    if (dueDate && !isValidDateOnly(dueDate)) {
       setError("Data inválida. Use o formato AAAA-MM-DD.");
       return;
     }
@@ -216,7 +187,7 @@ export default function NewExpense() {
           <TextInput
             style={styles.input}
             value={dueDate}
-            onChangeText={handleDateChange}
+            onChangeText={(text) => setDueDate(formatDateInput(text))}
             placeholder="AAAA-MM-DD"
             placeholderTextColor={C.outlineVariant}
             keyboardType="number-pad"
