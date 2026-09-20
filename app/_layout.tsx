@@ -1,5 +1,8 @@
 import { Stack } from "expo-router/stack";
-import { AuthProvider, useAuth } from "../src/lib/auth-context";
+import { AuthProvider } from "../src/providers/AuthProvider";
+import { CoupleProvider } from "../src/providers/CoupleProvider";
+import { FinanceProvider } from "../src/providers/FinanceProvider";
+import { useAuth } from "../src/lib/auth-context";
 import { View, ActivityIndicator, Text, Pressable } from "react-native";
 import { styles } from "../src/theme/layout.styles";
 
@@ -74,7 +77,11 @@ function AppNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <CoupleProvider>
+        <FinanceProvider>
+          <AppNavigator />
+        </FinanceProvider>
+      </CoupleProvider>
     </AuthProvider>
   );
 }

@@ -42,6 +42,25 @@ ocorrências do mesmo mês para a mesma série.
 - [ ] 7. Marcar como não paga e pagar novamente.
 - [ ] 8. Confirmar que despesa não recorrente não gera próxima ocorrência.
 
+## Bootstrap e contexts (Fase 6)
+
+Validar que a divisão em `AuthProvider` / `CoupleProvider` /
+`FinanceProvider` (consumida pela camada de compatibilidade `useAuth`)
+manteve o bootstrap atômico.
+
+- [ ] 1. Abrir o app já vinculado e confirmar que nunca aparece
+      `profile-setup` ou `link-partner` antes da Home.
+- [ ] 2. Confirmar que a Home não pisca o estado vazio de despesas
+      enquanto os dados ainda carregam.
+- [ ] 3. Matar e reabrir o app; confirmar sessão persistida e ausência de
+      tela de erro de bootstrap.
+- [ ] 4. Sair da conta e confirmar que perfil, casal e lançamentos são
+      limpos.
+- [ ] 5. Entrar com uma conta sem perfil e confirmar `profile-setup`.
+- [ ] 6. Entrar com perfil e sem casal e confirmar `link-partner`.
+- [ ] 7. Alterar um lançamento e confirmar que as telas continuam
+      reagindo via Realtime sem erro.
+
 ## Registro da execução
 
 | Data | Responsável | Versão/commit | Resultado | Observações |
