@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   View,
@@ -9,53 +9,69 @@ import {
   Platform,
 } from "react-native";
 import { Stack } from "expo-router/stack";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
-import {
-  formatCurrency,
-  formatCurrencyInput,
-  parseCurrencyInput,
-} from "../../src/utils/currency";
+import { formatCurrency, parseCurrencyInput } from "../../src/utils/currency";
 import { formatDateOnlyForDisplay } from "../../src/utils/date";
+import { getInitials } from "../../src/utils/initials";
+import {
+  profileEditFormSchema,
+  type ProfileEditFormInput,
+  type ProfileEditFormValues,
+} from "../../src/domain/account/schemas";
+import {
+  FormError,
+  FormField,
+  MoneyInput,
+  PrimaryButton,
+} from "../../src/components/forms";
 import { styles } from "../../src/styles/profile";
 import { C } from "../../src/theme/colors";
 
 export default function Profile() {
   const { profile, signOut, updateProfile } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState("");
-  const [income, setIncome] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileEditFormInput, unknown, ProfileEditFormValues>({
+    resolver: zodResolver(profileEditFormSchema),
+    defaultValues: { fullName: "", income: "" },
+  });
 
-  useEffect(() => {
-    if (profile) {
-      setName(profile.full_name);
-    }
-  }, [profile]);
+  const startEditing = () => {
+    reset({ fullName: profile?.full_name ?? "", income: "" });
+    setSubmitError("");
+    setEditing(true);
+  };
 
-  const handleSave = async () => {
-    if (!name.trim()) {
-      setError("Informe seu nome.");
-      return;
-    }
-    setSaving(true);
-    setError("");
+  const cancelEditing = () => {
+    reset({ fullName: profile?.full_name ?? "", income: "" });
+    setSubmitError("");
+    setEditing(false);
+  };
 
+  const onSubmit = async (values: ProfileEditFormValues) => {
+    setSubmitError("");
     try {
       const { error: updateError } = await updateProfile({
-        full_name: name.trim(),
-        monthly_income: income ? parseCurrencyInput(income) : null,
+        full_name: values.fullName,
+        monthly_income: values.income
+          ? parseCurrencyInput(values.income)
+          : null,
       });
 
       if (updateError) {
-        setError(updateError);
+        setSubmitError(updateError);
       } else {
         setEditing(false);
       }
     } catch {
-      setError("Erro inesperado ao salvar.");
-    } finally {
-      setSaving(false);
+      setSubmitError("Erro inesperado ao salvar.");
     }
   };
 
@@ -73,73 +89,73 @@ export default function Profile() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {profile?.full_name
-                  ?.split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase() ?? "?"}
+                {getInitials(profile?.full_name)}
               </Text>
             </View>
           </View>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText} selectable>{error}</Text>
-            </View>
-          ) : null}
+          <FormError message={submitError} variant="plain" />
 
           {editing ? (
             <>
-              <View style={styles.field}>
-                <Text style={styles.label}>Nome completo</Text>
-                <TextInput
-                  style={styles.input}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Seu nome completo"
-                  autoComplete="name"
-                  placeholderTextColor="#999"
+              <FormField
+                label="Nome completo"
+                error={errors.fullName?.message}
+                labelStyle={styles.label}
+              >
+                <Controller
+                  control={control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <TextInput
+                      style={styles.input}
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Seu nome completo"
+                      autoComplete="name"
+                      placeholderTextColor="#999"
+                    />
+                  )}
                 />
-              </View>
+              </FormField>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Renda mensal líquida</Text>
-                <TextInput
-                  style={styles.input}
-                  value={income}
-                  onChangeText={(text) => setIncome(formatCurrencyInput(text))}
-                  placeholder="R$ 0,00"
-                  keyboardType="number-pad"
-                  placeholderTextColor="#999"
+              <FormField
+                label="Renda mensal líquida"
+                error={errors.income?.message}
+                labelStyle={styles.label}
+              >
+                <Controller
+                  control={control}
+                  name="income"
+                  render={({ field }) => (
+                    <MoneyInput
+                      variant="currency"
+                      style={styles.input}
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
                 />
-              </View>
+              </FormField>
 
               <View style={styles.editButtons}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.saveButton,
-                    saving && styles.buttonDisabled,
-                    pressed && styles.buttonPressed,
-                  ]}
-                  onPress={handleSave}
-                  disabled={saving}
-                >
-                  <Text style={styles.buttonText}>
-                    {saving ? "Salvando..." : "Salvar"}
-                  </Text>
-                </Pressable>
+                <PrimaryButton
+                  title={isSubmitting ? "Salvando..." : "Salvar"}
+                  onPress={handleSubmit(onSubmit)}
+                  loading={isSubmitting}
+                  style={styles.saveButton}
+                  textStyle={styles.buttonText}
+                  pressedStyle={styles.buttonPressed}
+                  disabledStyle={styles.buttonDisabled}
+                />
                 <Pressable
                   style={({ pressed }) => [
                     styles.cancelButton,
                     pressed && styles.cancelButtonPressed,
                   ]}
-                  onPress={() => {
-                    setEditing(false);
-                    setName(profile?.full_name ?? "");
-                    setIncome("");
-                    setError("");
-                  }}
+                  onPress={cancelEditing}
                 >
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
                 </Pressable>
@@ -173,11 +189,7 @@ export default function Profile() {
                   styles.editButton,
                   pressed && styles.editButtonPressed,
                 ]}
-                onPress={() => {
-                  setEditing(true);
-                  setIncome("");
-                  setError("");
-                }}
+                onPress={startEditing}
               >
                 <Text style={styles.editButtonText}>Editar perfil</Text>
               </Pressable>

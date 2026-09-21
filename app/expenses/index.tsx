@@ -3,9 +3,7 @@ import {
   ScrollView,
   View,
   Text,
-  TextInput,
   Pressable,
-  Modal,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -14,8 +12,9 @@ import { Stack } from "expo-router/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../src/lib/auth-context";
-import { DEFAULT_CATEGORIES, type Expense, type Income } from "../../src/types/database";
-import { formatCurrency, parseDecimalInput } from "../../src/utils/currency";
+import { type Expense, type Income } from "../../src/types/database";
+import { formatCurrency } from "../../src/utils/currency";
+import { EditModal, type EditTarget } from "../../src/components/finance";
 import { C } from "../../src/theme/colors";
 import { styles } from "../../src/styles/expenses";
 
@@ -26,11 +25,6 @@ function formatDate(dateStr: string | null | undefined): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
-
-type EditTarget =
-  | { type: "expense"; item: Expense }
-  | { type: "income"; item: Income }
-  | null;
 
 export default function ExpensesList() {
   const insets = useSafeAreaInsets();
@@ -50,12 +44,14 @@ export default function ExpensesList() {
   const [editing, setEditing] = useState<EditTarget>(null);
 
   const sortedExpenses = useMemo(
-    () => [...expenses].sort((a, b) => a.description.localeCompare(b.description)),
+    () =>
+      [...expenses].sort((a, b) => a.description.localeCompare(b.description)),
     [expenses],
   );
 
   const sortedIncomes = useMemo(
-    () => [...incomes].sort((a, b) => a.description.localeCompare(b.description)),
+    () =>
+      [...incomes].sort((a, b) => a.description.localeCompare(b.description)),
     [incomes],
   );
 
@@ -70,14 +66,22 @@ export default function ExpensesList() {
   const handleDeleteExpense = (expense: Expense) => {
     Alert.alert("Excluir despesa", `Deseja excluir "${expense.description}"?`, [
       { text: "Cancelar", style: "cancel" },
-      { text: "Excluir", style: "destructive", onPress: () => deleteExpense(expense.id) },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: () => deleteExpense(expense.id),
+      },
     ]);
   };
 
   const handleDeleteIncome = (income: Income) => {
     Alert.alert("Excluir receita", `Deseja excluir "${income.description}"?`, [
       { text: "Cancelar", style: "cancel" },
-      { text: "Excluir", style: "destructive", onPress: () => deleteIncome(income.id) },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: () => deleteIncome(income.id),
+      },
     ]);
   };
 
@@ -93,7 +97,12 @@ export default function ExpensesList() {
             style={[styles.tab, tab === "expenses" && styles.tabActive]}
             onPress={() => setTab("expenses")}
           >
-            <Text style={[styles.tabText, tab === "expenses" && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                tab === "expenses" && styles.tabTextActive,
+              ]}
+            >
               Despesas
             </Text>
           </Pressable>
@@ -101,14 +110,22 @@ export default function ExpensesList() {
             style={[styles.tab, tab === "incomes" && styles.tabActive]}
             onPress={() => setTab("incomes")}
           >
-            <Text style={[styles.tabText, tab === "incomes" && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                tab === "incomes" && styles.tabTextActive,
+              ]}
+            >
               Receitas
             </Text>
           </Pressable>
         </View>
 
         <ScrollView
-          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: insets.bottom + 24 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {tab === "expenses" ? (
@@ -125,7 +142,9 @@ export default function ExpensesList() {
                     </Text>
                     <Text style={styles.itemMeta}>
                       {expense.category}
-                      {expense.due_date ? ` · ${formatDate(expense.due_date)}` : ""}
+                      {expense.due_date
+                        ? ` · ${formatDate(expense.due_date)}`
+                        : ""}
                     </Text>
                   </View>
                   <View style={styles.itemRight}>
@@ -143,22 +162,36 @@ export default function ExpensesList() {
                         onPress={() => handleTogglePaid(expense)}
                       >
                         <MaterialIcons
-                          name={expense.paid ? "remove-circle-outline" : "check-circle"}
+                          name={
+                            expense.paid
+                              ? "remove-circle-outline"
+                              : "check-circle"
+                          }
                           size={22}
                           color={expense.paid ? C.outline : C.primary}
                         />
                       </Pressable>
                       <Pressable
                         style={styles.iconBtn}
-                        onPress={() => setEditing({ type: "expense", item: expense })}
+                        onPress={() =>
+                          setEditing({ type: "expense", item: expense })
+                        }
                       >
-                        <MaterialIcons name="edit" size={20} color={C.onSurfaceVariant} />
+                        <MaterialIcons
+                          name="edit"
+                          size={20}
+                          color={C.onSurfaceVariant}
+                        />
                       </Pressable>
                       <Pressable
                         style={styles.iconBtn}
                         onPress={() => handleDeleteExpense(expense)}
                       >
-                        <MaterialIcons name="delete-outline" size={20} color={C.error} />
+                        <MaterialIcons
+                          name="delete-outline"
+                          size={20}
+                          color={C.error}
+                        />
                       </Pressable>
                     </View>
                   </View>
@@ -177,7 +210,8 @@ export default function ExpensesList() {
                     {income.description}
                   </Text>
                   <Text style={styles.itemMeta}>
-                    {income.is_extra ? "Extra" : "Salário"} · {formatDate(income.received_at)}
+                    {income.is_extra ? "Extra" : "Salário"} ·{" "}
+                    {formatDate(income.received_at)}
                   </Text>
                 </View>
                 <View style={styles.itemRight}>
@@ -187,15 +221,25 @@ export default function ExpensesList() {
                   <View style={styles.itemActions}>
                     <Pressable
                       style={styles.iconBtn}
-                      onPress={() => setEditing({ type: "income", item: income })}
+                      onPress={() =>
+                        setEditing({ type: "income", item: income })
+                      }
                     >
-                      <MaterialIcons name="edit" size={20} color={C.onSurfaceVariant} />
+                      <MaterialIcons
+                        name="edit"
+                        size={20}
+                        color={C.onSurfaceVariant}
+                      />
                     </Pressable>
                     <Pressable
                       style={styles.iconBtn}
                       onPress={() => handleDeleteIncome(income)}
                     >
-                      <MaterialIcons name="delete-outline" size={20} color={C.error} />
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={20}
+                        color={C.error}
+                      />
                     </Pressable>
                   </View>
                 </View>
@@ -207,6 +251,7 @@ export default function ExpensesList() {
 
       {editing && (
         <EditModal
+          key={`${editing.type}-${editing.item.id}`}
           target={editing}
           onClose={() => setEditing(null)}
           onSaveExpense={async (id, data) => {
@@ -220,134 +265,5 @@ export default function ExpensesList() {
         />
       )}
     </>
-  );
-}
-
-function EditModal({
-  target,
-  onClose,
-  onSaveExpense,
-  onSaveIncome,
-}: {
-  target: Exclude<EditTarget, null>;
-  onClose: () => void;
-  onSaveExpense: (
-    id: string,
-    data: { description: string; amount: number; category: string },
-  ) => Promise<void>;
-  onSaveIncome: (
-    id: string,
-    data: { description: string; amount: number },
-  ) => Promise<void>;
-}) {
-  const [description, setDescription] = useState(target.item.description);
-  const [amountText, setAmountText] = useState(String(target.item.amount));
-  const [category, setCategory] = useState(
-    target.type === "expense" ? target.item.category : DEFAULT_CATEGORIES[0].name,
-  );
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const parsedAmount = parseDecimalInput(amountText);
-
-  const handleSave = async () => {
-    setError("");
-    if (!description.trim()) {
-      setError("Informe a descrição.");
-      return;
-    }
-    if (parsedAmount <= 0) {
-      setError("Informe um valor válido.");
-      return;
-    }
-
-    setSaving(true);
-    if (target.type === "expense") {
-      await onSaveExpense(target.item.id, {
-        description: description.trim(),
-        amount: parsedAmount,
-        category,
-      });
-    } else {
-      await onSaveIncome(target.item.id, {
-        description: description.trim(),
-        amount: parsedAmount,
-      });
-    }
-    setSaving(false);
-  };
-
-  return (
-    <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.modalOverlay}
-      >
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>
-            {target.type === "expense" ? "Editar despesa" : "Editar receita"}
-          </Text>
-
-          {error ? <Text style={styles.modalError}>{error}</Text> : null}
-
-          <Text style={styles.modalLabel}>Descrição</Text>
-          <TextInput
-            style={styles.modalInput}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Descrição"
-            placeholderTextColor={C.outlineVariant}
-          />
-
-          <Text style={styles.modalLabel}>Valor (R$)</Text>
-          <TextInput
-            style={styles.modalInput}
-            value={amountText}
-            onChangeText={setAmountText}
-            placeholder="0,00"
-            keyboardType="decimal-pad"
-            placeholderTextColor={C.outlineVariant}
-          />
-
-          {target.type === "expense" && (
-            <>
-              <Text style={styles.modalLabel}>Categoria</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipRow}
-              >
-                {DEFAULT_CATEGORIES.map((cat) => (
-                  <Pressable
-                    key={cat.name}
-                    style={[styles.chip, category === cat.name && styles.chipActive]}
-                    onPress={() => setCategory(cat.name)}
-                  >
-                    <Text
-                      style={[styles.chipText, category === cat.name && styles.chipTextActive]}
-                    >
-                      {cat.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </>
-          )}
-
-          <View style={styles.modalActions}>
-            <Pressable style={styles.modalCancel} onPress={onClose}>
-              <Text style={styles.modalCancelText}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.modalSave, saving && styles.modalSaveDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              <Text style={styles.modalSaveText}>{saving ? "Salvando..." : "Salvar"}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
   );
 }

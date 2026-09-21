@@ -4,22 +4,39 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { Link, router } from "expo-router";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
+import {
+  signInFormSchema,
+  type SignInFormInput,
+  type SignInFormValues,
+} from "../../src/domain/account/schemas";
+import {
+  FormError,
+  FormField,
+  PrimaryButton,
+} from "../../src/components/forms";
 import { C } from "../../src/theme/colors";
 import { styles } from "../../src/styles/sign-in";
 
 export default function SignIn() {
   const { user, signIn } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const hasNavigated = useRef(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignInFormInput, unknown, SignInFormValues>({
+    resolver: zodResolver(signInFormSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   useEffect(() => {
     if (hasNavigated.current) return;
@@ -33,23 +50,11 @@ export default function SignIn() {
     }
   }, [user]);
 
-  const handleSignIn = async () => {
-    setError("");
-    if (!email.trim()) {
-      setError("Insira seu e-mail.");
-      return;
-    }
-    if (!password) {
-      setError("Insira sua senha.");
-      return;
-    }
-
-    setLoading(true);
-    const { error: signInError } = await signIn(email.trim(), password);
-    setLoading(false);
-
+  const onSubmit = async (values: SignInFormValues) => {
+    setSubmitError("");
+    const { error: signInError } = await signIn(values.email, values.password);
     if (signInError) {
-      setError(signInError);
+      setSubmitError(signInError);
     }
   };
 
@@ -70,52 +75,64 @@ export default function SignIn() {
         </View>
 
         <View style={styles.form}>
-          {error ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText} selectable>{error}</Text>
-            </View>
-          ) : null}
+          <FormError message={submitError} variant="plain" />
 
-          <View style={styles.field}>
-            <Text style={styles.label}>E-mail</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="seu@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Senha</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Sua senha"
-              secureTextEntry
-              autoComplete="current-password"
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              loading && styles.buttonDisabled,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={handleSignIn}
-            disabled={loading}
+          <FormField
+            label="E-mail"
+            error={errors.email?.message}
+            labelStyle={styles.label}
           >
-            <Text style={styles.buttonText}>
-              {loading ? "Entrando..." : "Entrar"}
-            </Text>
-          </Pressable>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="seu@email.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  placeholderTextColor="#999"
+                />
+              )}
+            />
+          </FormField>
+
+          <FormField
+            label="Senha"
+            error={errors.password?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="password"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Sua senha"
+                  secureTextEntry
+                  autoComplete="current-password"
+                  placeholderTextColor="#999"
+                />
+              )}
+            />
+          </FormField>
+
+          <PrimaryButton
+            title={isSubmitting ? "Entrando..." : "Entrar"}
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+            style={styles.button}
+            textStyle={styles.buttonText}
+            disabledStyle={styles.buttonDisabled}
+            pressedStyle={styles.buttonPressed}
+          />
 
           <View style={styles.loginLink}>
             <Text style={styles.loginText}>Não tem uma conta? </Text>

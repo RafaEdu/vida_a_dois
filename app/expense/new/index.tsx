@@ -12,10 +12,23 @@ import {
 import { router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../../src/lib/auth-context";
 import { DEFAULT_CATEGORIES } from "../../../src/types/database";
-import { parseDecimalInput } from "../../../src/utils/currency";
-import { formatDateInput, isValidDateOnly } from "../../../src/utils/date";
+import {
+  expenseFormSchema,
+  type ExpenseFormInput,
+  type ExpenseFormValues,
+} from "../../../src/domain/finance/schemas";
+import { CategoryPicker, PayerSelector } from "../../../src/components/finance";
+import {
+  DateInput,
+  FormError,
+  FormField,
+  MoneyInput,
+  PrimaryButton,
+} from "../../../src/components/forms";
 import { C } from "../../../src/theme/colors";
 import { shadowSm } from "../../../src/theme/shadows";
 import { styles } from "../../../src/styles/expense-new";
@@ -23,56 +36,45 @@ import { styles } from "../../../src/styles/expense-new";
 export default function NewExpense() {
   const insets = useSafeAreaInsets();
   const { addExpense, couple, user, profile, partnerInfo } = useAuth();
-  const [description, setDescription] = useState("");
-  const [amountText, setAmountText] = useState("");
-  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0].name);
-  const [dueDate, setDueDate] = useState("");
-  const [paid, setPaid] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [paidBy, setPaidBy] = useState<string>(user?.id ?? "");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [showCategories, setShowCategories] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const parsedAmount = parseDecimalInput(amountText);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ExpenseFormInput, unknown, ExpenseFormValues>({
+    resolver: zodResolver(expenseFormSchema),
+    defaultValues: {
+      description: "",
+      amount: "",
+      category: DEFAULT_CATEGORIES[0].name,
+      dueDate: "",
+      paidBy: user?.id ?? "",
+      isRecurring: false,
+      paid: false,
+    },
+  });
 
-  const handleSave = async () => {
-    setError("");
-    if (!description.trim()) {
-      setError("Informe a descrição da despesa.");
-      return;
-    }
-    if (parsedAmount <= 0) {
-      setError("Informe um valor válido.");
-      return;
-    }
+  const onSubmit = async (values: ExpenseFormValues) => {
+    setSubmitError("");
+
     if (!couple) {
-      setError("Nenhum casal vinculado.");
-      return;
-    }
-    if (dueDate && !isValidDateOnly(dueDate)) {
-      setError("Data inválida. Use o formato AAAA-MM-DD.");
-      return;
-    }
-    if (isRecurring && !dueDate) {
-      setError("Despesa recorrente precisa de uma data de vencimento.");
+      setSubmitError("Nenhum casal vinculado.");
       return;
     }
 
-    setSaving(true);
     const { error: saveError } = await addExpense({
-      description: description.trim(),
-      amount: parsedAmount,
-      category,
-      due_date: dueDate || undefined,
-      paid,
-      paid_by: paidBy,
-      is_recurring: isRecurring,
+      description: values.description,
+      amount: values.amount,
+      category: values.category,
+      due_date: values.dueDate || undefined,
+      paid: values.paid,
+      paid_by: values.paidBy,
+      is_recurring: values.isRecurring,
     });
-    setSaving(false);
 
     if (saveError) {
-      setError(saveError);
+      setSubmitError(saveError);
     } else {
       router.back();
     }
@@ -93,7 +95,10 @@ export default function NewExpense() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 40 },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -101,221 +106,151 @@ export default function NewExpense() {
           Adicione um novo gasto ao plano do casal
         </Text>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <MaterialIcons name="error-outline" size={18} color={C.error} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+        <FormError message={submitError} />
 
         {/* Description */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Descrição</Text>
-          <TextInput
-            style={styles.input}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Ex: Supermercado do mês"
-            placeholderTextColor={C.outlineVariant}
+        <FormField label="Descrição" error={errors.description?.message}>
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <TextInput
+                style={styles.input}
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Ex: Supermercado do mês"
+                placeholderTextColor={C.outlineVariant}
+              />
+            )}
           />
-        </View>
+        </FormField>
 
         {/* Amount */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Valor (R$)</Text>
-          <TextInput
-            style={styles.input}
-            value={amountText}
-            onChangeText={setAmountText}
-            placeholder="0,00"
-            keyboardType="decimal-pad"
-            placeholderTextColor={C.outlineVariant}
+        <FormField label="Valor (R$)" error={errors.amount?.message}>
+          <Controller
+            control={control}
+            name="amount"
+            render={({ field }) => (
+              <MoneyInput
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
           />
-        </View>
+        </FormField>
 
         {/* Category */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Categoria</Text>
-          <Pressable
-            style={styles.selector}
-            onPress={() => setShowCategories(!showCategories)}
-          >
-            <Text style={styles.selectorText}>{category}</Text>
-            <MaterialIcons
-              name={showCategories ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-              size={20}
-              color={C.outline}
-            />
-          </Pressable>
-
-          {showCategories && (
-            <View style={styles.categoryList}>
-              <ScrollView style={styles.categoryScroll} nestedScrollEnabled>
-                {DEFAULT_CATEGORIES.map((cat) => (
-                  <Pressable
-                    key={cat.name}
-                    style={[
-                      styles.categoryItem,
-                      category === cat.name && styles.categoryItemSelected,
-                    ]}
-                    onPress={() => {
-                      setCategory(cat.name);
-                      setShowCategories(false);
-                    }}
-                  >
-                    <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                    <View style={styles.categoryInfo}>
-                      <Text
-                        style={[
-                          styles.categoryName,
-                          category === cat.name && styles.categoryNameSelected,
-                        ]}
-                      >
-                        {cat.name}
-                      </Text>
-                      <Text style={styles.categoryType}>{cat.type}</Text>
-                    </View>
-                    {category === cat.name && (
-                      <MaterialIcons name="check" size={18} color={C.primary} />
-                    )}
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+        <FormField label="Categoria" error={errors.category?.message}>
+          <Controller
+            control={control}
+            name="category"
+            render={({ field }) => (
+              <CategoryPicker value={field.value} onChange={field.onChange} />
+            )}
+          />
+        </FormField>
 
         {/* Due Date */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Data de vencimento (opcional)</Text>
-          <TextInput
-            style={styles.input}
-            value={dueDate}
-            onChangeText={(text) => setDueDate(formatDateInput(text))}
-            placeholder="AAAA-MM-DD"
-            placeholderTextColor={C.outlineVariant}
-            keyboardType="number-pad"
-            maxLength={10}
+        <FormField
+          label="Data de vencimento (opcional)"
+          error={errors.dueDate?.message}
+        >
+          <Controller
+            control={control}
+            name="dueDate"
+            render={({ field }) => (
+              <DateInput
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
           />
-        </View>
+        </FormField>
 
         {/* Paid By */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Quem pagou?</Text>
-          <View style={styles.paidByRow}>
-            <Pressable
-              style={[
-                styles.paidByOption,
-                paidBy === user?.id && styles.paidByOptionSelected,
-              ]}
-              onPress={() => setPaidBy(user?.id ?? "")}
-            >
-              <View style={styles.paidByAvatar}>
-                <Text style={styles.paidByAvatarText}>
-                  {profile?.full_name
-                    ?.split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase() ?? "EU"}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.paidByName,
-                    paidBy === user?.id && styles.paidByNameSelected,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {profile?.full_name ?? "Você"}
-                </Text>
-              </View>
-              {paidBy === user?.id && (
-                <MaterialIcons name="check-circle" size={20} color={C.primary} />
-              )}
-            </Pressable>
-            {partnerInfo && (
-              <Pressable
-                style={[
-                  styles.paidByOption,
-                  paidBy === partnerInfo.id && styles.paidByOptionSelected,
-                ]}
-                onPress={() => setPaidBy(partnerInfo.id)}
-              >
-                <View style={[styles.paidByAvatar, styles.paidByAvatarPartner]}>
-                  <Text style={styles.paidByAvatarText}>
-                    {partnerInfo.full_name
-                      ?.split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase() ?? "??"}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      styles.paidByName,
-                      paidBy === partnerInfo.id && styles.paidByNameSelected,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {partnerInfo.full_name}
-                  </Text>
-                </View>
-                {paidBy === partnerInfo.id && (
-                  <MaterialIcons name="check-circle" size={20} color={C.primary} />
-                )}
-              </Pressable>
+        <FormField label="Quem pagou?" error={errors.paidBy?.message}>
+          <Controller
+            control={control}
+            name="paidBy"
+            render={({ field }) => (
+              <PayerSelector
+                value={field.value}
+                onChange={field.onChange}
+                self={{
+                  id: user?.id ?? "",
+                  full_name: profile?.full_name ?? "",
+                }}
+                partner={
+                  partnerInfo
+                    ? { id: partnerInfo.id, full_name: partnerInfo.full_name }
+                    : null
+                }
+              />
             )}
-          </View>
-        </View>
+          />
+        </FormField>
 
         {/* Recurring Toggle */}
-        <View style={[styles.switchCard, shadowSm]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.switchLabel}>Despesa recorrente</Text>
-            <Text style={styles.switchHint}>
-              {isRecurring
-                ? "Gasto fixo mensal (ex: aluguel, internet)"
-                : "Gasto pontual ou variável"}
-            </Text>
-          </View>
-          <Switch
-            value={isRecurring}
-            onValueChange={setIsRecurring}
-            trackColor={{ false: C.surfaceVariant, true: C.primaryFixedDim }}
-            thumbColor={isRecurring ? C.primary : C.surfaceContainerLowest}
-          />
-        </View>
+        <Controller
+          control={control}
+          name="isRecurring"
+          render={({ field }) => (
+            <View style={[styles.switchCard, shadowSm]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.switchLabel}>Despesa recorrente</Text>
+                <Text style={styles.switchHint}>
+                  {field.value
+                    ? "Gasto fixo mensal (ex: aluguel, internet)"
+                    : "Gasto pontual ou variável"}
+                </Text>
+              </View>
+              <Switch
+                value={field.value}
+                onValueChange={field.onChange}
+                trackColor={{
+                  false: C.surfaceVariant,
+                  true: C.primaryFixedDim,
+                }}
+                thumbColor={field.value ? C.primary : C.surfaceContainerLowest}
+              />
+            </View>
+          )}
+        />
 
         {/* Paid Toggle */}
-        <View style={[styles.switchCard, shadowSm]}>
-          <Text style={styles.switchLabel}>Já foi pago?</Text>
-          <Switch
-            value={paid}
-            onValueChange={setPaid}
-            trackColor={{ false: C.surfaceVariant, true: C.primaryFixedDim }}
-            thumbColor={paid ? C.primary : C.surfaceContainerLowest}
-          />
-        </View>
+        <Controller
+          control={control}
+          name="paid"
+          render={({ field }) => (
+            <View style={[styles.switchCard, shadowSm]}>
+              <Text style={styles.switchLabel}>Já foi pago?</Text>
+              <Switch
+                value={field.value}
+                onValueChange={field.onChange}
+                trackColor={{
+                  false: C.surfaceVariant,
+                  true: C.primaryFixedDim,
+                }}
+                thumbColor={field.value ? C.primary : C.surfaceContainerLowest}
+              />
+            </View>
+          )}
+        />
 
         {/* Save Button */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.saveBtn,
-            saving && styles.saveBtnDisabled,
-            pressed && styles.saveBtnPressed,
-          ]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <MaterialIcons name="save" size={20} color={C.onPrimary} />
-          <Text style={styles.saveBtnText}>
-            {saving ? "Salvando..." : "Salvar despesa"}
-          </Text>
-        </Pressable>
+        <PrimaryButton
+          title={isSubmitting ? "Salvando..." : "Salvar despesa"}
+          onPress={handleSubmit(onSubmit)}
+          loading={isSubmitting}
+          icon="save"
+          style={styles.saveBtn}
+          textStyle={styles.saveBtnText}
+          disabledStyle={styles.saveBtnDisabled}
+          pressedStyle={styles.saveBtnPressed}
+        />
 
         {/* Cancel */}
         <Pressable

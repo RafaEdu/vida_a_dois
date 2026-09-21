@@ -84,6 +84,31 @@ parceiro, sem refetch incondicional.
 - [ ] 9. Fechar o mês e confirmar que o `closeMonth` continua reconciliando
       o perfil/casal sem refetch financeiro desnecessário.
 
+## Formulários com Zod + React Hook Form (Fase 8)
+
+Validar que as telas migradas mantiveram a aparência e as regras, agora com
+validação por schema, erro por campo e submit desabilitado durante o save.
+
+- [ ] 1. Nova receita: salvar válido, salvar com descrição vazia e com valor
+      zero (erro no campo), data de recebimento inválida e válida.
+- [ ] 2. Nova despesa: descrição, valor, categoria, vencimento, quem pagou,
+      recorrente e já pago; recorrente sem vencimento deve acusar erro no
+      campo de vencimento.
+- [ ] 3. Histórico: editar despesa (descrição/valor/categoria) e editar
+      receita (descrição/valor) pelo modal, validando erro por campo.
+- [ ] 4. Perfil: entrar em edição, cancelar e confirmar a restauração do
+      nome; salvar novo nome/renda.
+- [ ] 5. Plano de custos: orçamento, "usar renda somada", "usar divisão
+      ideal" e percentual fora de 0–100.
+- [ ] 6. Criar conta: e-mail inválido, senha curta e senhas diferentes
+      exibem o aviso e mantêm o botão desabilitado.
+- [ ] 7. Entrar: e-mail e senha obrigatórios.
+- [ ] 8. Perfil (setup): nome, data de nascimento (DD/MM/AAAA) e renda;
+      confirmar que o rascunho local continua sendo salvo e retomado.
+- [ ] 9. Vincular parceiro: código com menos de 8 caracteres mantém o botão
+      desabilitado; código válido busca e vincula.
+- [ ] 10. Confirmar visualmente que os formulários mantêm o layout anterior.
+
 ## Registro da execução
 
 | Data | Responsável | Versão/commit | Resultado | Observações |

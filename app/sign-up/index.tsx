@@ -4,26 +4,52 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { Link, router } from "expo-router";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  signUpFormSchema,
+  type SignUpFormInput,
+  type SignUpFormValues,
+} from "../../src/domain/account/schemas";
+import {
+  FormError,
+  FormField,
+  PrimaryButton,
+} from "../../src/components/forms";
 import { C } from "../../src/theme/colors";
 import { styles } from "../../src/styles/sign-up";
 
 const REGISTRATION_STEP_KEY = "@registration_step";
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignUp() {
   const { user, signUp } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const hasNavigated = useRef(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormInput, unknown, SignUpFormValues>({
+    resolver: zodResolver(signUpFormSchema),
+    defaultValues: { email: "", password: "", confirmPassword: "" },
+  });
+
+  const email = useWatch({ control, name: "email" }) ?? "";
+  const password = useWatch({ control, name: "password" }) ?? "";
+  const confirmPassword = useWatch({ control, name: "confirmPassword" }) ?? "";
+
+  const isEmailValid = EMAIL_PATTERN.test(email);
+  const isPasswordValid = password.length >= 8;
+  const passwordsMatch = password === confirmPassword;
+  const isFormValid = isEmailValid && isPasswordValid && passwordsMatch;
 
   useEffect(() => {
     if (hasNavigated.current) return;
@@ -37,36 +63,23 @@ export default function SignUp() {
     AsyncStorage.setItem(REGISTRATION_STEP_KEY, "signup").catch(() => {});
   }, []);
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isPasswordValid = password.length >= 8;
-  const passwordsMatch = password === confirmPassword;
-
-  const handleSignUp = async () => {
-    setError("");
-    if (!isEmailValid) {
-      setError("Insira um e-mail válido.");
-      return;
-    }
-    if (!isPasswordValid) {
-      setError("A senha deve ter pelo menos 8 caracteres.");
-      return;
-    }
-    if (!passwordsMatch) {
-      setError("As senhas não conferem.");
-      return;
-    }
-
-    setLoading(true);
-    const { error: signUpError, session } = await signUp(email, password);
-    setLoading(false);
+  const onSubmit = async (values: SignUpFormValues) => {
+    setSubmitError("");
+    const { error: signUpError, session } = await signUp(
+      values.email,
+      values.password,
+    );
 
     if (signUpError) {
-      setError(signUpError);
+      setSubmitError(signUpError);
       return;
     }
 
     if (!session) {
-      router.replace({ pathname: "/verify-email", params: { email } });
+      router.replace({
+        pathname: "/verify-email",
+        params: { email: values.email },
+      });
     }
   };
 
@@ -89,72 +102,94 @@ export default function SignUp() {
         <View style={styles.form}>
           <Text style={styles.step}>Etapa 1 de 2</Text>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText} selectable>{error}</Text>
-            </View>
-          ) : null}
+          <FormError message={submitError} variant="plain" />
 
-          <View style={styles.field}>
-            <Text style={styles.label}>E-mail</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="seu@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              placeholderTextColor="#999"
+          <FormField
+            label="E-mail"
+            error={errors.email?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="email"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="seu@email.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  placeholderTextColor="#999"
+                />
+              )}
             />
             {email.length > 0 && !isEmailValid && (
               <Text style={styles.hint}>Insira um e-mail válido</Text>
             )}
-          </View>
+          </FormField>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Senha</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Mínimo de 8 caracteres"
-              secureTextEntry
-              autoComplete="new-password"
-              placeholderTextColor="#999"
+          <FormField
+            label="Senha"
+            error={errors.password?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="password"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Mínimo de 8 caracteres"
+                  secureTextEntry
+                  autoComplete="new-password"
+                  placeholderTextColor="#999"
+                />
+              )}
             />
-          </View>
+          </FormField>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Confirmar senha</Text>
-            <TextInput
-              style={styles.input}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Repita a senha"
-              secureTextEntry
-              autoComplete="new-password"
-              placeholderTextColor="#999"
+          <FormField
+            label="Confirmar senha"
+            error={errors.confirmPassword?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Repita a senha"
+                  secureTextEntry
+                  autoComplete="new-password"
+                  placeholderTextColor="#999"
+                />
+              )}
             />
             {confirmPassword.length > 0 && !passwordsMatch && (
               <Text style={styles.hint}>As senhas não conferem</Text>
             )}
-          </View>
+          </FormField>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              (!isEmailValid || !isPasswordValid || !passwordsMatch || loading) &&
-                styles.buttonDisabled,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={handleSignUp}
-            disabled={!isEmailValid || !isPasswordValid || !passwordsMatch || loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Criando conta..." : "Criar conta"}
-            </Text>
-          </Pressable>
+          <PrimaryButton
+            title={isSubmitting ? "Criando conta..." : "Criar conta"}
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isFormValid}
+            loading={isSubmitting}
+            style={styles.button}
+            textStyle={styles.buttonText}
+            disabledStyle={styles.buttonDisabled}
+            pressedStyle={styles.buttonPressed}
+          />
 
           <View style={styles.loginLink}>
             <Text style={styles.loginText}>Já tem uma conta? </Text>

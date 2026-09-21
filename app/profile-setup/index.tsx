@@ -4,21 +4,28 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useAuth } from "../../src/lib/auth-context";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "../../src/lib/auth-context";
+import { parseCurrencyInput } from "../../src/utils/currency";
+import { parseBirthDateToISO } from "../../src/utils/date";
 import {
-  formatCurrencyInput,
-  parseCurrencyInput,
-} from "../../src/utils/currency";
+  profileSetupFormSchema,
+  type ProfileSetupFormInput,
+  type ProfileSetupFormValues,
+} from "../../src/domain/account/schemas";
 import {
-  formatBirthDateInput,
-  parseBirthDateToISO,
-} from "../../src/utils/date";
+  DateInput,
+  FormError,
+  FormField,
+  MoneyInput,
+  PrimaryButton,
+} from "../../src/components/forms";
 import { styles } from "../../src/styles/profile-setup";
 import { C } from "../../src/theme/colors";
 
@@ -29,13 +36,23 @@ const DRAFT_INCOME_KEY = "@profile_draft_income";
 
 export default function ProfileSetup() {
   const { userState, saveProfile } = useAuth();
-  const [name, setName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
-  const [income, setIncome] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const hasNavigated = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileSetupFormInput, unknown, ProfileSetupFormValues>({
+    resolver: zodResolver(profileSetupFormSchema),
+    defaultValues: { fullName: "", birthDate: "", income: "" },
+  });
+
+  const fullName = useWatch({ control, name: "fullName" }) ?? "";
+  const birthDate = useWatch({ control, name: "birthDate" }) ?? "";
+  const income = useWatch({ control, name: "income" }) ?? "";
 
   useEffect(() => {
     if (hasNavigated.current) return;
@@ -48,24 +65,30 @@ export default function ProfileSetup() {
   useEffect(() => {
     AsyncStorage.setItem(REGISTRATION_STEP_KEY, "profile").catch(() => {});
 
-    AsyncStorage.multiGet([DRAFT_NAME_KEY, DRAFT_BIRTHDATE_KEY, DRAFT_INCOME_KEY])
+    AsyncStorage.multiGet([
+      DRAFT_NAME_KEY,
+      DRAFT_BIRTHDATE_KEY,
+      DRAFT_INCOME_KEY,
+    ])
       .then((values) => {
+        const draft: Record<string, string> = {};
         for (const [key, val] of values) {
-          if (val) {
-            if (key === DRAFT_NAME_KEY) setName(val);
-            else if (key === DRAFT_BIRTHDATE_KEY) setBirthDate(val);
-            else if (key === DRAFT_INCOME_KEY) setIncome(val);
-          }
+          if (val) draft[key] = val;
         }
+        reset({
+          fullName: draft[DRAFT_NAME_KEY] ?? "",
+          birthDate: draft[DRAFT_BIRTHDATE_KEY] ?? "",
+          income: draft[DRAFT_INCOME_KEY] ?? "",
+        });
       })
       .catch(() => {});
-  }, []);
+  }, [reset]);
 
   useEffect(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       AsyncStorage.multiSet([
-        [DRAFT_NAME_KEY, name],
+        [DRAFT_NAME_KEY, fullName],
         [DRAFT_BIRTHDATE_KEY, birthDate],
         [DRAFT_INCOME_KEY, income],
       ]).catch(() => {});
@@ -73,31 +96,27 @@ export default function ProfileSetup() {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [name, birthDate, income]);
+  }, [fullName, birthDate, income]);
 
-  const handleSave = async () => {
-    setError("");
-    if (!name.trim()) {
-      setError("Informe seu nome completo.");
-      return;
-    }
-    const isoDate = parseBirthDateToISO(birthDate);
+  const onSubmit = async (values: ProfileSetupFormValues) => {
+    setSubmitError("");
+
+    const isoDate = parseBirthDateToISO(values.birthDate);
     if (!isoDate) {
-      setError("Informe uma data de nascimento válida (DD/MM/AAAA).");
+      setSubmitError("Informe uma data de nascimento válida (DD/MM/AAAA).");
       return;
     }
-
-    setLoading(true);
 
     const { error: saveError } = await saveProfile({
-      full_name: name.trim(),
+      full_name: values.fullName,
       birth_date: isoDate,
-      monthly_income: income ? parseCurrencyInput(income) : undefined,
+      monthly_income: values.income
+        ? parseCurrencyInput(values.income)
+        : undefined,
     });
-    setLoading(false);
 
     if (saveError) {
-      setError(saveError);
+      setSubmitError(saveError);
     } else {
       AsyncStorage.multiRemove([
         DRAFT_NAME_KEY,
@@ -126,65 +145,82 @@ export default function ProfileSetup() {
         <View style={styles.form}>
           <Text style={styles.step}>Etapa 2 de 2</Text>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText} selectable>{error}</Text>
-            </View>
-          ) : null}
+          <FormError message={submitError} variant="plain" />
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Nome completo</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Seu nome completo"
-              autoComplete="name"
-              placeholderTextColor="#999"
+          <FormField
+            label="Nome completo"
+            error={errors.fullName?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="fullName"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Seu nome completo"
+                  autoComplete="name"
+                  placeholderTextColor="#999"
+                />
+              )}
             />
-          </View>
+          </FormField>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Data de nascimento</Text>
-            <TextInput
-              style={styles.input}
-              value={birthDate}
-              onChangeText={(text) => setBirthDate(formatBirthDateInput(text))}
-              placeholder="DD/MM/AAAA"
-              keyboardType="number-pad"
-              maxLength={10}
-              placeholderTextColor="#999"
+          <FormField
+            label="Data de nascimento"
+            error={errors.birthDate?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="birthDate"
+              render={({ field }) => (
+                <DateInput
+                  variant="br"
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )}
             />
-          </View>
+          </FormField>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Renda mensal líquida</Text>
-            <TextInput
-              style={styles.input}
-              value={income}
-              onChangeText={(text) => setIncome(formatCurrencyInput(text))}
-              placeholder="R$ 0,00"
-              keyboardType="number-pad"
-              placeholderTextColor="#999"
+          <FormField
+            label="Renda mensal líquida"
+            error={errors.income?.message}
+            labelStyle={styles.label}
+          >
+            <Controller
+              control={control}
+              name="income"
+              render={({ field }) => (
+                <MoneyInput
+                  variant="currency"
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )}
             />
             <Text style={styles.optionalHint}>
               Pode preencher depois — vamos perguntar isso no planejamento
             </Text>
-          </View>
+          </FormField>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              loading && styles.buttonDisabled,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Salvando..." : "Salvar e continuar"}
-            </Text>
-          </Pressable>
+          <PrimaryButton
+            title={isSubmitting ? "Salvando..." : "Salvar e continuar"}
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+            style={styles.button}
+            textStyle={styles.buttonText}
+            disabledStyle={styles.buttonDisabled}
+            pressedStyle={styles.buttonPressed}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

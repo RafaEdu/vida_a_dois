@@ -9,76 +9,78 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../../src/lib/auth-context";
 import type { IdealSplit } from "../../../src/types/database";
-import { formatCurrency, parseDecimalInput } from "../../../src/utils/currency";
+import { formatCurrency } from "../../../src/utils/currency";
+import {
+  costPlanFormSchema,
+  type CostPlanFormInput,
+  type CostPlanFormValues,
+} from "../../../src/domain/finance/schemas";
+import { FormError, PrimaryButton } from "../../../src/components/forms";
+import { getInitials } from "../../../src/utils/initials";
 import { C } from "../../../src/theme/colors";
 import { styles } from "../../../src/styles/cost-plan-edit";
 
 export default function EditCostPlan() {
-  const { couple, profile, partnerInfo, updateCostPlan, fetchIdealSplit } = useAuth();
+  const { couple, profile, partnerInfo, updateCostPlan, fetchIdealSplit } =
+    useAuth();
   const [idealSplit, setIdealSplit] = useState<IdealSplit | null>(null);
+  const [submitError, setSubmitError] = useState("");
 
-  const [budgetText, setBudgetText] = useState(
-    couple?.monthly_budget ? String(couple.monthly_budget) : ""
-  );
-  const [splitA, setSplitA] = useState(
-    String(couple?.split_ratio_a ?? 50)
-  );
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<CostPlanFormInput, unknown, CostPlanFormValues>({
+    resolver: zodResolver(costPlanFormSchema),
+    defaultValues: {
+      budget: couple?.monthly_budget ? String(couple.monthly_budget) : "",
+      splitA: String(couple?.split_ratio_a ?? 50),
+    },
+  });
 
   useEffect(() => {
     fetchIdealSplit().then((result) => setIdealSplit(result.data));
   }, [fetchIdealSplit]);
 
-  const splitB = String(100 - (parseFloat(splitA) || 0));
+  const splitAValue = useWatch({ control, name: "splitA" }) ?? "";
+  const splitB = String(100 - (parseFloat(splitAValue) || 0));
 
-  const combinedIncome = (profile?.monthly_income ?? 0) + (partnerInfo?.monthly_income ?? 0);
+  const combinedIncome =
+    (profile?.monthly_income ?? 0) + (partnerInfo?.monthly_income ?? 0);
 
   const handleUseIdeal = () => {
     if (idealSplit) {
-      setSplitA(String(idealSplit.ratio_a));
+      setValue("splitA", String(idealSplit.ratio_a));
     }
   };
 
   const handleUseIncomeBudget = () => {
     if (combinedIncome > 0) {
-      setBudgetText(String(combinedIncome));
+      setValue("budget", String(combinedIncome));
     }
   };
 
-  const handleSave = async () => {
-    setError("");
-    const budget = parseDecimalInput(budgetText);
-    const ratioA = parseFloat(splitA) || 0;
-
-    if (budget <= 0) {
-      setError("Informe um orçamento válido.");
-      return;
-    }
-    if (ratioA < 0 || ratioA > 100) {
-      setError("A porcentagem deve estar entre 0 e 100.");
-      return;
-    }
-
-    setSaving(true);
+  const onSubmit = async (values: CostPlanFormValues) => {
+    setSubmitError("");
     try {
       const { error: saveError } = await updateCostPlan({
-        monthly_budget: budget,
-        split_ratio_a: ratioA,
-        split_ratio_b: 100 - ratioA,
+        monthly_budget: values.budget,
+        split_ratio_a: values.splitA,
+        split_ratio_b: 100 - values.splitA,
       });
 
       if (saveError) {
-        setError(saveError);
+        setSubmitError(saveError);
         return;
       }
     } catch {
-      setError("Erro inesperado ao salvar.");
+      setSubmitError("Erro inesperado ao salvar.");
       return;
-    } finally {
-      setSaving(false);
     }
 
     router.back();
@@ -98,28 +100,34 @@ export default function EditCostPlan() {
           Ajuste o orçamento mensal e a divisão de custos entre o casal
         </Text>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+        <FormError message={submitError} variant="plain" />
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Orçamento mensal</Text>
           <Text style={styles.cardDescription}>
             Valor total disponível para as despesas do mês
           </Text>
-          <View style={styles.currencyInput}>
-            <Text style={styles.currencySymbol}>R$</Text>
-            <TextInput
-              style={styles.budgetInput}
-              value={budgetText}
-              onChangeText={setBudgetText}
-              placeholder="0,00"
-              keyboardType="decimal-pad"
-              placeholderTextColor="#CCC"
-            />
-          </View>
+          <Controller
+            control={control}
+            name="budget"
+            render={({ field }) => (
+              <View style={styles.currencyInput}>
+                <Text style={styles.currencySymbol}>R$</Text>
+                <TextInput
+                  style={styles.budgetInput}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="0,00"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor="#CCC"
+                />
+              </View>
+            )}
+          />
+          {errors.budget?.message ? (
+            <Text style={styles.errorText}>{errors.budget.message}</Text>
+          ) : null}
 
           {combinedIncome > 0 && (
             <Pressable
@@ -146,26 +154,28 @@ export default function EditCostPlan() {
             <View style={styles.splitPerson}>
               <View style={styles.splitAvatar}>
                 <Text style={styles.splitAvatarText}>
-                  {profile?.full_name
-                    ?.split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase() ?? "??"}
+                  {getInitials(profile?.full_name, "??")}
                 </Text>
               </View>
               <Text style={styles.splitName} numberOfLines={1}>
                 {profile?.full_name}
               </Text>
               <View style={styles.percentInput}>
-                <TextInput
-                  style={styles.percentField}
-                  value={splitA}
-                  onChangeText={setSplitA}
-                  keyboardType="decimal-pad"
-                  maxLength={5}
-                  placeholder="50"
-                  placeholderTextColor="#CCC"
+                <Controller
+                  control={control}
+                  name="splitA"
+                  render={({ field }) => (
+                    <TextInput
+                      style={styles.percentField}
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      keyboardType="decimal-pad"
+                      maxLength={5}
+                      placeholder="50"
+                      placeholderTextColor="#CCC"
+                    />
+                  )}
                 />
                 <Text style={styles.percentSymbol}>%</Text>
               </View>
@@ -180,12 +190,7 @@ export default function EditCostPlan() {
             <View style={styles.splitPerson}>
               <View style={[styles.splitAvatar, styles.splitAvatarPartner]}>
                 <Text style={styles.splitAvatarText}>
-                  {partnerInfo?.full_name
-                    ?.split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase() ?? "??"}
+                  {getInitials(partnerInfo?.full_name, "??")}
                 </Text>
               </View>
               <Text style={styles.splitName} numberOfLines={1}>
@@ -200,13 +205,18 @@ export default function EditCostPlan() {
             </View>
           </View>
 
+          {errors.splitA?.message ? (
+            <Text style={styles.errorText}>{errors.splitA.message}</Text>
+          ) : null}
+
           {idealSplit && (
             <View style={styles.idealSuggestion}>
               <Text style={styles.idealSuggestionTitle}>
                 Divisão ideal sugerida
               </Text>
               <Text style={styles.idealSuggestionText}>
-                {profile?.full_name}: {idealSplit.ratio_a}% / {partnerInfo?.full_name}: {idealSplit.ratio_b}%
+                {profile?.full_name}: {idealSplit.ratio_a}% /{" "}
+                {partnerInfo?.full_name}: {idealSplit.ratio_b}%
               </Text>
               <Text style={styles.idealSuggestionHint}>
                 Calculado proporcionalmente com base na renda mensal
@@ -226,19 +236,15 @@ export default function EditCostPlan() {
           )}
         </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.saveButton,
-            saving && styles.saveButtonDisabled,
-            pressed && styles.saveButtonPressed,
-          ]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? "Salvando..." : "Salvar alterações"}
-          </Text>
-        </Pressable>
+        <PrimaryButton
+          title={isSubmitting ? "Salvando..." : "Salvar alterações"}
+          onPress={handleSubmit(onSubmit)}
+          loading={isSubmitting}
+          style={styles.saveButton}
+          textStyle={styles.saveButtonText}
+          disabledStyle={styles.saveButtonDisabled}
+          pressedStyle={styles.saveButtonPressed}
+        />
 
         <Pressable
           style={({ pressed }) => [

@@ -10,25 +10,24 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Link, router } from "expo-router";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
 import type { PartnerLookup } from "../../src/types/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  partnerCodeFormSchema,
+  type PartnerCodeFormInput,
+  type PartnerCodeFormValues,
+} from "../../src/domain/account/schemas";
+import { FormError, FormField } from "../../src/components/forms";
+import { getInitials } from "../../src/utils/initials";
 import { styles } from "../../src/styles/link-partner";
 import { C } from "../../src/theme/colors";
 
 function formatCode(code: string): string {
   if (code.length !== 8) return code;
   return `${code.slice(0, 4)}-${code.slice(4, 8)}`;
-}
-
-function getInitials(name: string | undefined | null): string {
-  if (!name) return "??";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 export default function LinkPartner() {
@@ -41,11 +40,9 @@ export default function LinkPartner() {
     linkPartner,
     acceptInvitation,
     rejectInvitation,
-    refreshProfile,
   } = useAuth();
 
-  const [partnerCode, setPartnerCode] = useState("");
-  const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
   const [linking, setLinking] = useState(false);
   const [accepting, setAccepting] = useState(false);
@@ -54,6 +51,18 @@ export default function LinkPartner() {
   const [copied, setCopied] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const hasNavigated = useRef(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PartnerCodeFormInput, unknown, PartnerCodeFormValues>({
+    resolver: zodResolver(partnerCodeFormSchema),
+    defaultValues: { code: "" },
+  });
+
+  const codeValue = useWatch({ control, name: "code" }) ?? "";
+  const normalizedCodeLength = codeValue.replace(/[^A-Za-z0-9]/g, "").length;
 
   useEffect(() => {
     AsyncStorage.setItem("@registration_step", "link").catch(() => {});
@@ -86,20 +95,14 @@ export default function LinkPartner() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleLookup = async () => {
-    setError("");
-    const code = partnerCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    if (code.length !== 8) {
-      setError("O código deve ter 8 caracteres.");
-      return;
-    }
-
+  const handleLookup = async (values: PartnerCodeFormValues) => {
+    setSubmitError("");
     setLookingUp(true);
-    const { error: lookupError, partner } = await lookupPartner(code);
+    const { error: lookupError, partner } = await lookupPartner(values.code);
     setLookingUp(false);
 
     if (lookupError) {
-      setError(lookupError);
+      setSubmitError(lookupError);
       setFoundPartner(null);
       return;
     }
@@ -109,40 +112,39 @@ export default function LinkPartner() {
     }
   };
 
-  const handleLink = async () => {
-    setError("");
-    const code = partnerCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const handleLink = async (values: PartnerCodeFormValues) => {
+    setSubmitError("");
 
     setLinking(true);
-    const { error: linkError } = await linkPartner(code);
+    const { error: linkError } = await linkPartner(values.code);
     setLinking(false);
 
     if (linkError) {
-      setError(linkError);
+      setSubmitError(linkError);
     }
   };
 
   const handleAccept = async () => {
     if (!couple) return;
-    setError("");
+    setSubmitError("");
     setAccepting(true);
     const { error: acceptError } = await acceptInvitation(couple.id);
     setAccepting(false);
 
     if (acceptError) {
-      setError(acceptError);
+      setSubmitError(acceptError);
     }
   };
 
   const handleReject = async () => {
     if (!couple) return;
-    setError("");
+    setSubmitError("");
     setRejecting(true);
     const { error: rejectError } = await rejectInvitation(couple.id);
     setRejecting(false);
 
     if (rejectError) {
-      setError(rejectError);
+      setSubmitError(rejectError);
     }
   };
 
@@ -164,13 +166,13 @@ export default function LinkPartner() {
             <View style={styles.avatarRow}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {getInitials(partnerInfo?.full_name)}
+                  {getInitials(partnerInfo?.full_name, "??")}
                 </Text>
               </View>
               <View style={styles.connectionLine} />
               <View style={[styles.avatar, styles.avatarPending]}>
                 <Text style={styles.avatarText}>
-                  {getInitials(profile?.full_name)}
+                  {getInitials(profile?.full_name, "??")}
                 </Text>
                 <View style={styles.pendingBadge}>
                   <Text style={styles.pendingBadgeText}>Você</Text>
@@ -179,14 +181,11 @@ export default function LinkPartner() {
             </View>
 
             <Text style={styles.inviteText}>
-              {partnerInfo?.full_name ?? "Alguém"} quer começar uma vida a dois com você
+              {partnerInfo?.full_name ?? "Alguém"} quer começar uma vida a dois
+              com você
             </Text>
 
-            {error ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            ) : null}
+            <FormError message={submitError} variant="plain" />
 
             <View style={styles.actionRow}>
               <Pressable
@@ -244,13 +243,13 @@ export default function LinkPartner() {
             <View style={styles.avatarRow}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {getInitials(profile?.full_name)}
+                  {getInitials(profile?.full_name, "??")}
                 </Text>
               </View>
               <View style={styles.connectionLine} />
               <View style={[styles.avatar, styles.avatarPending]}>
                 <Text style={styles.avatarText}>
-                  {getInitials(partnerInfo?.full_name)}
+                  {getInitials(partnerInfo?.full_name, "??")}
                 </Text>
                 <View style={styles.pendingBadge}>
                   <Text style={styles.pendingBadgeText}>Pendente</Text>
@@ -314,13 +313,13 @@ export default function LinkPartner() {
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {getInitials(profile?.full_name)}
+              {getInitials(profile?.full_name, "??")}
             </Text>
           </View>
           <View style={[styles.connectionLine, styles.connectionLineSolid]} />
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {getInitials(partnerInfo?.full_name)}
+              {getInitials(partnerInfo?.full_name, "??")}
             </Text>
           </View>
         </View>
@@ -330,7 +329,9 @@ export default function LinkPartner() {
         </View>
 
         <View style={styles.checkmarkContainer}>
-          <Text style={styles.checkmark}>{confirmed ? "\u2705" : "\u2764\uFE0F"}</Text>
+          <Text style={styles.checkmark}>
+            {confirmed ? "\u2705" : "\u2764\uFE0F"}
+          </Text>
         </View>
 
         <Text style={styles.confirmedText}>
@@ -368,14 +369,15 @@ export default function LinkPartner() {
         <View style={styles.header}>
           <Text style={styles.title}>Vincular parceiro</Text>
           <Text style={styles.subtitle}>
-            Conecte-se com a pessoa que vai compartilhar a vida financeira com você
+            Conecte-se com a pessoa que vai compartilhar a vida financeira com
+            você
           </Text>
         </View>
 
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {getInitials(profile?.full_name)}
+              {getInitials(profile?.full_name, "??")}
             </Text>
           </View>
           <View style={[styles.connectionLine, styles.connectionLineDashed]} />
@@ -406,48 +408,52 @@ export default function LinkPartner() {
           Compartilhe este código com seu parceiro e insira o código dele abaixo
         </Text>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText} selectable>{error}</Text>
-          </View>
-        ) : null}
+        <FormError message={submitError} variant="plain" />
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Código do parceiro</Text>
+        <FormField
+          label="Código do parceiro"
+          error={errors.code?.message}
+          labelStyle={styles.label}
+        >
           <View style={styles.codeInputRow}>
-            <TextInput
-              style={styles.input}
-              value={partnerCode}
-              onChangeText={setPartnerCode}
-              placeholder="A7F3-B2C1"
-              autoCapitalize="characters"
-              maxLength={9}
-              placeholderTextColor="#999"
+            <Controller
+              control={control}
+              name="code"
+              render={({ field }) => (
+                <TextInput
+                  style={styles.input}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="A7F3-B2C1"
+                  autoCapitalize="characters"
+                  maxLength={9}
+                  placeholderTextColor="#999"
+                />
+              )}
             />
             <Pressable
               style={({ pressed }) => [
                 styles.lookupButton,
-                (partnerCode.replace(/[^A-Za-z0-9]/g, "").length !== 8 || lookingUp) &&
+                (normalizedCodeLength !== 8 || lookingUp) &&
                   styles.lookupButtonDisabled,
                 pressed && styles.lookupButtonPressed,
               ]}
-              onPress={handleLookup}
-              disabled={
-                partnerCode.replace(/[^A-Za-z0-9]/g, "").length !== 8 || lookingUp
-              }
+              onPress={handleSubmit(handleLookup)}
+              disabled={normalizedCodeLength !== 8 || lookingUp}
             >
               <Text style={styles.lookupButtonText}>
                 {lookingUp ? "..." : "Verificar"}
               </Text>
             </Pressable>
           </View>
-        </View>
+        </FormField>
 
         {foundPartner && (
           <View style={styles.partnerCard}>
             <View style={styles.partnerAvatar}>
               <Text style={styles.partnerAvatarText}>
-                {getInitials(foundPartner.full_name)}
+                {getInitials(foundPartner.full_name, "??")}
               </Text>
             </View>
             <View style={styles.partnerInfo}>
@@ -460,7 +466,7 @@ export default function LinkPartner() {
                 linking && styles.confirmButtonDisabled,
                 pressed && styles.confirmButtonPressed,
               ]}
-              onPress={handleLink}
+              onPress={handleSubmit(handleLink)}
               disabled={linking}
             >
               <Text style={styles.confirmButtonText}>
