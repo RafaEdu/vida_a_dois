@@ -28,24 +28,41 @@ export async function createExpense(
   coupleId: string,
   userId: string,
   data: ExpenseInput,
-): Promise<{ error?: string }> {
-  const { error } = await supabase.from("expenses").insert({
-    ...data,
-    couple_id: coupleId,
-    created_by: userId,
-    paid: data.paid ?? false,
-    paid_by: data.paid_by || userId,
-    is_recurring: data.is_recurring ?? false,
-  });
-  return { error: error?.message };
+): Promise<ServiceResult<Expense>> {
+  const { data: created, error } = await supabase
+    .from("expenses")
+    .insert({
+      ...data,
+      couple_id: coupleId,
+      created_by: userId,
+      paid: data.paid ?? false,
+      paid_by: data.paid_by || userId,
+      is_recurring: data.is_recurring ?? false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return fail(toAppError(error, "Não foi possível salvar a despesa."));
+  }
+  return ok(created as Expense);
 }
 
 export async function updateExpense(
   id: string,
   data: Partial<ExpenseInput>,
-): Promise<{ error?: string }> {
-  const { error } = await supabase.from("expenses").update(data).eq("id", id);
-  return { error: error?.message };
+): Promise<ServiceResult<Expense>> {
+  const { data: updated, error } = await supabase
+    .from("expenses")
+    .update(data)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    return fail(toAppError(error, "Não foi possível atualizar a despesa."));
+  }
+  return ok(updated as Expense);
 }
 
 export interface MarkExpensePaidResult {

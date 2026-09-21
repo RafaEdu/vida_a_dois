@@ -18,6 +18,7 @@ import {
   applyIncomeDelta,
   subscribeToFinance,
 } from "../services/realtime";
+import { sortExpenses, sortIncomes } from "../domain/finance/order";
 import { toAppError } from "../utils/result";
 import type {
   CloseMonthResult,
@@ -95,14 +96,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         if (expenseResult.error) {
           setExpensesError(expenseResult.error.message);
         } else {
-          setExpenses(expenseResult.data);
+          setExpenses(sortExpenses(expenseResult.data));
           setExpensesError(null);
         }
 
         if (incomeResult.error) {
           setIncomesError(incomeResult.error.message);
         } else {
-          setIncomes(incomeResult.data);
+          setIncomes(sortIncomes(incomeResult.data));
           setIncomesError(null);
         }
 
@@ -152,7 +153,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setExpensesError(result.error.message);
         return;
       }
-      setExpenses(result.data);
+      setExpenses(sortExpenses(result.data));
     } catch (err) {
       setExpensesError(toAppError(err, "Erro ao carregar despesas.").message);
     } finally {
@@ -170,7 +171,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setIncomesError(result.error.message);
         return;
       }
-      setIncomes(result.data);
+      setIncomes(sortIncomes(result.data));
     } catch (err) {
       setIncomesError(toAppError(err, "Erro ao carregar receitas.").message);
     } finally {
@@ -182,35 +183,47 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     async (data: ExpenseInput) => {
       if (!user || !coupleId) return { error: "No user or couple" };
       try {
-        const { error } = await expenseService.createExpense(
+        const result = await expenseService.createExpense(
           coupleId,
           user.id,
           data,
         );
-        if (error) return { error };
+        if (result.error) return { error: result.error.message };
+
+        setExpenses((prev) =>
+          applyExpenseDelta(prev, {
+            eventType: "INSERT",
+            new: result.data,
+            old: { id: result.data.id },
+          }),
+        );
         return {};
       } catch (err) {
         return { error: toAppError(err, "Erro ao salvar despesa.").message };
-      } finally {
-        fetchExpenses().catch(() => {});
       }
     },
-    [user, coupleId, fetchExpenses],
+    [user, coupleId],
   );
 
   const updateExpense = useCallback(
     async (id: string, data: Partial<ExpenseInput>) => {
       try {
-        const { error } = await expenseService.updateExpense(id, data);
-        if (error) return { error };
+        const result = await expenseService.updateExpense(id, data);
+        if (result.error) return { error: result.error.message };
+
+        setExpenses((prev) =>
+          applyExpenseDelta(prev, {
+            eventType: "UPDATE",
+            new: result.data,
+            old: { id },
+          }),
+        );
         return {};
       } catch (err) {
         return { error: toAppError(err, "Erro ao atualizar despesa.").message };
-      } finally {
-        fetchExpenses().catch(() => {});
       }
     },
-    [fetchExpenses],
+    [],
   );
 
   const markExpensePaid = useCallback(async (id: string) => {
@@ -247,55 +260,62 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const deleteExpense = useCallback(
-    async (id: string) => {
-      const { error } = await expenseService.deleteExpense(id);
-      if (error) return { error };
-      await fetchExpenses();
-      return {};
-    },
-    [fetchExpenses],
-  );
+  const deleteExpense = useCallback(async (id: string) => {
+    const { error } = await expenseService.deleteExpense(id);
+    if (error) return { error };
+    setExpenses((prev) => prev.filter((expense) => expense.id !== id));
+    return {};
+  }, []);
 
   const addIncome = useCallback(
     async (data: IncomeInput) => {
       if (!user || !coupleId) return { error: "No user or couple" };
       try {
-        const { error } = await incomeService.createIncome(
+        const result = await incomeService.createIncome(
           coupleId,
           user.id,
           data,
         );
-        if (error) return { error };
+        if (result.error) return { error: result.error.message };
+
+        setIncomes((prev) =>
+          applyIncomeDelta(prev, {
+            eventType: "INSERT",
+            new: result.data,
+            old: { id: result.data.id },
+          }),
+        );
         return {};
       } catch (err) {
         return { error: toAppError(err, "Erro ao salvar receita.").message };
-      } finally {
-        fetchIncomes().catch(() => {});
       }
     },
-    [user, coupleId, fetchIncomes],
+    [user, coupleId],
   );
 
   const updateIncome = useCallback(
     async (id: string, data: Partial<IncomeInput>) => {
-      const { error } = await incomeService.updateIncome(id, data);
-      if (error) return { error };
-      await fetchIncomes();
+      const result = await incomeService.updateIncome(id, data);
+      if (result.error) return { error: result.error.message };
+
+      setIncomes((prev) =>
+        applyIncomeDelta(prev, {
+          eventType: "UPDATE",
+          new: result.data,
+          old: { id },
+        }),
+      );
       return {};
     },
-    [fetchIncomes],
+    [],
   );
 
-  const deleteIncome = useCallback(
-    async (id: string) => {
-      const { error } = await incomeService.deleteIncome(id);
-      if (error) return { error };
-      await fetchIncomes();
-      return {};
-    },
-    [fetchIncomes],
-  );
+  const deleteIncome = useCallback(async (id: string) => {
+    const { error } = await incomeService.deleteIncome(id);
+    if (error) return { error };
+    setIncomes((prev) => prev.filter((income) => income.id !== id));
+    return {};
+  }, []);
 
   const closeMonth = useCallback(async () => {
     if (!coupleId) return { error: "No couple" };

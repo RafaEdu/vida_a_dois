@@ -91,14 +91,39 @@ beforeEach(() => {
 });
 
 describe("applyExpenseDelta", () => {
-  it("insere uma despesa nova no início", () => {
-    const next = applyExpenseDelta([], {
-      eventType: "INSERT",
-      new: makeExpense(),
-      old: { id: "e1" },
+  it("insere uma despesa mantendo a ordenação canônica", () => {
+    const older = makeExpense({
+      id: "e1",
+      due_date: "2026-09-05",
+      created_at: "2026-08-01T12:00:00.000Z",
+    });
+    const newer = makeExpense({
+      id: "e2",
+      due_date: "2026-10-05",
+      created_at: "2026-09-01T12:00:00.000Z",
     });
 
-    expect(next.map((item) => item.id)).toEqual(["e1"]);
+    const next = applyExpenseDelta([older], {
+      eventType: "INSERT",
+      new: newer,
+      old: { id: "e2" },
+    });
+
+    expect(next.map((item) => item.id)).toEqual(["e2", "e1"]);
+  });
+
+  it("reposiciona a despesa ao atualizar o vencimento", () => {
+    const first = makeExpense({ id: "e1", due_date: "2026-10-05" });
+    const second = makeExpense({ id: "e2", due_date: "2026-09-05" });
+    const updated = makeExpense({ id: "e2", due_date: "2026-11-05" });
+
+    const next = applyExpenseDelta([first, second], {
+      eventType: "UPDATE",
+      new: updated,
+      old: { id: "e2" },
+    });
+
+    expect(next.map((item) => item.id)).toEqual(["e2", "e1"]);
   });
 
   it("atualiza sem duplicar", () => {

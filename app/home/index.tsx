@@ -53,12 +53,10 @@ export default function Home() {
     userState,
     expenses,
     incomes,
-    fetchExpenses,
     markExpensePaid,
     signOut,
   } = useAuth();
   const hasNavigated = useRef(false);
-  const hasFetched = useRef(false);
 
   useEffect(() => {
     if (hasNavigated.current) return;
@@ -67,13 +65,6 @@ export default function Home() {
       router.replace("/");
     }
   }, [userState]);
-
-  useEffect(() => {
-    if (couple?.status === "active" && !hasFetched.current) {
-      hasFetched.current = true;
-      fetchExpenses();
-    }
-  }, [couple?.status, fetchExpenses]);
 
   const summary = useMemo(
     () =>

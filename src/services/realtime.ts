@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import type { Couple, Expense, Income } from "../types/database";
+import { sortExpenses, sortIncomes } from "../domain/finance/order";
 
 export type RealtimePayload<T> = {
   eventType: "INSERT" | "UPDATE" | "DELETE";
@@ -8,9 +9,8 @@ export type RealtimePayload<T> = {
 };
 
 function upsert<T extends { id: string }>(list: T[], item: T): T[] {
-  const exists = list.some((x) => x.id === item.id);
-  if (!exists) return [item, ...list];
-  return list.map((x) => (x.id === item.id ? item : x));
+  const withoutItem = list.filter((x) => x.id !== item.id);
+  return [item, ...withoutItem];
 }
 
 export function applyExpenseDelta(
@@ -20,7 +20,7 @@ export function applyExpenseDelta(
   if (payload.eventType === "DELETE") {
     return list.filter((x) => x.id !== payload.old.id);
   }
-  return upsert(list, payload.new);
+  return sortExpenses(upsert(list, payload.new));
 }
 
 export function applyIncomeDelta(
@@ -30,7 +30,7 @@ export function applyIncomeDelta(
   if (payload.eventType === "DELETE") {
     return list.filter((x) => x.id !== payload.old.id);
   }
-  return upsert(list, payload.new);
+  return sortIncomes(upsert(list, payload.new));
 }
 
 export function subscribeToCoupleChanges(

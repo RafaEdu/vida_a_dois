@@ -61,6 +61,29 @@ manteve o bootstrap atômico.
 - [ ] 7. Alterar um lançamento e confirmar que as telas continuam
       reagindo via Realtime sem erro.
 
+## Estratégia de sincronização (Fase 7)
+
+Validar que o app usa um único snapshot inicial, atualiza o estado local por
+`id` após cada mutation e deixa o Realtime apenas reconciliar eventos do
+parceiro, sem refetch incondicional.
+
+- [ ] 1. Abrir a Home já vinculado e confirmar que os lançamentos aparecem
+      sem piscar e sem `fetchExpenses` duplicado.
+- [ ] 2. Cadastrar uma despesa e confirmar que ela aparece na lista e na Home
+      sem nova consulta completa (apenas o registro criado entra no estado).
+- [ ] 3. Editar descrição/valor/vencimento e confirmar a reposição na ordem
+      canônica sem recarregar a lista.
+- [ ] 4. Marcar como paga e desmarcar e confirmar que a ordem se mantém.
+- [ ] 5. Excluir uma despesa e uma receita e confirmar a remoção imediata.
+- [ ] 6. Cadastrar/editar/excluir receita e confirmar o mesmo comportamento.
+- [ ] 7. Com dois aparelhos, confirmar que as alterações do parceiro chegam
+      por Realtime e não reiniciam o snapshot.
+- [ ] 8. Confirmar que a ordenação após um evento Realtime é igual à do
+      snapshot inicial (despesas por vencimento desc., receitas por
+      recebimento desc., `created_at` como desempate/fallback).
+- [ ] 9. Fechar o mês e confirmar que o `closeMonth` continua reconciliando
+      o perfil/casal sem refetch financeiro desnecessário.
+
 ## Registro da execução
 
 | Data | Responsável | Versão/commit | Resultado | Observações |
