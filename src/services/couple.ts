@@ -15,13 +15,20 @@ import {
 } from "../utils/result";
 import type { ServiceResult } from "../utils/result";
 
-export async function fetchCouple(
+/**
+ * Vínculo aberto relevante do usuário (`pending` ou `active`). Históricos
+ * `ended` não aparecem aqui e não interferem no bootstrap.
+ */
+export async function fetchCurrentCouple(
   userId: string,
 ): Promise<ServiceResult<Couple | null>> {
   const { data, error } = await supabase
     .from("couples")
     .select("*")
     .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+    .in("status", ["pending", "active"])
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) {
@@ -30,6 +37,28 @@ export async function fetchCouple(
     );
   }
   return ok((data as Couple) ?? null);
+}
+
+/**
+ * Relacionamentos encerrados do usuário, do mais recente para o mais antigo.
+ * Apenas leitura; a experiência de histórico é construída na Fase 13.
+ */
+export async function fetchRelationshipHistory(
+  userId: string,
+): Promise<ServiceResult<Couple[]>> {
+  const { data, error } = await supabase
+    .from("couples")
+    .select("*")
+    .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+    .eq("status", "ended")
+    .order("ended_at", { ascending: false });
+
+  if (error) {
+    return fail(
+      toAppError(error, "Não foi possível carregar o histórico de vínculos."),
+    );
+  }
+  return ok((data as Couple[]) ?? []);
 }
 
 export async function fetchPartner(

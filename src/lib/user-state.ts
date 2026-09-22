@@ -10,8 +10,10 @@ export function deriveUserState(
 ): UserState {
   if (!profile) return "profile_incomplete";
   if (!couple) return "awaiting_partner";
-  if (couple.status === "pending") return "awaiting_partner";
-  return "linked";
+  // `pending` (convite em aberto) e `ended` (histórico) não contam como
+  // vínculo atual. Somente `active` abre o app.
+  if (couple.status === "active") return "linked";
+  return "awaiting_partner";
 }
 
 export function deriveBootstrapRoute(

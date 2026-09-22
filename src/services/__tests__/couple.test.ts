@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { supabase } from "../../lib/supabase";
 import type { Couple } from "../../types/domain";
-import { fetchIdealSplit, fetchPartner } from "../couple";
+import {
+  fetchCurrentCouple,
+  fetchIdealSplit,
+  fetchPartner,
+  fetchRelationshipHistory,
+} from "../couple";
 
 jest.mock("../../lib/supabase", () => ({
   supabase: {
@@ -14,13 +19,9 @@ interface QueryResult {
   error: unknown;
 }
 
-interface ChainCall {
-  table: string;
-  select: string;
-  eq: [string, unknown];
-}
+type RecordedCall = Record<string, unknown>;
 
-let calls: ChainCall[];
+let calls: RecordedCall[];
 let resultsByTable: Record<string, QueryResult>;
 
 const fromMock = supabase.from as unknown as {
@@ -40,6 +41,8 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     shared_balance: 0,
     created_at: "2026-01-01T00:00:00.000Z",
     linked_at: "2026-01-02T00:00:00.000Z",
+    ended_at: null,
+    ended_by: null,
     last_closed_month: null,
     ...overrides,
   } as Couple;
@@ -51,25 +54,101 @@ beforeEach(() => {
 
   fromMock.mockReset();
   fromMock.mockImplementation((table: string) => {
-    let select = "";
-    let eq: [string, unknown] = ["", ""];
+    const record: RecordedCall = { table };
 
-    const maybeSingle = async () => {
-      calls.push({ table, select, eq });
-      return resultsByTable[table] ?? { data: null, error: null };
+    const resolve = (): Promise<QueryResult> => {
+      calls.push(record);
+      return Promise.resolve(
+        resultsByTable[table] ?? { data: null, error: null },
+      );
     };
 
-    const eqBuilder = (column: string, value: unknown) => {
-      eq = [column, value];
-      return { maybeSingle };
+    const api = {
+      select(columns: string) {
+        record.select = columns;
+        return api;
+      },
+      eq(column: string, value: unknown) {
+        record.eq = [column, value];
+        return api;
+      },
+      or(filter: string) {
+        record.or = filter;
+        return api;
+      },
+      in(column: string, values: unknown[]) {
+        record.in = [column, values];
+        return api;
+      },
+      order(column: string, options?: unknown) {
+        record.order = [column, options];
+        return api;
+      },
+      limit(count: number) {
+        record.limit = count;
+        return api;
+      },
+      maybeSingle() {
+        return resolve();
+      },
+      then(onFulfilled: (value: QueryResult) => unknown) {
+        return resolve().then(onFulfilled);
+      },
     };
 
-    const selectBuilder = (columns: string) => {
-      select = columns;
-      return { eq: eqBuilder };
-    };
+    return api;
+  });
+});
 
-    return { select: selectBuilder };
+describe("fetchCurrentCouple", () => {
+  it("busca apenas vínculos abertos (pending/active), do mais recente", async () => {
+    resultsByTable["couples"] = { data: makeCouple(), error: null };
+
+    const result = await fetchCurrentCouple("u1");
+
+    expect(result.error).toBeNull();
+    expect(result.data?.id).toBe("c1");
+    expect(calls).toContainEqual({
+      table: "couples",
+      select: "*",
+      or: "user_a.eq.u1,user_b.eq.u1",
+      in: ["status", ["pending", "active"]],
+      order: ["created_at", { ascending: false }],
+      limit: 1,
+    });
+  });
+
+  it("devolve null quando o usuário só tem histórico encerrado", async () => {
+    resultsByTable["couples"] = { data: null, error: null };
+
+    const result = await fetchCurrentCouple("u1");
+
+    expect(result.error).toBeNull();
+    expect(result.data).toBeNull();
+  });
+});
+
+describe("fetchRelationshipHistory", () => {
+  it("lista vínculos encerrados ordenados por ended_at", async () => {
+    const ended = makeCouple({
+      id: "c-old",
+      status: "ended",
+      ended_at: "2026-03-01T00:00:00.000Z",
+      ended_by: "u1",
+    });
+    resultsByTable["couples"] = { data: [ended], error: null };
+
+    const result = await fetchRelationshipHistory("u1");
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual([ended]);
+    expect(calls).toContainEqual({
+      table: "couples",
+      select: "*",
+      or: "user_a.eq.u1,user_b.eq.u1",
+      eq: ["status", "ended"],
+      order: ["ended_at", { ascending: false }],
+    });
   });
 });
 

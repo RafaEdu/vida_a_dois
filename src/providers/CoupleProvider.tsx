@@ -95,7 +95,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
         setCouple(null);
         setPartnerInfo(null);
       } else {
-        const coupleResult = await coupleService.fetchCouple(uid);
+        const coupleResult = await coupleService.fetchCurrentCouple(uid);
         if (coupleResult.error) {
           throw new Error(coupleResult.error.message);
         }
@@ -162,6 +162,12 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     if (!coupleId || !user) return;
 
     return subscribeToCoupleChanges(coupleId, (updated) => {
+      if (updated.status === "ended") {
+        // Vínculo encerrado deixa de ser o vínculo atual do usuário.
+        refreshProfile().catch(() => {});
+        return;
+      }
+
       setCouple(updated);
       if (updated.status === "active") {
         refreshProfile().catch(() => {});

@@ -10,6 +10,8 @@ function couple(overrides: Partial<Couple> = {}): Couple {
     status: "active",
     linked_at: "2026-07-21T12:00:00.000Z",
     created_at: "2026-07-21T12:00:00.000Z",
+    ended_at: null,
+    ended_by: null,
     last_closed_month: null,
     monthly_budget: 0,
     shared_balance: 0,

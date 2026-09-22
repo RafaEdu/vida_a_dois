@@ -31,6 +31,8 @@ function makeCouple(status: Couple["status"]): Couple {
     last_closed_month: null,
     created_at: "2026-01-01T00:00:00.000Z",
     linked_at: status === "active" ? "2026-01-02T00:00:00.000Z" : null,
+    ended_at: status === "ended" ? "2026-03-01T00:00:00.000Z" : null,
+    ended_by: status === "ended" ? "user-a" : null,
   };
 }
 
@@ -51,6 +53,12 @@ describe("deriveUserState", () => {
 
   it("retorna linked quando o casal está ativo", () => {
     expect(deriveUserState(makeProfile(), makeCouple("active"))).toBe("linked");
+  });
+
+  it("não trata vínculo encerrado como linked", () => {
+    expect(deriveUserState(makeProfile(), makeCouple("ended"))).toBe(
+      "awaiting_partner",
+    );
   });
 });
 

@@ -4,8 +4,10 @@ type Tables = Database["public"]["Tables"];
 
 export type Profile = Tables["profiles"]["Row"];
 
+export type CoupleStatus = "pending" | "active" | "ended";
+
 export type Couple = Omit<Tables["couples"]["Row"], "status"> & {
-  status: "pending" | "active";
+  status: CoupleStatus;
 };
 
 export type Expense = Tables["expenses"]["Row"];

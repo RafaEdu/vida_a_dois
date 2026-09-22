@@ -21,6 +21,8 @@ export type Database = {
       couples: {
         Row: {
           created_at: string;
+          ended_at: string | null;
+          ended_by: string | null;
           id: string;
           last_closed_month: string | null;
           linked_at: string | null;
@@ -34,6 +36,8 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          ended_at?: string | null;
+          ended_by?: string | null;
           id?: string;
           last_closed_month?: string | null;
           linked_at?: string | null;
@@ -47,6 +51,8 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          ended_at?: string | null;
+          ended_by?: string | null;
           id?: string;
           last_closed_month?: string | null;
           linked_at?: string | null;
@@ -69,6 +75,13 @@ export type Database = {
           {
             foreignKeyName: "couples_user_b_fkey";
             columns: ["user_b"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "couples_ended_by_fkey";
+            columns: ["ended_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -278,6 +291,12 @@ export type Database = {
           p_couple_id: string;
         };
         Returns: Json;
+      };
+      rotate_couple_invite_codes: {
+        Args: {
+          p_couple_id: string;
+        };
+        Returns: undefined;
       };
     };
     Enums: {
