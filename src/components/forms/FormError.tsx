@@ -1,32 +1,57 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Text, View } from "react-native";
-import { C } from "../../theme/colors";
-import { formStyles } from "../../styles/forms";
+import { StyleSheet, View } from "react-native";
+import { colors, radius, spacing } from "../../theme";
+import { AppText } from "../ui";
 
 interface FormErrorProps {
   message?: string | null;
   variant?: "box" | "plain";
 }
 
+/** Form-level error feedback (submit/persistence failures). */
 export function FormError({ message, variant = "box" }: FormErrorProps) {
   if (!message) return null;
 
   if (variant === "plain") {
     return (
-      <View style={formStyles.plainErrorBox}>
-        <Text style={formStyles.plainErrorText} selectable>
+      <View style={styles.plain}>
+        <AppText variant="bodySmall" color="danger" selectable>
           {message}
-        </Text>
+        </AppText>
       </View>
     );
   }
 
   return (
-    <View style={formStyles.errorBox}>
-      <MaterialIcons name="error-outline" size={18} color={C.error} />
-      <Text style={formStyles.errorText} selectable>
+    <View style={styles.box}>
+      <MaterialIcons name="error-outline" size={18} color={colors.danger} />
+      <AppText
+        variant="bodySmall"
+        color="danger"
+        style={styles.text}
+        selectable
+      >
         {message}
-      </Text>
+      </AppText>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  box: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  text: {
+    flex: 1,
+  },
+  plain: {
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+});

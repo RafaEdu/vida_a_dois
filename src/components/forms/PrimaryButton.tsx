@@ -1,14 +1,7 @@
 import type { ComponentProps } from "react";
-import {
-  Pressable,
-  Text,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
+import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { C } from "../../theme/colors";
-import { formStyles } from "../../styles/forms";
+import { Button } from "../ui";
 
 type IconName = ComponentProps<typeof MaterialIcons>["name"];
 
@@ -20,6 +13,10 @@ interface PrimaryButtonProps {
   icon?: IconName;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  /**
+   * Kept for the legacy call sites that still pass them. State feedback is now
+   * handled by the canonical `Button`, so these are intentionally ignored.
+   */
   disabledStyle?: StyleProp<ViewStyle>;
   pressedStyle?: StyleProp<ViewStyle>;
 }
@@ -32,26 +29,17 @@ export function PrimaryButton({
   icon,
   style,
   textStyle,
-  disabledStyle,
-  pressedStyle,
 }: PrimaryButtonProps) {
-  const isDisabled = Boolean(disabled || loading);
-
   return (
-    <Pressable
-      style={({ pressed }) => [
-        formStyles.button,
-        style,
-        isDisabled && (disabledStyle ?? formStyles.buttonDisabled),
-        pressed && (pressedStyle ?? formStyles.buttonPressed),
-      ]}
+    <Button
+      title={title}
       onPress={onPress}
-      disabled={isDisabled}
-    >
-      {icon ? (
-        <MaterialIcons name={icon} size={20} color={C.onPrimary} />
-      ) : null}
-      <Text style={[formStyles.buttonText, textStyle]}>{title}</Text>
-    </Pressable>
+      loading={loading}
+      disabled={disabled}
+      icon={icon}
+      fullWidth
+      style={style}
+      textStyle={textStyle}
+    />
   );
 }

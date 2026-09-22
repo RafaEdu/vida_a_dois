@@ -1,7 +1,7 @@
 import { TextInput, type TextInputProps } from "react-native";
-import { C } from "../../theme/colors";
-import { formStyles } from "../../styles/forms";
+import { colors } from "../../theme";
 import { formatCurrencyInput } from "../../utils/currency";
+import { inputStyles } from "./inputStyles";
 
 type MoneyInputProps = Omit<
   TextInputProps,
@@ -26,12 +26,12 @@ export function MoneyInput({
 
   return (
     <TextInput
-      style={[formStyles.input, style]}
+      style={[inputStyles.base, style]}
       value={value}
       onChangeText={handleChange}
       keyboardType={variant === "currency" ? "number-pad" : "decimal-pad"}
       placeholder={placeholder ?? (variant === "currency" ? "R$ 0,00" : "0,00")}
-      placeholderTextColor={C.outlineVariant}
+      placeholderTextColor={colors.textSecondary}
       {...rest}
     />
   );

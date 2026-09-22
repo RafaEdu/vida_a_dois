@@ -1,7 +1,7 @@
 import { TextInput, type TextInputProps } from "react-native";
-import { C } from "../../theme/colors";
-import { formStyles } from "../../styles/forms";
+import { colors } from "../../theme";
 import { formatBirthDateInput, formatDateInput } from "../../utils/date";
+import { inputStyles } from "./inputStyles";
 
 type DateInputProps = Omit<
   TextInputProps,
@@ -28,7 +28,7 @@ export function DateInput({
 
   return (
     <TextInput
-      style={[formStyles.input, style]}
+      style={[inputStyles.base, style]}
       value={value}
       onChangeText={handleChange}
       keyboardType="number-pad"
@@ -36,7 +36,7 @@ export function DateInput({
       placeholder={
         placeholder ?? (variant === "br" ? "DD/MM/AAAA" : "AAAA-MM-DD")
       }
-      placeholderTextColor={C.outlineVariant}
+      placeholderTextColor={colors.textSecondary}
       {...rest}
     />
   );
