@@ -8,7 +8,7 @@ import {
 import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../../src/lib/auth-context";
-import type { CloseMonthResult } from "../../src/types/database";
+import type { CloseMonthResult } from "../../src/types/domain";
 import { formatCurrency } from "../../src/utils/currency";
 import { getCurrentYearMonth } from "../../src/utils/date";
 import {

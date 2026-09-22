@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type Expense, type Income } from "../../types/database";
+import { type Expense, type Income } from "../../types/domain";
 import {
   expenseEditFormSchema,
   incomeEditFormSchema,

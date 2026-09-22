@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { Profile } from "../types/database";
+import type { Profile } from "../types/domain";
 import { fail, ok, toAppError } from "../utils/result";
 import type { ServiceResult } from "../utils/result";
 

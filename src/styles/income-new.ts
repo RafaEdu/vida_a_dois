@@ -1,33 +1,10 @@
 import { StyleSheet, Platform } from "react-native";
 import { C } from "../theme/colors";
-import { shadowSm } from "../theme/shadows";
 
 export const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: C.surface,
-  },
-  /* Header */
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: C.surface,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: C.surfaceContainerHigh,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: C.onSurface,
   },
   /* Scroll */
   scrollContent: {
@@ -139,19 +116,5 @@ export const styles = StyleSheet.create({
     color: C.onPrimary,
     fontSize: 16,
     fontWeight: "700",
-  },
-  /* Cancel */
-  cancelBtn: {
-    alignItems: "center",
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  cancelBtnPressed: {
-    opacity: 0.7,
-  },
-  cancelBtnText: {
-    color: C.onSurfaceVariant,
-    fontSize: 14,
-    fontWeight: "600",
   },
 });

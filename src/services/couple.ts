@@ -5,7 +5,7 @@ import type {
   PartnerLookup,
   CloseMonthResult,
   IdealSplit,
-} from "../types/database";
+} from "../types/domain";
 import {
   extractDomainError,
   fail,
@@ -130,7 +130,7 @@ export async function closeMonth(
         .message,
     };
   }
-  return { result: data as CloseMonthResult };
+  return { result: data as unknown as CloseMonthResult };
 }
 
 export interface CostPlanInput {

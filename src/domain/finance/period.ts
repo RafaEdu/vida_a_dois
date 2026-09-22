@@ -1,4 +1,4 @@
-import type { Expense, Income } from "../../types/database";
+import type { Expense, Income } from "../../types/domain";
 import {
   getYearMonthFromDateOnly,
   getYearMonthFromTimestamp,

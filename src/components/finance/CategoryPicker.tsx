@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { DEFAULT_CATEGORIES } from "../../types/database";
+import { DEFAULT_CATEGORIES } from "../../constants/categories";
 import { C } from "../../theme/colors";
 import { categoryPickerStyles as styles } from "../../styles/category-picker";
 

@@ -11,9 +11,13 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "jest"
+    "test": "jest",
+    "gen:types": "supabase gen types typescript --local > src/types/database.generated.ts",
+    "gen:types:linked": "supabase gen types typescript --linked > src/types/database.generated.ts"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.9.1",
     "@react-native-async-storage/async-storage": "2.2.0",

@@ -3,11 +3,13 @@ import {
   formatBirthDateInput,
   formatDateInput,
   formatDateOnlyForDisplay,
+  formatYearMonthLong,
   getCurrentYearMonth,
   getYearMonthFromDateOnly,
   getYearMonthFromTimestamp,
   isValidDateOnly,
   parseBirthDateToISO,
+  shiftYearMonth,
 } from "../date";
 
 describe("isValidDateOnly", () => {
@@ -91,5 +93,33 @@ describe("getYearMonthFromTimestamp", () => {
 describe("getCurrentYearMonth", () => {
   it("retorna o período atual no formato YYYY-MM", () => {
     expect(getCurrentYearMonth()).toMatch(/^\d{4}-\d{2}$/);
+  });
+});
+
+describe("formatYearMonthLong", () => {
+  it("formata o período em português", () => {
+    expect(formatYearMonthLong("2025-10")).toBe("Outubro de 2025");
+    expect(formatYearMonthLong("2024-01")).toBe("Janeiro de 2024");
+  });
+
+  it("retorna vazio para período inválido", () => {
+    expect(formatYearMonthLong("2025-13")).toBe("");
+    expect(formatYearMonthLong("")).toBe("");
+  });
+});
+
+describe("shiftYearMonth", () => {
+  it("avança e recua meses", () => {
+    expect(shiftYearMonth("2025-10", 1)).toBe("2025-11");
+    expect(shiftYearMonth("2025-10", -1)).toBe("2025-09");
+  });
+
+  it("atravessa a virada de ano", () => {
+    expect(shiftYearMonth("2025-12", 1)).toBe("2026-01");
+    expect(shiftYearMonth("2025-01", -1)).toBe("2024-12");
+  });
+
+  it("retorna o próprio valor para entrada inválida", () => {
+    expect(shiftYearMonth("inválido", 1)).toBe("inválido");
   });
 });

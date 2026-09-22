@@ -6,16 +6,17 @@ import {
   Pressable,
 } from "react-native";
 import { Link } from "expo-router";
-import { useAuth } from "../../src/lib/auth-context";
-import type { IdealSplit } from "../../src/types/database";
-import { formatCurrency } from "../../src/utils/currency";
-import { getCurrentYearMonth } from "../../src/utils/date";
+import { TabScreenHeader } from "../../../src/components/shell";
+import { useAuth } from "../../../src/lib/auth-context";
+import type { IdealSplit } from "../../../src/types/domain";
+import { formatCurrency } from "../../../src/utils/currency";
+import { getCurrentYearMonth } from "../../../src/utils/date";
 import {
   groupExpensesByCategory,
   selectExpensesByMonth,
   sumExpenses,
-} from "../../src/domain/finance/selectors";
-import { styles } from "../../src/styles/cost-plan";
+} from "../../../src/domain/finance/selectors";
+import { styles } from "../../../src/styles/cost-plan";
 
 export default function CostPlan() {
   const { couple, profile, partnerInfo, expenses, fetchIdealSplit } = useAuth();
@@ -44,16 +45,16 @@ export default function CostPlan() {
   const userBAmount = summary.budget * (splitB / 100);
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      contentInsetAdjustmentBehavior="automatic"
-    >
-      <Text style={styles.title}>Plano de custos</Text>
-      <Text style={styles.subtitle}>
-        Resumo do orçamento e divisão de custos do casal
-      </Text>
-
-      <View style={styles.budgetCard}>
+    <View style={styles.root}>
+      <TabScreenHeader
+        title="Planejamento"
+        subtitle="Resumo do orçamento e divisão de custos do casal"
+      />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        <View style={styles.budgetCard}>
         <Text style={styles.budgetLabel}>Orçamento mensal</Text>
         <Text style={styles.budgetValue}>{formatCurrency(summary.budget)}</Text>
         {summary.budget > 0 && (
@@ -213,6 +214,7 @@ export default function CostPlan() {
           <Text style={styles.editButtonText}>Editar plano de custos</Text>
         </Pressable>
       </Link>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

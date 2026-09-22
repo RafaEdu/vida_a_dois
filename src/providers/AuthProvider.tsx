@@ -7,9 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Session, User } from "@supabase/supabase-js";
 import * as authService from "../services/auth";
+import { clearOnboardingDraft } from "../lib/onboarding-draft";
 import type { LoadStatus } from "./bootstrap";
 
 export interface AuthSessionContextValue {
@@ -33,13 +33,6 @@ export interface AuthSessionContextValue {
 }
 
 const AuthSessionContext = createContext<AuthSessionContextValue | null>(null);
-
-const SIGN_OUT_KEYS = [
-  "@registration_step",
-  "@profile_draft_name",
-  "@profile_draft_birthdate",
-  "@profile_draft_income",
-];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -97,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    await AsyncStorage.multiRemove(SIGN_OUT_KEYS).catch(() => {});
+    await clearOnboardingDraft().catch(() => {});
     await authService.signOut();
   }, []);
 

@@ -13,8 +13,7 @@ import { Link, router } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
-import type { PartnerLookup } from "../../src/types/database";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { PartnerLookup } from "../../src/types/domain";
 import {
   partnerCodeFormSchema,
   type PartnerCodeFormInput,
@@ -63,10 +62,6 @@ export default function LinkPartner() {
 
   const codeValue = useWatch({ control, name: "code" }) ?? "";
   const normalizedCodeLength = codeValue.replace(/[^A-Za-z0-9]/g, "").length;
-
-  useEffect(() => {
-    AsyncStorage.setItem("@registration_step", "link").catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (couple?.status === "active") return;

@@ -1,4 +1,4 @@
-import type { Couple } from "../types/database";
+import type { Couple } from "../types/domain";
 
 export type LoadStatus = "loading" | "ready" | "error";
 export type BootstrapStatus = LoadStatus;

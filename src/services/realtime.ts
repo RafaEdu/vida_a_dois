@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { Couple, Expense, Income } from "../types/database";
+import type { Couple, Expense, Income } from "../types/domain";
 import { sortExpenses, sortIncomes } from "../domain/finance/order";
 
 export type RealtimePayload<T> = {

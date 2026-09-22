@@ -1,4 +1,4 @@
-import type { Expense, Income } from "../../types/database";
+import type { Expense, Income } from "../../types/domain";
 
 function datePartOf(timestamp: string | null | undefined): string {
   return timestamp ? timestamp.slice(0, 10) : "";

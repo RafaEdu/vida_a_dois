@@ -26,7 +26,7 @@ import type {
   ExpenseInput,
   Income,
   IncomeInput,
-} from "../types/database";
+} from "../types/domain";
 
 export interface FinanceContextValue {
   expenses: Expense[];

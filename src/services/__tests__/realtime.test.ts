@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { supabase } from "../../lib/supabase";
-import type { Couple, Expense, Income } from "../../types/database";
+import type { Couple, Expense, Income } from "../../types/domain";
 import {
   applyExpenseDelta,
   applyIncomeDelta,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -7,11 +7,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
+import { useOnboardingDraft } from "../../src/hooks/useOnboardingDraft";
 import { parseCurrencyInput } from "../../src/utils/currency";
 import { parseBirthDateToISO } from "../../src/utils/date";
 import {
@@ -29,16 +28,10 @@ import {
 import { styles } from "../../src/styles/profile-setup";
 import { C } from "../../src/theme/colors";
 
-const REGISTRATION_STEP_KEY = "@registration_step";
-const DRAFT_NAME_KEY = "@profile_draft_name";
-const DRAFT_BIRTHDATE_KEY = "@profile_draft_birthdate";
-const DRAFT_INCOME_KEY = "@profile_draft_income";
-
 export default function ProfileSetup() {
-  const { userState, saveProfile } = useAuth();
+  const { saveProfile } = useAuth();
   const [submitError, setSubmitError] = useState("");
-  const hasNavigated = useRef(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { draft, loaded, persist, clear } = useOnboardingDraft();
 
   const {
     control,
@@ -55,48 +48,18 @@ export default function ProfileSetup() {
   const income = useWatch({ control, name: "income" }) ?? "";
 
   useEffect(() => {
-    if (hasNavigated.current) return;
-    if (userState !== "profile_incomplete") {
-      hasNavigated.current = true;
-      router.replace("/");
-    }
-  }, [userState]);
+    if (!loaded) return;
+    reset({
+      fullName: draft.fullName ?? "",
+      birthDate: draft.birthDate ?? "",
+      income: draft.income ?? "",
+    });
+  }, [loaded, draft, reset]);
 
   useEffect(() => {
-    AsyncStorage.setItem(REGISTRATION_STEP_KEY, "profile").catch(() => {});
-
-    AsyncStorage.multiGet([
-      DRAFT_NAME_KEY,
-      DRAFT_BIRTHDATE_KEY,
-      DRAFT_INCOME_KEY,
-    ])
-      .then((values) => {
-        const draft: Record<string, string> = {};
-        for (const [key, val] of values) {
-          if (val) draft[key] = val;
-        }
-        reset({
-          fullName: draft[DRAFT_NAME_KEY] ?? "",
-          birthDate: draft[DRAFT_BIRTHDATE_KEY] ?? "",
-          income: draft[DRAFT_INCOME_KEY] ?? "",
-        });
-      })
-      .catch(() => {});
-  }, [reset]);
-
-  useEffect(() => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      AsyncStorage.multiSet([
-        [DRAFT_NAME_KEY, fullName],
-        [DRAFT_BIRTHDATE_KEY, birthDate],
-        [DRAFT_INCOME_KEY, income],
-      ]).catch(() => {});
-    }, 500);
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, [fullName, birthDate, income]);
+    if (!loaded) return;
+    persist({ fullName, birthDate, income });
+  }, [loaded, fullName, birthDate, income, persist]);
 
   const onSubmit = async (values: ProfileSetupFormValues) => {
     setSubmitError("");
@@ -118,11 +81,7 @@ export default function ProfileSetup() {
     if (saveError) {
       setSubmitError(saveError);
     } else {
-      AsyncStorage.multiRemove([
-        DRAFT_NAME_KEY,
-        DRAFT_BIRTHDATE_KEY,
-        DRAFT_INCOME_KEY,
-      ]).catch(() => {});
+      clear();
     }
   };
 

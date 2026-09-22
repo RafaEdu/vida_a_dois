@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   View,
@@ -11,7 +11,6 @@ import { Link, router } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   signUpFormSchema,
   type SignUpFormInput,
@@ -25,13 +24,11 @@ import {
 import { C } from "../../src/theme/colors";
 import { styles } from "../../src/styles/sign-up";
 
-const REGISTRATION_STEP_KEY = "@registration_step";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignUp() {
-  const { user, signUp } = useAuth();
+  const { signUp } = useAuth();
   const [submitError, setSubmitError] = useState("");
-  const hasNavigated = useRef(false);
 
   const {
     control,
@@ -50,18 +47,6 @@ export default function SignUp() {
   const isPasswordValid = password.length >= 8;
   const passwordsMatch = password === confirmPassword;
   const isFormValid = isEmailValid && isPasswordValid && passwordsMatch;
-
-  useEffect(() => {
-    if (hasNavigated.current) return;
-    if (user && !user.email_confirmed_at) {
-      hasNavigated.current = true;
-      router.replace("/verify-email");
-    }
-  }, [user]);
-
-  useEffect(() => {
-    AsyncStorage.setItem(REGISTRATION_STEP_KEY, "signup").catch(() => {});
-  }, []);
 
   const onSubmit = async (values: SignUpFormValues) => {
     setSubmitError("");

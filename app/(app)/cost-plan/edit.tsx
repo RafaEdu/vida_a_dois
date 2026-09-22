@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../../src/lib/auth-context";
-import type { IdealSplit } from "../../../src/types/database";
+import type { IdealSplit } from "../../../src/types/domain";
 import { formatCurrency } from "../../../src/utils/currency";
 import {
   costPlanFormSchema,

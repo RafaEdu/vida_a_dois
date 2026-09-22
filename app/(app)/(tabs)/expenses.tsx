@@ -8,15 +8,15 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Stack } from "expo-router/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useAuth } from "../../src/lib/auth-context";
-import { type Expense, type Income } from "../../src/types/database";
-import { formatCurrency } from "../../src/utils/currency";
-import { EditModal, type EditTarget } from "../../src/components/finance";
-import { C } from "../../src/theme/colors";
-import { styles } from "../../src/styles/expenses";
+import { useAuth } from "../../../src/lib/auth-context";
+import { type Expense, type Income } from "../../../src/types/domain";
+import { formatCurrency } from "../../../src/utils/currency";
+import { EditModal, type EditTarget } from "../../../src/components/finance";
+import { TabScreenHeader } from "../../../src/components/shell";
+import { C } from "../../../src/theme/colors";
+import { styles } from "../../../src/styles/expenses";
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
@@ -87,11 +87,12 @@ export default function ExpensesList() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Histórico" }} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={[styles.root, { paddingTop: insets.top }]}
+        style={styles.root}
       >
+        <TabScreenHeader title="Lançamentos" />
+
         <View style={styles.tabs}>
           <Pressable
             style={[styles.tab, tab === "expenses" && styles.tabActive]}
@@ -124,7 +125,7 @@ export default function ExpensesList() {
         <ScrollView
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: insets.bottom + 24 },
+            { paddingBottom: insets.bottom + 96 },
           ]}
           showsVerticalScrollIndicator={false}
         >

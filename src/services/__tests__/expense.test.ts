@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { supabase } from "../../lib/supabase";
-import type { Expense } from "../../types/database";
+import type { Expense } from "../../types/domain";
 import { createExpense, markExpensePaid, updateExpense } from "../expense";
 
 jest.mock("../../lib/supabase", () => ({

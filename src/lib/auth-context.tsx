@@ -22,7 +22,7 @@ import type {
   IncomeInput,
   CloseMonthResult,
   IdealSplit,
-} from "../types/database";
+} from "../types/domain";
 
 export type { BootstrapStatus };
 

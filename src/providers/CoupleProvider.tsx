@@ -27,7 +27,7 @@ import type {
   PartnerLookup,
   Profile,
   UserState,
-} from "../types/database";
+} from "../types/domain";
 
 export interface CoupleContextValue {
   profile: Profile | null;

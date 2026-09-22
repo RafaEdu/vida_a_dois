@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { Expense, ExpenseInput } from "../types/database";
+import type { Expense, ExpenseInput } from "../types/domain";
 import {
   extractDomainError,
   fail,

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
-import { deriveBootstrapRoute, deriveUserState } from "../user-state";
-import type { Couple, Profile } from "../../types/database";
+import {
+  deriveBootstrapRoute,
+  deriveGuardRedirect,
+  deriveUserState,
+  getRouteGroup,
+} from "../user-state";
+import type { Couple, Profile } from "../../types/domain";
 
 function makeProfile(): Profile {
   return {
@@ -94,5 +99,105 @@ describe("deriveBootstrapRoute", () => {
         "linked",
       ),
     ).toBe("home");
+  });
+});
+
+describe("getRouteGroup", () => {
+  it("agrupa auth, onboarding e app", () => {
+    expect(getRouteGroup("sign-in")).toBe("auth");
+    expect(getRouteGroup("verify-email")).toBe("auth");
+    expect(getRouteGroup("profile-setup")).toBe("onboarding");
+    expect(getRouteGroup("link-partner")).toBe("onboarding");
+    expect(getRouteGroup("home")).toBe("app");
+  });
+});
+
+describe("deriveGuardRedirect", () => {
+  it("não redireciona quando a rota canônica pertence ao grupo auth", () => {
+    expect(
+      deriveGuardRedirect({
+        canonical: "sign-in",
+        pathname: "/sign-up",
+        group: "auth",
+      }),
+    ).toBeNull();
+  });
+
+  it("expulsa do grupo auth quando o usuário já avançou", () => {
+    expect(
+      deriveGuardRedirect({
+        canonical: "home",
+        pathname: "/sign-in",
+        group: "auth",
+      }),
+    ).toBe("home");
+  });
+
+  it("força verify-email quando o e-mail não foi confirmado", () => {
+    expect(
+      deriveGuardRedirect({
+        canonical: "verify-email",
+        pathname: "/sign-in",
+        group: "auth",
+      }),
+    ).toBe("verify-email");
+    expect(
+      deriveGuardRedirect({
+        canonical: "verify-email",
+        pathname: "/verify-email",
+        group: "auth",
+      }),
+    ).toBeNull();
+  });
+
+  it("no onboarding, redireciona apenas quando o passo canônico é outro", () => {
+    expect(
+      deriveGuardRedirect({
+        canonical: "link-partner",
+        pathname: "/profile-setup",
+        group: "onboarding",
+      }),
+    ).toBe("link-partner");
+    expect(
+      deriveGuardRedirect({
+        canonical: "profile-setup",
+        pathname: "/profile-setup",
+        group: "onboarding",
+      }),
+    ).toBeNull();
+    expect(
+      deriveGuardRedirect({
+        canonical: "sign-in",
+        pathname: "/profile-setup",
+        group: "onboarding",
+      }),
+    ).toBe("sign-in");
+  });
+
+  it("deixa a tela de vínculo tratar a transição para a Home", () => {
+    expect(
+      deriveGuardRedirect({
+        canonical: "home",
+        pathname: "/link-partner",
+        group: "onboarding",
+      }),
+    ).toBeNull();
+  });
+
+  it("expulsa do grupo app enquanto o vínculo não estiver ativo", () => {
+    expect(
+      deriveGuardRedirect({
+        canonical: "link-partner",
+        pathname: "/home",
+        group: "app",
+      }),
+    ).toBe("link-partner");
+    expect(
+      deriveGuardRedirect({
+        canonical: "home",
+        pathname: "/profile",
+        group: "app",
+      }),
+    ).toBeNull();
   });
 });

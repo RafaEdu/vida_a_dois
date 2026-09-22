@@ -3,22 +3,15 @@ import { C } from "../../src/theme/colors";
 import { shadowSm } from "../../src/theme/shadows";
 
 export const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: C.surface,
+  },
   container: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: C.onSurface,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: C.onSurfaceVariant,
-    marginBottom: 24,
+    paddingTop: 8,
+    paddingBottom: 120,
   },
   budgetCard: {
     backgroundColor: C.surfaceContainerLowest,

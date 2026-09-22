@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   ScrollView,
   View,
@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../src/lib/auth-context";
@@ -25,9 +25,8 @@ import { C } from "../../src/theme/colors";
 import { styles } from "../../src/styles/sign-in";
 
 export default function SignIn() {
-  const { user, signIn } = useAuth();
+  const { signIn } = useAuth();
   const [submitError, setSubmitError] = useState("");
-  const hasNavigated = useRef(false);
 
   const {
     control,
@@ -37,18 +36,6 @@ export default function SignIn() {
     resolver: zodResolver(signInFormSchema),
     defaultValues: { email: "", password: "" },
   });
-
-  useEffect(() => {
-    if (hasNavigated.current) return;
-    if (user) {
-      hasNavigated.current = true;
-      if (!user.email_confirmed_at) {
-        router.replace("/verify-email");
-      } else {
-        router.replace("/");
-      }
-    }
-  }, [user]);
 
   const onSubmit = async (values: SignInFormValues) => {
     setSubmitError("");

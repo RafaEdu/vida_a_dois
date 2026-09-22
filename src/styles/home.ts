@@ -1,62 +1,11 @@
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet } from "react-native";
 import { C } from "../../src/theme/colors";
-import { shadow, shadowSm, shadowNav } from "../../src/theme/shadows";
+import { shadowSm } from "../../src/theme/shadows";
 
 export const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: C.surface,
-  },
-  /* Header */
-  header: {
-    backgroundColor: C.surfaceBright,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  avatarStack: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatarBack: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: C.primaryFixed,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
-  },
-  avatarBackText: {
-    color: C.onPrimaryFixed,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  avatarFront: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: C.tertiaryFixed,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: -16,
-    borderWidth: 2,
-    borderColor: C.surfaceBright,
-    zIndex: 2,
-  },
-  avatarFrontText: {
-    color: C.onTertiaryFixed,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: C.primary,
   },
   /* Scroll */
   scrollContent: {
@@ -363,50 +312,5 @@ export const styles = StyleSheet.create({
     color: C.onSurfaceVariant,
     fontSize: 14,
     fontWeight: "500",
-  },
-  /* Bottom Nav */
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: C.surfaceContainerLowest,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingTop: 8,
-    paddingHorizontal: 16,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  navItemActive: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: C.primaryContainer,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    gap: 2,
-  },
-  navLabelActive: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    color: C.onPrimaryContainer,
-  },
-  navItem: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    gap: 2,
-  },
-  navLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    color: C.onSurfaceVariant,
   },
 });

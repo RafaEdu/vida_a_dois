@@ -4,18 +4,16 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   Switch,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../../src/lib/auth-context";
-import { DEFAULT_CATEGORIES } from "../../../src/types/database";
+import { DEFAULT_CATEGORIES } from "../../../src/constants/categories";
 import {
   expenseFormSchema,
   type ExpenseFormInput,
@@ -83,17 +81,8 @@ export default function NewExpense() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.root, { paddingTop: insets.top }]}
+      style={styles.root}
     >
-      {/* Custom Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <MaterialIcons name="arrow-back" size={24} color={C.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Nova despesa</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -251,17 +240,6 @@ export default function NewExpense() {
           disabledStyle={styles.saveBtnDisabled}
           pressedStyle={styles.saveBtnPressed}
         />
-
-        {/* Cancel */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.cancelBtn,
-            pressed && styles.cancelBtnPressed,
-          ]}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.cancelBtnText}>Cancelar</Text>
-        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

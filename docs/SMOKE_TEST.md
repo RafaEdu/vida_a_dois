@@ -109,6 +109,29 @@ validação por schema, erro por campo e submit desabilitado durante o save.
       desabilitado; código válido busca e vincula.
 - [ ] 10. Confirmar visualmente que os formulários mantêm o layout anterior.
 
+## Navegação e onboarding com Expo Router (Fase 9)
+
+Validar que os grupos `(auth)` / `(onboarding)` / `(app)` guardam a navegação
+por layout, que as telas deixaram de se expulsar sozinhas e que o
+`@registration_step` não é mais gravado.
+
+- [ ] 1. Abrir o app deslogado e confirmar que a rota inicial é `sign-in`.
+- [ ] 2. Criar conta: o app vai para `verify-email`, sem depender de
+      `@registration_step`.
+- [ ] 3. Confirmar o e-mail e confirmar que entra no onboarding (`profile-setup`).
+- [ ] 4. Entrar com conta já vinculada e confirmar que nunca aparece
+      `profile-setup`/`link-partner` (o layout `(app)` só libera vinculado).
+- [ ] 5. Em `link-partner`, abrir "Editar meu perfil" (rota compartilhada) e
+      confirmar que o modal abre normalmente.
+- [ ] 6. Concluir o vínculo e confirmar a tela de confirmação antes da Home.
+- [ ] 7. Sair da conta e confirmar o retorno imediato para `sign-in`.
+- [ ] 8. Verificar no AsyncStorage que `@registration_step` não é mais
+      gravado; apenas o rascunho de perfil continua sendo salvo.
+- [ ] 9. Preencher parcialmente o `profile-setup`, sair e voltar: o rascunho
+      deve ser retomado (encapsulado em `useOnboardingDraft`).
+- [ ] 10. Confirmar que a Home permanece acessível após o vínculo e que os
+      redirecionamentos não geram telas piscando.
+
 ## Registro da execução
 
 | Data | Responsável | Versão/commit | Resultado | Observações |

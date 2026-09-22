@@ -6,8 +6,8 @@ export const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
+    paddingTop: 8,
+    paddingBottom: 120,
   },
   avatarContainer: {
     alignItems: "center",

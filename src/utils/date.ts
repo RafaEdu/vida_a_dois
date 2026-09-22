@@ -1,5 +1,21 @@
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const BIRTH_DATE_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+const YEAR_MONTH_PATTERN = /^(\d{4})-(\d{2})$/;
+
+const MONTH_NAMES = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+] as const;
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -78,4 +94,21 @@ export function getCurrentYearMonth(): string {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${now.getFullYear()}-${month}`;
+}
+
+export function formatYearMonthLong(yearMonth: string): string {
+  const match = YEAR_MONTH_PATTERN.exec(yearMonth);
+  if (!match) return "";
+  const name = MONTH_NAMES[Number(match[2]) - 1];
+  if (!name) return "";
+  return `${name} de ${match[1]}`;
+}
+
+export function shiftYearMonth(yearMonth: string, delta: number): string {
+  const match = YEAR_MONTH_PATTERN.exec(yearMonth);
+  if (!match || !Number.isFinite(delta)) return yearMonth;
+
+  const date = new Date(Number(match[1]), Number(match[2]) - 1 + delta, 1);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${date.getFullYear()}-${month}`;
 }

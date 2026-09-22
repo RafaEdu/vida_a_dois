@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import type { Expense, Income } from "../../../types/database";
+import type { Expense, Income } from "../../../types/domain";
 import { sortExpenses, sortIncomes } from "../order";
 
 function makeExpense(overrides: Partial<Expense> = {}): Expense {

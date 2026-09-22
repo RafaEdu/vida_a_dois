@@ -1,4 +1,4 @@
-import type { CloseMonthResult, Expense, Income } from "../../types/database";
+import type { CloseMonthResult, Expense, Income } from "../../types/domain";
 import { isExpenseInYearMonth, isIncomeInYearMonth } from "./period";
 
 export interface CategoryTotal {

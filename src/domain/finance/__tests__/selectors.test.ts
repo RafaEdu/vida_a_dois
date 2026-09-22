@@ -3,7 +3,7 @@ import type {
   CloseMonthResult,
   Expense,
   Income,
-} from "../../../types/database";
+} from "../../../types/domain";
 import {
   calculateBudgetProgress,
   calculateMonthlySummary,
