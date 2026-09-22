@@ -112,3 +112,84 @@ export function shiftYearMonth(yearMonth: string, delta: number): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${date.getFullYear()}-${month}`;
 }
+
+function toDateOnly(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Human label for a date group in the transactions list: `Hoje`, `Ontem` or
+ * the canonical `DD/MM/AAAA`. Returns `Sem data` for missing/invalid values.
+ */
+export function formatDateGroupLabel(
+  dateOnly: string,
+  today = new Date(),
+): string {
+  if (dateOnly === toDateOnly(today)) return "Hoje";
+
+  const yesterday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - 1,
+  );
+  if (dateOnly === toDateOnly(yesterday)) return "Ontem";
+
+  return formatDateOnlyForDisplay(dateOnly) || "Sem data";
+}
+
+/**
+ * Formats a timestamp (ISO string) as the canonical `DD/MM/AAAA` in local
+ * time. Returns an empty string for missing/invalid values.
+ */
+export function formatDateFromTimestamp(
+  value: string | null | undefined,
+): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getFullYear()}`;
+}
+
+/**
+ * Human elapsed time since a timestamp, e.g. `há 3 dias`, `há 2 meses`,
+ * `há 1 ano e 3 meses`. Returns `null` for missing/invalid values.
+ */
+export function formatElapsedSince(
+  value: string | null | undefined,
+  now = new Date(),
+): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs <= 0) return "agora";
+
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "agora";
+  if (minutes < 60) return "há poucos minutos";
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `há ${hours} ${hours === 1 ? "hora" : "horas"}`;
+
+  const days = Math.floor(diffMs / 86400000);
+  if (days < 30) return `há ${days} ${days === 1 ? "dia" : "dias"}`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `há ${months} ${months === 1 ? "mês" : "meses"}`;
+
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  const yearLabel = `${years} ${years === 1 ? "ano" : "anos"}`;
+  if (remainingMonths === 0) return `há ${yearLabel}`;
+
+  const monthLabel = `${remainingMonths} ${
+    remainingMonths === 1 ? "mês" : "meses"
+  }`;
+  return `há ${yearLabel} e ${monthLabel}`;
+}

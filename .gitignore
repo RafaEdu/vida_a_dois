@@ -42,6 +42,10 @@ yarn-error.*
 /android
 /analises
 
+# supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
 PLANO_MELHORIA_VIDA_A_DOIS.md
 REDESIGN_EXECUTION_PLAN.md
 Supabase Performance Security Lints (tpabkmlcwhoitqvgtdzf).csv

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
 import {
   formatBirthDateInput,
+  formatDateFromTimestamp,
+  formatDateGroupLabel,
   formatDateInput,
   formatDateOnlyForDisplay,
+  formatElapsedSince,
   formatYearMonthLong,
   getCurrentYearMonth,
   getYearMonthFromDateOnly,
@@ -121,5 +124,72 @@ describe("shiftYearMonth", () => {
 
   it("retorna o próprio valor para entrada inválida", () => {
     expect(shiftYearMonth("inválido", 1)).toBe("inválido");
+  });
+});
+
+describe("formatDateFromTimestamp", () => {
+  it("formata um timestamp em DD/MM/AAAA no fuso local", () => {
+    const timestamp = new Date(2026, 8, 15, 12).toISOString();
+    expect(formatDateFromTimestamp(timestamp)).toBe("15/09/2026");
+  });
+
+  it("retorna vazio para valores ausentes ou inválidos", () => {
+    expect(formatDateFromTimestamp(null)).toBe("");
+    expect(formatDateFromTimestamp("inválido")).toBe("");
+  });
+});
+
+describe("formatElapsedSince", () => {
+  const now = new Date(2026, 8, 21, 12, 0, 0);
+
+  it("rotula recém-criado como agora", () => {
+    expect(formatElapsedSince(now.toISOString(), now)).toBe("agora");
+    expect(
+      formatElapsedSince(new Date(2026, 8, 21, 11, 55).toISOString(), now),
+    ).toBe("há poucos minutos");
+  });
+
+  it("rotula horas e dias", () => {
+    expect(
+      formatElapsedSince(new Date(2026, 8, 21, 9).toISOString(), now),
+    ).toBe("há 3 horas");
+    expect(
+      formatElapsedSince(new Date(2026, 8, 18, 12).toISOString(), now),
+    ).toBe("há 3 dias");
+  });
+
+  it("rotula meses e anos", () => {
+    expect(
+      formatElapsedSince(new Date(2026, 6, 21, 12).toISOString(), now),
+    ).toBe("há 2 meses");
+    expect(
+      formatElapsedSince(new Date(2026, 5, 21, 12).toISOString(), now),
+    ).toBe("há 3 meses");
+    expect(
+      formatElapsedSince(new Date(2025, 5, 21, 12).toISOString(), now),
+    ).toBe("há 1 ano e 3 meses");
+  });
+
+  it("retorna null para valor ausente ou inválido", () => {
+    expect(formatElapsedSince(null, now)).toBeNull();
+    expect(formatElapsedSince("inválido", now)).toBeNull();
+  });
+});
+
+describe("formatDateGroupLabel", () => {
+  const today = new Date(2026, 8, 21);
+
+  it("rotula hoje e ontem", () => {
+    expect(formatDateGroupLabel("2026-09-21", today)).toBe("Hoje");
+    expect(formatDateGroupLabel("2026-09-20", today)).toBe("Ontem");
+  });
+
+  it("usa a data canônica para datas anteriores", () => {
+    expect(formatDateGroupLabel("2026-09-19", today)).toBe("19/09/2026");
+  });
+
+  it("rotula valores ausentes ou inválidos como Sem data", () => {
+    expect(formatDateGroupLabel("", today)).toBe("Sem data");
+    expect(formatDateGroupLabel("inválido", today)).toBe("Sem data");
   });
 });

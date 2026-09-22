@@ -245,16 +245,6 @@ export default function EditCostPlan() {
           disabledStyle={styles.saveButtonDisabled}
           pressedStyle={styles.saveButtonPressed}
         />
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.cancelButton,
-            pressed && styles.cancelButtonPressed,
-          ]}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

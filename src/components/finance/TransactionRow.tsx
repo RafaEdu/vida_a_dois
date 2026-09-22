@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { colors, radius, spacing } from "../../theme";
-import { AppText, Badge, MoneyText, type BadgeTone } from "../ui";
+import { AppText, Badge, IconButton, MoneyText, type BadgeTone } from "../ui";
 
 type IconName = ComponentProps<typeof MaterialIcons>["name"];
 
@@ -29,6 +29,9 @@ export interface TransactionRowProps {
   recurring?: boolean;
   /** When omitted the row is rendered as static content. */
   onPress?: () => void;
+  /** Optional overflow action (e.g. payment toggle, delete). */
+  onMorePress?: () => void;
+  moreAccessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -47,6 +50,8 @@ export function TransactionRow({
   status,
   recurring = false,
   onPress,
+  onMorePress,
+  moreAccessibilityLabel,
   style,
 }: TransactionRowProps) {
   const isExpense = kind === "expense";
@@ -84,6 +89,17 @@ export function TransactionRow({
         signed
         style={styles.amount}
       />
+
+      {onMorePress ? (
+        <IconButton
+          icon="more-vert"
+          size="sm"
+          accessibilityLabel={
+            moreAccessibilityLabel ?? `Mais opções para ${title}`
+          }
+          onPress={onMorePress}
+        />
+      ) : null}
     </>
   );
 

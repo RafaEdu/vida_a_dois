@@ -61,7 +61,9 @@ export function PayerSelector({
           onPress={() => onChange(partner.id)}
         >
           <View style={[styles.paidByAvatar, styles.paidByAvatarPartner]}>
-            <Text style={styles.paidByAvatarText}>
+            <Text
+              style={[styles.paidByAvatarText, styles.paidByAvatarTextPartner]}
+            >
               {getInitials(partner.full_name, "??")}
             </Text>
           </View>

@@ -21,6 +21,13 @@ export {
 } from "./IconButton";
 export { Badge, type BadgeProps, type BadgeTone } from "./Badge";
 export { Chip, type ChipProps } from "./Chip";
+export { SwitchRow, type SwitchRowProps } from "./SwitchRow";
+export {
+  SegmentedControl,
+  type SegmentedControlOption,
+  type SegmentedControlProps,
+} from "./SegmentedControl";
+export { BottomSheet, type BottomSheetProps } from "./BottomSheet";
 export {
   ProgressBar,
   type ProgressBarProps,

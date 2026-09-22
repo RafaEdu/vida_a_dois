@@ -6,6 +6,8 @@ import { useAuth } from "../../lib/auth-context";
 import { getCategoryIcon } from "../../utils/category";
 import { getCurrentYearMonth } from "../../utils/date";
 import { getInitials } from "../../utils/initials";
+import { getFirstName } from "../../utils/name";
+import { payerMeta, receiverMeta } from "../../utils/transaction";
 import { compareExpenses, compareIncomes } from "../../domain/finance/order";
 import {
   calculateBudgetProgress,
@@ -24,37 +26,10 @@ import {
   type RecentTransactionItem,
 } from "./components/RecentTransactions";
 
-function firstName(fullName: string | null | undefined): string {
-  if (!fullName) return "";
-  return fullName.trim().split(/\s+/)[0] ?? "";
-}
-
 function buildGreeting(name: string, date = new Date()): string {
   const hour = date.getHours();
   const prefix = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   return name ? `${prefix}, ${name}` : prefix;
-}
-
-function payerMeta(
-  paidBy: string | null | undefined,
-  selfId: string | undefined,
-  partnerId: string | undefined,
-  partnerName: string | null | undefined,
-): string | undefined {
-  if (!paidBy) return undefined;
-  if (paidBy === selfId) return "Pago por você";
-  if (paidBy === partnerId) return `Pago por ${partnerName ?? "parceiro"}`;
-  return undefined;
-}
-
-function receiverMeta(
-  userId: string | null | undefined,
-  selfId: string | undefined,
-  partnerName: string | null | undefined,
-): string | undefined {
-  if (!userId) return undefined;
-  if (userId === selfId) return "Recebido por você";
-  return `Recebido por ${partnerName ?? "parceiro"}`;
 }
 
 export function HomeScreen() {
@@ -184,8 +159,8 @@ export function HomeScreen() {
       ? "Sem conexão"
       : "Sincronizado";
 
-  const selfFirstName = firstName(profile?.full_name);
-  const partnerFirstName = firstName(partnerInfo?.full_name);
+  const selfFirstName = getFirstName(profile?.full_name);
+  const partnerFirstName = getFirstName(partnerInfo?.full_name);
   const greeting = buildGreeting(selfFirstName);
   const coupleLabel = partnerFirstName
     ? `${selfFirstName || "Você"} & ${partnerFirstName}`

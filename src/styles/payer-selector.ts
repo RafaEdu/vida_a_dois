@@ -1,50 +1,54 @@
 import { StyleSheet } from "react-native";
-import { C } from "../theme/colors";
+import { colors, fontFamilies, radius, spacing } from "../theme";
 
 export const payerSelectorStyles = StyleSheet.create({
   paidByRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
   paidByOption: {
     flex: 1,
-    backgroundColor: C.surfaceContainerLowest,
-    borderWidth: 2,
-    borderColor: C.outlineVariant,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     alignItems: "center",
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm,
+    minHeight: 56,
   },
   paidByOptionSelected: {
-    borderColor: C.primary,
-    backgroundColor: C.surfaceContainerLow,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
   },
   paidByAvatar: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: C.avatarRed,
+    borderRadius: radius.full,
+    backgroundColor: colors.partnerASoft,
     justifyContent: "center",
     alignItems: "center",
   },
   paidByAvatarPartner: {
-    backgroundColor: C.avatarTeal,
+    backgroundColor: colors.partnerBSoft,
   },
   paidByAvatarText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
+    fontFamily: fontFamilies.jakarta.bold,
+    fontSize: 15,
+    color: colors.partnerA,
+  },
+  paidByAvatarTextPartner: {
+    color: colors.partnerB,
   },
   paidByName: {
+    fontFamily: fontFamilies.inter.medium,
     fontSize: 14,
-    color: C.onSurfaceVariant,
-    fontWeight: "500",
+    color: colors.textSecondary,
   },
   paidByNameSelected: {
-    color: C.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: fontFamilies.inter.semibold,
   },
 });
