@@ -187,7 +187,7 @@ export function HomeScreen() {
             initials={getInitials(profile?.full_name, "??")}
             tone="primary"
             onPress={() => router.navigate("/profile")}
-            accessibilityLabel="Abrir área do casal"
+            accessibilityLabel="Abrir meu perfil"
           />
         }
       />

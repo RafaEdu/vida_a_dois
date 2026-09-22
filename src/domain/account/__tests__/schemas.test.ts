@@ -5,6 +5,7 @@ import {
   profileSetupFormSchema,
   signInFormSchema,
   signUpFormSchema,
+  toProfileUpdateInput,
 } from "../schemas";
 
 describe("signInFormSchema", () => {
@@ -84,6 +85,21 @@ describe("profileEditFormSchema", () => {
     expect(
       profileEditFormSchema.safeParse({ fullName: " ", income: "" }).success,
     ).toBe(false);
+  });
+});
+
+describe("toProfileUpdateInput", () => {
+  it("converte a renda formatada para número", () => {
+    expect(
+      toProfileUpdateInput({ fullName: "Rafael", income: "R$ 1.234,56" }),
+    ).toEqual({ full_name: "Rafael", monthly_income: 1234.56 });
+  });
+
+  it("envia renda nula quando o campo está vazio", () => {
+    expect(toProfileUpdateInput({ fullName: "Rafael", income: "" })).toEqual({
+      full_name: "Rafael",
+      monthly_income: null,
+    });
   });
 });
 

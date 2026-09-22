@@ -11,10 +11,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Profile } from "../../../types/domain";
 import {
   profileEditFormSchema,
+  toProfileUpdateInput,
   type ProfileEditFormInput,
   type ProfileEditFormValues,
+  type ProfileUpdateInput,
 } from "../../../domain/account/schemas";
-import { formatCurrency, parseCurrencyInput } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 import { formatDateOnlyForDisplay } from "../../../utils/date";
 import { colors, fontFamilies, radius, spacing } from "../../../theme";
 import { AppText, Button, Card, MoneyText } from "../../../components/ui";
@@ -22,10 +24,7 @@ import { MoneyInput } from "../../../components/forms";
 
 export interface ProfileDetailsCardProps {
   profile: Profile | null;
-  onUpdate: (data: {
-    full_name: string;
-    monthly_income: number | null;
-  }) => Promise<{ error?: string }>;
+  onUpdate: (data: ProfileUpdateInput) => Promise<{ error?: string }>;
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -78,12 +77,7 @@ export function ProfileDetailsCard({
   const onSubmit = async (values: ProfileEditFormValues) => {
     setSubmitError("");
     try {
-      const { error } = await onUpdate({
-        full_name: values.fullName,
-        monthly_income: values.income
-          ? parseCurrencyInput(values.income)
-          : null,
-      });
+      const { error } = await onUpdate(toProfileUpdateInput(values));
 
       if (error) {
         setSubmitError(error);

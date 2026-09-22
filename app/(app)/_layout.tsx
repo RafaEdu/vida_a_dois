@@ -44,6 +44,7 @@ export default function AppLayout() {
         name="monthly-closing"
         options={{ title: "Fechamento do mês" }}
       />
+      <Stack.Screen name="profile" options={{ title: "Perfil" }} />
     </Stack>
   );
 }

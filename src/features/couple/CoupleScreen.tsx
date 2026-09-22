@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "../../lib/auth-context";
+import { useCouple } from "../../providers/CoupleProvider";
 import { getInitials } from "../../utils/initials";
 import { getFirstName } from "../../utils/name";
 import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
@@ -11,35 +11,25 @@ import { CoupleSummary } from "./components/CoupleSummary";
 import { CouplePartners } from "./components/CouplePartners";
 import { CoupleSplit } from "./components/CoupleSplit";
 import { CoupleLinkCard } from "./components/CoupleLinkCard";
-import { AccountSection } from "./components/AccountSection";
 
 export function CoupleScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    profile,
-    partnerInfo,
-    couple,
-    bootstrapStatus,
-    bootstrapError,
-    retryBootstrap,
-    updateProfile,
-    signOut,
-  } = useAuth();
+  const { profile, partnerInfo, couple, status, error, retry } = useCouple();
 
-  if (bootstrapStatus === "error") {
+  if (status === "error") {
     return (
       <View style={styles.root}>
         <TabScreenHeader title="Casal" />
         <ErrorState
           title="Não foi possível carregar seu casal"
-          message={bootstrapError ?? undefined}
-          onRetry={retryBootstrap}
+          message={error ?? undefined}
+          onRetry={retry}
         />
       </View>
     );
   }
 
-  if (bootstrapStatus === "loading" && !profile) {
+  if (status === "loading" && !profile) {
     return (
       <View style={styles.root}>
         <TabScreenHeader title="Casal" />
@@ -98,12 +88,6 @@ export function CoupleScreen() {
         <CoupleLinkCard
           statusLabel={link.statusLabel}
           linkedAt={couple?.linked_at ?? null}
-        />
-
-        <AccountSection
-          profile={profile}
-          onUpdateProfile={updateProfile}
-          onSignOut={signOut}
         />
       </ScrollView>
     </View>

@@ -71,7 +71,7 @@ export default function AppTabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="profile"
+          name="couple"
           options={{
             title: "Casal",
             tabBarIcon: ({ focused }) => (
