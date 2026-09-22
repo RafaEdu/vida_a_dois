@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { DEFAULT_CATEGORIES } from "../../constants/categories";
-import { C } from "../../theme/colors";
+import { colors } from "../../theme/colors";
 import { categoryPickerStyles as styles } from "../../styles/category-picker";
 
 interface CategoryPickerProps {
@@ -30,6 +30,9 @@ export function CategoryPicker({
             key={cat.name}
             style={[styles.chip, value === cat.name && styles.chipActive]}
             onPress={() => onChange(cat.name)}
+            accessibilityRole="button"
+            accessibilityLabel={cat.name}
+            accessibilityState={{ selected: value === cat.name }}
           >
             <Text
               style={[
@@ -47,12 +50,19 @@ export function CategoryPicker({
 
   return (
     <>
-      <Pressable style={styles.selector} onPress={() => setOpen((o) => !o)}>
+      <Pressable
+        style={styles.selector}
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel={`Categoria: ${value}`}
+        accessibilityHint="Abre a lista de categorias"
+        accessibilityState={{ expanded: open }}
+      >
         <Text style={styles.selectorText}>{value}</Text>
         <MaterialIcons
           name={open ? "keyboard-arrow-up" : "keyboard-arrow-down"}
           size={20}
-          color={C.outline}
+          color={colors.textSecondary}
         />
       </Pressable>
 
@@ -70,6 +80,9 @@ export function CategoryPicker({
                   onChange(cat.name);
                   setOpen(false);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`${cat.name}, ${cat.type}`}
+                accessibilityState={{ selected: value === cat.name }}
               >
                 <Text style={styles.categoryIcon}>{cat.icon}</Text>
                 <View style={styles.categoryInfo}>
@@ -84,7 +97,11 @@ export function CategoryPicker({
                   <Text style={styles.categoryType}>{cat.type}</Text>
                 </View>
                 {value === cat.name && (
-                  <MaterialIcons name="check" size={18} color={C.primary} />
+                  <MaterialIcons
+                    name="check"
+                    size={18}
+                    color={colors.primary}
+                  />
                 )}
               </Pressable>
             ))}

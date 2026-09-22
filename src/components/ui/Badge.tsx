@@ -28,10 +28,10 @@ const toneStyles: Record<BadgeTone, { background: string; text: ColorToken }> =
   {
     neutral: { background: colors.surfaceMuted, text: "textSecondary" },
     primary: { background: colors.primarySoft, text: "primary" },
-    success: { background: colors.successSoft, text: "success" },
-    warning: { background: colors.warningSoft, text: "warning" },
+    success: { background: colors.successSoft, text: "onSuccessSoft" },
+    warning: { background: colors.warningSoft, text: "onWarningSoft" },
     danger: { background: colors.dangerSoft, text: "danger" },
-    partnerA: { background: colors.partnerASoft, text: "partnerA" },
+    partnerA: { background: colors.partnerASoft, text: "onPartnerASoft" },
     partnerB: { background: colors.partnerBSoft, text: "partnerB" },
     shared: { background: colors.sharedSoft, text: "shared" },
   };

@@ -1,7 +1,4 @@
-export {
-  TabScreenHeader,
-  type TabScreenHeaderProps,
-} from "./TabScreenHeader";
+export { TabScreenHeader, type TabScreenHeaderProps } from "./TabScreenHeader";
 export {
   HeaderCancelButton,
   type HeaderCancelButtonProps,

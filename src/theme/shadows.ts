@@ -1,45 +1,6 @@
 import { Platform, type ViewStyle } from "react-native";
 
 // ---------------------------------------------------------------------------
-// Legacy shadows. Kept while screens migrate to the canonical `shadows` tokens.
-// ---------------------------------------------------------------------------
-export const shadow = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-  },
-  default: {
-    elevation: 4,
-  },
-});
-
-export const shadowSm = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  default: {
-    elevation: 2,
-  },
-});
-
-export const shadowNav = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-  },
-  default: {
-    elevation: 8,
-  },
-});
-
-// ---------------------------------------------------------------------------
 // Canonical elevation tokens.
 //   0 canvas | 1 cards | 2 FAB/tab bar/floating controls | 3 modal/sheet
 // Shadows stay subtle; components should also keep a hairline border so the

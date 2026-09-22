@@ -1,44 +1,4 @@
 // ---------------------------------------------------------------------------
-// Legacy palette (Material-like). Kept during the gradual migration so that
-// existing screens continue to work. New code must use `colors` below.
-// ---------------------------------------------------------------------------
-export const C = {
-  surface: "#f9f9ff",
-  surfaceBright: "#f9f9ff",
-  surfaceContainerLowest: "#ffffff",
-  surfaceContainerLow: "#f1f3ff",
-  surfaceContainerHigh: "#e3e8f9",
-  surfaceVariant: "#dde2f3",
-  onSurface: "#161c27",
-  onSurfaceVariant: "#434655",
-  outline: "#747686",
-  outlineVariant: "#c4c5d7",
-  primary: "#1f4ed8",
-  onPrimary: "#ffffff",
-  primaryContainer: "#4169f2",
-  onPrimaryContainer: "#fffbff",
-  primaryFixed: "#dde1ff",
-  primaryFixedDim: "#b7c4ff",
-  onPrimaryFixed: "#001453",
-  secondary: "#a53b29",
-  onSecondary: "#ffffff",
-  secondaryContainer: "#fe7d66",
-  onSecondaryContainer: "#711609",
-  tertiary: "#006763",
-  tertiaryContainer: "#00827e",
-  onTertiaryContainer: "#f3fffd",
-  tertiaryFixed: "#84f5ee",
-  onTertiaryFixed: "#00201e",
-  error: "#ba1a1a",
-  errorContainer: "#ffdad6",
-  onErrorContainer: "#93000a",
-  avatarRed: "#ff5252",
-  avatarTeal: "#39b5bf",
-  progressGreen: "#4CAF50",
-  inverseSurface: "#2a303d",
-} as const;
-
-// ---------------------------------------------------------------------------
 // Canonical palette — Vida a Dois v1.
 // Semantic names are the single source of truth for the redesigned UI.
 // Do not introduce hardcoded colors in screens; add a token here instead.
@@ -69,6 +29,9 @@ export const colors = {
   partnerAAccent: "#E07A5F",
   partnerASoft: "#FFE3DA",
   onPartnerA: "#FFFFFF",
+  // Text/icon color tuned for AA contrast (>=4.5:1) on `partnerASoft`. The base
+  // `partnerA` accent is reserved for fills, bars and decorative graphics.
+  onPartnerASoft: "#9E3F28",
 
   partnerB: "#0F4C45",
   partnerBSoft: "#D8F3EE",
@@ -81,10 +44,13 @@ export const colors = {
   success: "#168568",
   successSoft: "#ECFDF5",
   onSuccess: "#FFFFFF",
+  // See `onPartnerASoft`: darker text variants for the matching soft surfaces.
+  onSuccessSoft: "#0F6B54",
 
   warning: "#A86416",
   warningSoft: "#FFF4E5",
   onWarning: "#FFFFFF",
+  onWarningSoft: "#8A4F0F",
 
   danger: "#C33D3D",
   dangerSoft: "#FEF2F2",

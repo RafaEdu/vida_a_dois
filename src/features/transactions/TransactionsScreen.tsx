@@ -3,7 +3,7 @@ import { Alert, SectionList, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../lib/auth-context";
 import { getCurrentYearMonth } from "../../utils/date";
-import { colors, screenPadding, spacing } from "../../theme";
+import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
 import {
   AppText,
   Chip,
@@ -345,6 +345,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
+    width: "100%",
+    maxWidth: maxContentWidth,
+    alignSelf: "center",
     paddingHorizontal: screenPadding.compact,
     paddingTop: spacing.lg,
   },

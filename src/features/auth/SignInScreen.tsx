@@ -7,12 +7,8 @@ import {
   type SignInFormInput,
   type SignInFormValues,
 } from "../../domain/account/schemas";
-import {
-  FormError,
-  FormField,
-  PrimaryButton,
-  TextField,
-} from "../../components/forms";
+import { FormError, FormField, TextField } from "../../components/forms";
+import { Button } from "../../components/ui";
 import { AuthFooterLink, AuthLayout } from "./components";
 
 export function SignInScreen() {
@@ -83,10 +79,11 @@ export function SignInScreen() {
         />
       </FormField>
 
-      <PrimaryButton
+      <Button
         title={isSubmitting ? "Entrando..." : "Entrar"}
         onPress={handleSubmit(onSubmit)}
         loading={isSubmitting}
+        fullWidth
       />
 
       <AuthFooterLink

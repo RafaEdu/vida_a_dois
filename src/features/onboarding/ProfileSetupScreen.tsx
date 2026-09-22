@@ -16,10 +16,9 @@ import {
   FormError,
   FormField,
   MoneyInput,
-  PrimaryButton,
   TextField,
 } from "../../components/forms";
-import { Screen } from "../../components/ui";
+import { Button, Screen } from "../../components/ui";
 import { colors, spacing } from "../../theme";
 import { OnboardingHeader } from "./components";
 
@@ -88,7 +87,7 @@ export function ProfileSetupScreen() {
       <Screen
         scroll
         padded
-        edges={["top", "left", "right"]}
+        edges={["top", "left", "right", "bottom"]}
         contentContainerStyle={styles.content}
       >
         <OnboardingHeader
@@ -153,10 +152,11 @@ export function ProfileSetupScreen() {
           />
         </FormField>
 
-        <PrimaryButton
+        <Button
           title={isSubmitting ? "Salvando..." : "Salvar e continuar"}
           onPress={handleSubmit(onSubmit)}
           loading={isSubmitting}
+          fullWidth
         />
       </Screen>
     </KeyboardAvoidingView>

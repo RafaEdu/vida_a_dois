@@ -13,7 +13,9 @@ jest.mock("@react-native-async-storage/async-storage", () => {
     __esModule: true,
     default: {
       multiGet: async (keys: string[]) =>
-        keys.map((key) => [key, store.get(key) ?? null] as [string, string | null]),
+        keys.map(
+          (key) => [key, store.get(key) ?? null] as [string, string | null],
+        ),
       multiSet: async (pairs: [string, string][]) => {
         for (const [key, value] of pairs) store.set(key, value);
       },

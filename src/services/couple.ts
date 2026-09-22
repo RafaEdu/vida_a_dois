@@ -25,7 +25,9 @@ export async function fetchCouple(
     .maybeSingle();
 
   if (error) {
-    return fail(toAppError(error, "Não foi possível carregar o vínculo do casal."));
+    return fail(
+      toAppError(error, "Não foi possível carregar o vínculo do casal."),
+    );
   }
   return ok((data as Couple) ?? null);
 }
@@ -188,10 +190,12 @@ export async function fetchIdealSplit(
   }
   if (!profiles || profiles.length < 2) return ok(null);
 
-  const incomeA = profiles.find((p) => p.id === coupleData.user_a)
-    ?.monthly_income;
-  const incomeB = profiles.find((p) => p.id === coupleData.user_b)
-    ?.monthly_income;
+  const incomeA = profiles.find(
+    (p) => p.id === coupleData.user_a,
+  )?.monthly_income;
+  const incomeB = profiles.find(
+    (p) => p.id === coupleData.user_b,
+  )?.monthly_income;
 
   if (!incomeA || !incomeB || incomeA + incomeB === 0) return ok(null);
 

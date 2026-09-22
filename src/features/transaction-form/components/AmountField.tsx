@@ -2,7 +2,7 @@ import { useState } from "react";
 import { TextInput } from "react-native";
 import { colors } from "../../../theme";
 import { formatCurrencyInput } from "../../../utils/currency";
-import { inputStyles } from "./inputStyles";
+import { inputStyles } from "../../../components/forms";
 
 export interface AmountFieldProps {
   value: string;
@@ -38,6 +38,7 @@ export function AmountField({
       placeholderTextColor={colors.textSecondary}
       accessibilityLabel={accessibilityLabel}
       autoFocus={autoFocus}
+      maxFontSizeMultiplier={1.5}
       style={[
         inputStyles.amount,
         focused ? inputStyles.focused : null,

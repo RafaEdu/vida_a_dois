@@ -21,12 +21,13 @@ export function CoupleSummary({
     <Card padded style={styles.card}>
       <View style={styles.avatars}>
         <Avatar initials={selfInitials} tone="partnerA" size="xl" />
-        <View style={styles.linkIcon}>
-          <MaterialIcons
-            name="favorite"
-            size={18}
-            color={colors.partnerAAccent}
-          />
+        <View
+          style={styles.linkIcon}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <MaterialIcons name="favorite" size={18} color={colors.partnerA} />
         </View>
         <Avatar initials={partnerInitials} tone="partnerB" size="xl" />
       </View>

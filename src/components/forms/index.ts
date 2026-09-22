@@ -3,5 +3,4 @@ export { FormError } from "./FormError";
 export { TextField, type TextFieldProps } from "./TextField";
 export { MoneyInput } from "./MoneyInput";
 export { DateInput } from "./DateInput";
-export { PrimaryButton } from "./PrimaryButton";
 export { inputStyles } from "./inputStyles";

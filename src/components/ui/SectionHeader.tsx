@@ -50,7 +50,10 @@ export function SectionHeader({
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={actionLabel}
-            style={({ pressed }) => (pressed ? styles.pressed : null)}
+            style={({ pressed }) => [
+              styles.action,
+              pressed ? styles.pressed : null,
+            ]}
           >
             <AppText variant="bodySmallMedium" color="primary">
               {actionLabel}
@@ -73,6 +76,10 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: spacing.xs,
+  },
+  action: {
+    minHeight: 44,
+    justifyContent: "center",
   },
   pressed: {
     opacity: 0.7,

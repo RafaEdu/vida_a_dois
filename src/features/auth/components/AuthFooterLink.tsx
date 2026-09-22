@@ -20,7 +20,11 @@ export function AuthFooterLink({
       <AppText variant="bodySmall" color="textSecondary">
         {text}
       </AppText>
-      <Link href={href}>
+      <Link
+        href={href}
+        accessibilityRole="link"
+        accessibilityLabel={actionLabel}
+      >
         <AppText variant="bodySmall" color="primary">
           {actionLabel}
         </AppText>

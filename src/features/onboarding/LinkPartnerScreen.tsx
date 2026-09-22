@@ -144,7 +144,7 @@ export function LinkPartnerScreen() {
       <Screen
         scroll
         padded
-        edges={["top", "left", "right"]}
+        edges={["top", "left", "right", "bottom"]}
         contentContainerStyle={styles.content}
       >
         <LinkPendingView
@@ -170,7 +170,7 @@ export function LinkPartnerScreen() {
       <Screen
         scroll
         padded
-        edges={["top", "left", "right"]}
+        edges={["top", "left", "right", "bottom"]}
         contentContainerStyle={styles.content}
       >
         <LinkActiveView
@@ -191,7 +191,7 @@ export function LinkPartnerScreen() {
       <Screen
         scroll
         padded
-        edges={["top", "left", "right"]}
+        edges={["top", "left", "right", "bottom"]}
         contentContainerStyle={styles.content}
       >
         <LinkRequestView

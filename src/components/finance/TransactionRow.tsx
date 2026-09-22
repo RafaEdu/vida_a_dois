@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { formatCurrency } from "../../utils/currency";
 import { colors, radius, spacing } from "../../theme";
 import { AppText, Badge, IconButton, MoneyText, type BadgeTone } from "../ui";
 
@@ -38,7 +39,8 @@ export interface TransactionRowProps {
 /**
  * Compact transaction line shared by the Home recent list and the
  * Transactions screen. Expense/income are distinguished by the amount sign
- * and status label, never by color alone.
+ * and status label, never by color alone. The overflow action is rendered as a
+ * sibling of the pressable body so screen readers can reach both.
  */
 export function TransactionRow({
   kind,
@@ -59,7 +61,19 @@ export function TransactionRow({
   const iconColor = isExpense ? colors.textSecondary : colors.success;
   const signedAmount = isExpense ? -amount : amount;
 
-  const body = (
+  const accessibilityLabel = [
+    isExpense ? "Despesa" : "Receita",
+    title,
+    subtitle,
+    meta,
+    formatCurrency(amount),
+    status?.label,
+    recurring ? "Recorrente" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const body: ReactNode = (
     <>
       <View style={[styles.iconBox, iconWrapStyle]}>
         <MaterialIcons name={icon} size={22} color={iconColor} />
@@ -89,6 +103,33 @@ export function TransactionRow({
         signed
         style={styles.amount}
       />
+    </>
+  );
+
+  return (
+    <View style={[styles.base, style]}>
+      {onPress ? (
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint="Toque para editar"
+          style={({ pressed }) => [
+            styles.main,
+            pressed ? styles.pressed : null,
+          ]}
+        >
+          {body}
+        </Pressable>
+      ) : (
+        <View
+          style={styles.main}
+          accessible
+          accessibilityLabel={accessibilityLabel}
+        >
+          {body}
+        </View>
+      )}
 
       {onMorePress ? (
         <IconButton
@@ -100,26 +141,7 @@ export function TransactionRow({
           onPress={onMorePress}
         />
       ) : null}
-    </>
-  );
-
-  if (!onPress) {
-    return <View style={[styles.base, style]}>{body}</View>;
-  }
-
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}, ${subtitle ?? ""}`}
-      style={({ pressed }) => [
-        styles.base,
-        pressed ? styles.pressed : null,
-        style,
-      ]}
-    >
-      {body}
-    </Pressable>
+    </View>
   );
 }
 
@@ -129,6 +151,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     paddingVertical: spacing.md,
+  },
+  main: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
   },
   pressed: {
     opacity: 0.7,

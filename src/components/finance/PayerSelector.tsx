@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { C } from "../../theme/colors";
+import { colors } from "../../theme/colors";
 import { getInitials } from "../../utils/initials";
 import { payerSelectorStyles as styles } from "../../styles/payer-selector";
 
@@ -22,14 +22,19 @@ export function PayerSelector({
   self,
   partner,
 }: PayerSelectorProps) {
+  const selfLabel = self.full_name || "Você";
+
   return (
-    <View style={styles.paidByRow}>
+    <View style={styles.paidByRow} accessibilityRole="radiogroup">
       <Pressable
         style={[
           styles.paidByOption,
           value === self.id && styles.paidByOptionSelected,
         ]}
         onPress={() => onChange(self.id)}
+        accessibilityRole="radio"
+        accessibilityLabel={selfLabel}
+        accessibilityState={{ selected: value === self.id }}
       >
         <View style={styles.paidByAvatar}>
           <Text style={styles.paidByAvatarText}>
@@ -44,11 +49,11 @@ export function PayerSelector({
             ]}
             numberOfLines={1}
           >
-            {self.full_name || "Você"}
+            {selfLabel}
           </Text>
         </View>
         {value === self.id && (
-          <MaterialIcons name="check-circle" size={20} color={C.primary} />
+          <MaterialIcons name="check-circle" size={20} color={colors.primary} />
         )}
       </Pressable>
 
@@ -59,6 +64,9 @@ export function PayerSelector({
             value === partner.id && styles.paidByOptionSelected,
           ]}
           onPress={() => onChange(partner.id)}
+          accessibilityRole="radio"
+          accessibilityLabel={partner.full_name}
+          accessibilityState={{ selected: value === partner.id }}
         >
           <View style={[styles.paidByAvatar, styles.paidByAvatarPartner]}>
             <Text
@@ -79,7 +87,11 @@ export function PayerSelector({
             </Text>
           </View>
           {value === partner.id && (
-            <MaterialIcons name="check-circle" size={20} color={C.primary} />
+            <MaterialIcons
+              name="check-circle"
+              size={20}
+              color={colors.primary}
+            />
           )}
         </Pressable>
       )}

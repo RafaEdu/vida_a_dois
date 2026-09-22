@@ -2,8 +2,9 @@ import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import { Tabs } from "expo-router/tabs";
 import { MaterialIcons } from "@expo/vector-icons";
-import { colors, fontFamilies, radius } from "../../../src/theme";
+import { colors, radius } from "../../../src/theme";
 import { GlobalFab } from "../../../src/components/shell";
+import { AppText } from "../../../src/components/ui";
 
 type IconName = ComponentProps<typeof MaterialIcons>["name"];
 
@@ -29,9 +30,17 @@ export default function AppTabsLayout() {
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
           tabBarStyle: styles.tabBar,
-          tabBarLabelStyle: styles.tabLabel,
           tabBarItemStyle: styles.tabItem,
           tabBarHideOnKeyboard: true,
+          tabBarLabel: ({ color, children }) => (
+            <AppText
+              variant="label"
+              maxFontSizeMultiplier={1.25}
+              style={{ color }}
+            >
+              {children}
+            </AppText>
+          ),
         }}
       >
         <Tabs.Screen
@@ -87,10 +96,6 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     paddingTop: 6,
-  },
-  tabLabel: {
-    fontFamily: fontFamilies.inter.semibold,
-    fontSize: 12,
   },
   tabItem: {
     paddingVertical: 2,

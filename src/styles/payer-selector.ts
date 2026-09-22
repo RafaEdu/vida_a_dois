@@ -37,7 +37,7 @@ export const payerSelectorStyles = StyleSheet.create({
   paidByAvatarText: {
     fontFamily: fontFamilies.jakarta.bold,
     fontSize: 15,
-    color: colors.partnerA,
+    color: colors.onPartnerASoft,
   },
   paidByAvatarTextPartner: {
     color: colors.partnerB,

@@ -22,4 +22,18 @@ export const inputStyles = StyleSheet.create({
   invalid: {
     borderColor: colors.danger,
   },
+  // Hero currency input used by the transaction forms.
+  amount: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    minHeight: 72,
+    fontFamily: fontFamilies.jakarta.bold,
+    fontSize: 32,
+    lineHeight: 40,
+    color: colors.text,
+  },
 });

@@ -6,7 +6,7 @@ import { useAuth } from "../../lib/auth-context";
 import type { IdealSplit } from "../../types/domain";
 import { getCurrentYearMonth } from "../../utils/date";
 import { getInitials } from "../../utils/initials";
-import { colors, screenPadding, spacing } from "../../theme";
+import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
 import {
   AppText,
   Badge,
@@ -206,6 +206,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
+    width: "100%",
+    maxWidth: maxContentWidth,
+    alignSelf: "center",
     paddingHorizontal: screenPadding.compact,
     paddingTop: spacing.lg,
     gap: spacing.xl,

@@ -34,6 +34,7 @@ export const categoryPickerStyles = StyleSheet.create({
   categoryItem: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: 44,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -76,7 +77,7 @@ export const categoryPickerStyles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: "center",
   },
   chipActive: {

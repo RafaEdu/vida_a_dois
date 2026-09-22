@@ -4,6 +4,7 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { router } from "expo-router";
@@ -11,11 +12,14 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   colors,
+  maxContentWidth,
   minTouchTarget,
   radius,
   shadows,
   spacing,
 } from "../../theme";
+import { useReduceMotion } from "../../hooks/useReduceMotion";
+import { hapticSelection } from "../../utils/haptics";
 import { AppText } from "../ui";
 
 type IconName = ComponentProps<typeof MaterialIcons>["name"];
@@ -33,6 +37,7 @@ function ActionRow({ icon, label, description, onPress }: ActionRowProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint={description}
       style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
     >
       <View style={styles.rowIcon}>
@@ -59,6 +64,8 @@ function ActionRow({ icon, label, description, onPress }: ActionRowProps) {
  */
 export function GlobalFab() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const reduceMotion = useReduceMotion();
   const [open, setOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -77,10 +84,15 @@ export function GlobalFab() {
 
   const goTo = (href: "/expense/new" | "/income/new") => {
     setOpen(false);
+    void hapticSelection();
     router.push(href);
   };
 
   const hidden = keyboardVisible;
+  const fabRight =
+    width > maxContentWidth
+      ? (width - maxContentWidth) / 2 + spacing.lg
+      : spacing.lg;
 
   return (
     <>
@@ -94,7 +106,7 @@ export function GlobalFab() {
           accessibilityLabel="Novo lançamento"
           style={({ pressed }) => [
             styles.fab,
-            { bottom: insets.bottom + 64 },
+            { bottom: insets.bottom + 64, right: fabRight },
             hidden ? styles.fabHidden : null,
             pressed ? styles.fabPressed : null,
           ]}
@@ -106,7 +118,7 @@ export function GlobalFab() {
       <Modal
         visible={open}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? "none" : "fade"}
         statusBarTranslucent
         onRequestClose={() => setOpen(false)}
       >
@@ -164,7 +176,6 @@ export function GlobalFab() {
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    right: spacing.lg,
     width: 56,
     height: 56,
     borderRadius: radius.full,

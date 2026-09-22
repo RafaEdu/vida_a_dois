@@ -106,7 +106,7 @@ export function PlanningSplitCard({
               />
               <AppText
                 variant="bodySmall"
-                color="warning"
+                color="onWarningSoft"
                 style={styles.warningText}
               >
                 A divisão atual difere da ideal. Edite o planejamento para

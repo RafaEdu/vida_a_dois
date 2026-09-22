@@ -11,14 +11,14 @@ import {
 } from "../../domain/finance/schemas";
 import { AppText, Button, Card, Screen, SwitchRow } from "../../components/ui";
 import { colors, spacing } from "../../theme";
+import { hapticSuccess } from "../../utils/haptics";
 import {
-  AmountField,
-  DateField,
-  Field,
-  FormBanner,
-  FormFooter,
+  DateInput,
+  FormError,
+  FormField,
   TextField,
-} from "./components";
+} from "../../components/forms";
+import { AmountField, FormFooter } from "./components";
 
 export function NewIncomeScreen() {
   const { addIncome, couple } = useAuth();
@@ -59,6 +59,7 @@ export function NewIncomeScreen() {
     if (saveError) {
       setSubmitError(saveError);
     } else {
+      void hapticSuccess();
       router.back();
     }
   };
@@ -77,9 +78,9 @@ export function NewIncomeScreen() {
           Registre uma entrada no caixa do casal.
         </AppText>
 
-        <FormBanner message={submitError} />
+        <FormError message={submitError} />
 
-        <Field label="Valor" error={errors.amount?.message}>
+        <FormField label="Valor" error={errors.amount?.message}>
           <Controller
             control={control}
             name="amount"
@@ -94,9 +95,9 @@ export function NewIncomeScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
-        <Field label="Descrição" error={errors.description?.message}>
+        <FormField label="Descrição" error={errors.description?.message}>
           <Controller
             control={control}
             name="description"
@@ -111,9 +112,9 @@ export function NewIncomeScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
-        <Field
+        <FormField
           label="Data de recebimento"
           hint="Opcional — informada como AAAA-MM-DD."
           error={errors.receivedDate?.message}
@@ -122,7 +123,7 @@ export function NewIncomeScreen() {
             control={control}
             name="receivedDate"
             render={({ field }) => (
-              <DateField
+              <DateInput
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -131,7 +132,7 @@ export function NewIncomeScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
         <Card variant="subtle" padded>
           <Controller

@@ -39,15 +39,13 @@ const textVariant: Record<
   xl: "h3",
 };
 
-const toneStyles: Record<
-  AvatarTone,
-  { background: string; text: ColorToken }
-> = {
-  primary: { background: colors.primarySoft, text: "primary" },
-  partnerA: { background: colors.partnerASoft, text: "partnerA" },
-  partnerB: { background: colors.partnerBSoft, text: "partnerB" },
-  neutral: { background: colors.surfaceMuted, text: "textSecondary" },
-};
+const toneStyles: Record<AvatarTone, { background: string; text: ColorToken }> =
+  {
+    primary: { background: colors.primarySoft, text: "primary" },
+    partnerA: { background: colors.partnerASoft, text: "onPartnerASoft" },
+    partnerB: { background: colors.partnerBSoft, text: "partnerB" },
+    neutral: { background: colors.surfaceMuted, text: "textSecondary" },
+  };
 
 export function Avatar({
   initials,
@@ -86,6 +84,7 @@ export function Avatar({
   return (
     <Pressable
       onPress={onPress}
+      hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? "Avatar"}
       style={({ pressed }) => [pressed ? styles.pressed : null]}

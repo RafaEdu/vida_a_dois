@@ -71,6 +71,7 @@ export function SegmentedControl<T extends string>({
               variant={selected ? "bodySmallMedium" : "bodySmall"}
               color={selected ? "primary" : "textSecondary"}
               numberOfLines={1}
+              maxFontSizeMultiplier={1.5}
             >
               {option.label}
             </AppText>
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
   },

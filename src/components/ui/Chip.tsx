@@ -39,6 +39,7 @@ export function Chip({
       testID={testID}
       hitSlop={4}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
         styles.base,
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,

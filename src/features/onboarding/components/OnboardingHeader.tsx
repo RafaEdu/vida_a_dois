@@ -21,7 +21,7 @@ export function OnboardingHeader({
           {step}
         </AppText>
       ) : null}
-      <AppText variant="h1" align="center">
+      <AppText variant="h1" align="center" accessibilityRole="header">
         {title}
       </AppText>
       {subtitle ? (

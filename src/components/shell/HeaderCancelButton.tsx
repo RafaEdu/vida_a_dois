@@ -20,10 +20,7 @@ export function HeaderCancelButton({
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.base,
-        pressed ? styles.pressed : null,
-      ]}
+      style={({ pressed }) => [styles.base, pressed ? styles.pressed : null]}
     >
       <AppText variant="bodyMedium" color="primary">
         {label}
@@ -34,7 +31,9 @@ export function HeaderCancelButton({
 
 const styles = StyleSheet.create({
   base: {
-    paddingHorizontal: spacing.xs,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
   pressed: {

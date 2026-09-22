@@ -1,9 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import type {
-  CloseMonthResult,
-  Expense,
-  Income,
-} from "../../../types/domain";
+import type { CloseMonthResult, Expense, Income } from "../../../types/domain";
 import {
   calculateBudgetProgress,
   calculateMonthlySummary,

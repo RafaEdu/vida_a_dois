@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius, shadows, spacing } from "../../theme";
+import { useReduceMotion } from "../../hooks/useReduceMotion";
 import { AppText } from "./AppText";
 
 export interface BottomSheetProps {
@@ -35,12 +36,13 @@ export function BottomSheet({
   testID,
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotion();
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       statusBarTranslucent
       onRequestClose={onClose}
     >
@@ -53,6 +55,7 @@ export function BottomSheet({
         />
         <View
           testID={testID}
+          accessibilityViewIsModal
           style={[
             styles.sheet,
             { paddingBottom: insets.bottom + spacing.lg },

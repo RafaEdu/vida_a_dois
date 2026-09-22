@@ -3,10 +3,15 @@ import { AuthProvider } from "../src/providers/AuthProvider";
 import { CoupleProvider } from "../src/providers/CoupleProvider";
 import { FinanceProvider } from "../src/providers/FinanceProvider";
 import { useAuth } from "../src/lib/auth-context";
-import { View, ActivityIndicator, Text, Pressable } from "react-native";
-import { styles } from "../src/theme/layout.styles";
+import {
+  StyleSheet,
+  View,
+  ActivityIndicator,
+  Text,
+  Pressable,
+} from "react-native";
 import { useAppFonts } from "../src/theme/fonts";
-import { colors } from "../src/theme";
+import { colors, radius, spacing } from "../src/theme";
 
 function LoadingScreen() {
   return (
@@ -86,3 +91,43 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  loadingText: {
+    marginTop: spacing.lg,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  errorTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  errorMessage: {
+    marginTop: spacing.sm,
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  retryButton: {
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  retryButtonText: {
+    color: colors.onPrimary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});

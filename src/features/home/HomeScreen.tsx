@@ -15,7 +15,7 @@ import {
   selectExpensesByMonth,
   selectIncomesByMonth,
 } from "../../domain/finance/selectors";
-import { colors, screenPadding, spacing } from "../../theme";
+import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
 import { Avatar, ErrorState, LoadingState } from "../../components/ui";
 import { TabScreenHeader } from "../../components/shell";
 import { BalanceCard, MonthPicker } from "../../components/finance";
@@ -252,6 +252,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
+    width: "100%",
+    maxWidth: maxContentWidth,
+    alignSelf: "center",
     paddingHorizontal: screenPadding.compact,
     paddingTop: spacing.lg,
     gap: spacing.xl,

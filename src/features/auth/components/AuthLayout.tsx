@@ -23,7 +23,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
       <Screen
         scroll
         padded
-        edges={["top", "left", "right"]}
+        edges={["top", "left", "right", "bottom"]}
         contentContainerStyle={styles.content}
       >
         <View style={styles.brand}>

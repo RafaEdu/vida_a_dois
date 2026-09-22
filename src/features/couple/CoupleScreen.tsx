@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../lib/auth-context";
 import { getInitials } from "../../utils/initials";
 import { getFirstName } from "../../utils/name";
-import { colors, screenPadding, spacing } from "../../theme";
+import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
 import { ErrorState, LoadingState } from "../../components/ui";
 import { TabScreenHeader } from "../../components/shell";
 import { buildCoupleDisplayName, deriveCoupleLinkSummary } from "./model";
@@ -116,6 +116,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
+    width: "100%",
+    maxWidth: maxContentWidth,
+    alignSelf: "center",
     paddingHorizontal: screenPadding.compact,
     paddingTop: spacing.lg,
     gap: spacing.xl,

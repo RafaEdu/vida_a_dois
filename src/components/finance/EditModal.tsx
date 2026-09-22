@@ -3,9 +3,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
-  Text,
-  TextInput,
+  StyleSheet,
   View,
 } from "react-native";
 import { Controller, useForm } from "react-hook-form";
@@ -19,10 +17,11 @@ import {
   type IncomeEditFormInput,
   type IncomeEditFormValues,
 } from "../../domain/finance/schemas";
-import { MoneyInput } from "../forms";
+import { FormError, FormField, MoneyInput, TextField } from "../forms";
+import { AppText, Button } from "../ui";
 import { CategoryPicker } from "./CategoryPicker";
-import { C } from "../../theme/colors";
-import { styles } from "../../styles/expenses";
+import { colors, radius, spacing } from "../../theme";
+import { useReduceMotion } from "../../hooks/useReduceMotion";
 
 export type EditTarget =
   { type: "expense"; item: Expense } | { type: "income"; item: Income } | null;
@@ -51,8 +50,14 @@ export function EditModal({
   onSaveExpense,
   onSaveIncome,
 }: EditModalProps) {
+  const reduceMotion = useReduceMotion();
+
   return (
-    <Modal transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      animationType={reduceMotion ? "none" : "fade"}
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.modalOverlay}
@@ -116,68 +121,72 @@ function ExpenseEditForm({
 
   return (
     <>
-      <Text style={styles.modalTitle}>Editar despesa</Text>
+      <AppText variant="h3" style={styles.modalTitle}>
+        Editar despesa
+      </AppText>
 
-      {submitError || fieldError ? (
-        <Text style={styles.modalError}>{submitError || fieldError}</Text>
-      ) : null}
+      <FormError message={submitError || fieldError} />
 
-      <Text style={styles.modalLabel}>Descrição</Text>
-      <Controller
-        control={control}
-        name="description"
-        render={({ field }) => (
-          <TextInput
-            style={styles.modalInput}
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            placeholder="Descrição"
-            placeholderTextColor={C.outlineVariant}
-          />
-        )}
-      />
+      <FormField label="Descrição">
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <TextField
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              placeholder="Descrição"
+              accessibilityLabel="Descrição da despesa"
+            />
+          )}
+        />
+      </FormField>
 
-      <Text style={styles.modalLabel}>Valor (R$)</Text>
-      <Controller
-        control={control}
-        name="amount"
-        render={({ field }) => (
-          <MoneyInput
-            style={styles.modalInput}
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-          />
-        )}
-      />
+      <FormField label="Valor (R$)">
+        <Controller
+          control={control}
+          name="amount"
+          render={({ field }) => (
+            <MoneyInput
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              accessibilityLabel="Valor da despesa"
+            />
+          )}
+        />
+      </FormField>
 
-      <Text style={styles.modalLabel}>Categoria</Text>
-      <Controller
-        control={control}
-        name="category"
-        render={({ field }) => (
-          <CategoryPicker
-            variant="chips"
-            value={field.value}
-            onChange={field.onChange}
-          />
-        )}
-      />
+      <FormField label="Categoria">
+        <Controller
+          control={control}
+          name="category"
+          render={({ field }) => (
+            <CategoryPicker
+              variant="chips"
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </FormField>
 
       <View style={styles.modalActions}>
-        <Pressable style={styles.modalCancel} onPress={onClose}>
-          <Text style={styles.modalCancelText}>Cancelar</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.modalSave, isSubmitting && styles.modalSaveDisabled]}
-          onPress={handleSubmit(onSubmit)}
+        <Button
+          title="Cancelar"
+          variant="secondary"
+          style={styles.modalAction}
+          onPress={onClose}
           disabled={isSubmitting}
-        >
-          <Text style={styles.modalSaveText}>
-            {isSubmitting ? "Salvando..." : "Salvar"}
-          </Text>
-        </Pressable>
+        />
+        <Button
+          title="Salvar"
+          style={styles.modalAction}
+          onPress={handleSubmit(onSubmit)}
+          loading={isSubmitting}
+          accessibilityLabel="Salvar alterações"
+        />
       </View>
     </>
   );
@@ -218,56 +227,88 @@ function IncomeEditForm({
 
   return (
     <>
-      <Text style={styles.modalTitle}>Editar receita</Text>
+      <AppText variant="h3" style={styles.modalTitle}>
+        Editar receita
+      </AppText>
 
-      {submitError || fieldError ? (
-        <Text style={styles.modalError}>{submitError || fieldError}</Text>
-      ) : null}
+      <FormError message={submitError || fieldError} />
 
-      <Text style={styles.modalLabel}>Descrição</Text>
-      <Controller
-        control={control}
-        name="description"
-        render={({ field }) => (
-          <TextInput
-            style={styles.modalInput}
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            placeholder="Descrição"
-            placeholderTextColor={C.outlineVariant}
-          />
-        )}
-      />
+      <FormField label="Descrição">
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <TextField
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              placeholder="Descrição"
+              accessibilityLabel="Descrição da receita"
+            />
+          )}
+        />
+      </FormField>
 
-      <Text style={styles.modalLabel}>Valor (R$)</Text>
-      <Controller
-        control={control}
-        name="amount"
-        render={({ field }) => (
-          <MoneyInput
-            style={styles.modalInput}
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-          />
-        )}
-      />
+      <FormField label="Valor (R$)">
+        <Controller
+          control={control}
+          name="amount"
+          render={({ field }) => (
+            <MoneyInput
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              accessibilityLabel="Valor da receita"
+            />
+          )}
+        />
+      </FormField>
 
       <View style={styles.modalActions}>
-        <Pressable style={styles.modalCancel} onPress={onClose}>
-          <Text style={styles.modalCancelText}>Cancelar</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.modalSave, isSubmitting && styles.modalSaveDisabled]}
-          onPress={handleSubmit(onSubmit)}
+        <Button
+          title="Cancelar"
+          variant="secondary"
+          style={styles.modalAction}
+          onPress={onClose}
           disabled={isSubmitting}
-        >
-          <Text style={styles.modalSaveText}>
-            {isSubmitting ? "Salvando..." : "Salvar"}
-          </Text>
-        </Pressable>
+        />
+        <Button
+          title="Salvar"
+          style={styles.modalAction}
+          onPress={handleSubmit(onSubmit)}
+          loading={isSubmitting}
+          accessibilityLabel="Salvar alterações"
+        />
       </View>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.scrim,
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
+    gap: spacing.md,
+  },
+  modalTitle: {
+    marginBottom: spacing.xs,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  modalAction: {
+    flex: 1,
+  },
+});

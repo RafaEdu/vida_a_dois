@@ -120,6 +120,7 @@ export function ProfileDetailsCard({
                 placeholder="Seu nome completo"
                 autoComplete="name"
                 placeholderTextColor={colors.textSecondary}
+                accessibilityLabel="Nome completo"
               />
             )}
           />
@@ -145,6 +146,7 @@ export function ProfileDetailsCard({
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
                 placeholderTextColor={colors.textSecondary}
+                accessibilityLabel="Renda mensal líquida"
               />
             )}
           />

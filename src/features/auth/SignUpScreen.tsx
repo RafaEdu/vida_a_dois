@@ -8,13 +8,8 @@ import {
   type SignUpFormInput,
   type SignUpFormValues,
 } from "../../domain/account/schemas";
-import {
-  FormError,
-  FormField,
-  PrimaryButton,
-  TextField,
-} from "../../components/forms";
-import { AppText } from "../../components/ui";
+import { FormError, FormField, TextField } from "../../components/forms";
+import { AppText, Button } from "../../components/ui";
 import { AuthFooterLink, AuthLayout } from "./components";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -147,11 +142,12 @@ export function SignUpScreen() {
         />
       </FormField>
 
-      <PrimaryButton
+      <Button
         title={isSubmitting ? "Criando conta..." : "Criar conta"}
         onPress={handleSubmit(onSubmit)}
         disabled={!isFormValid}
         loading={isSubmitting}
+        fullWidth
       />
 
       <AuthFooterLink

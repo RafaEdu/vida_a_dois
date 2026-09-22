@@ -18,15 +18,15 @@ import {
 import { AppText, Button, Card, Screen, SwitchRow } from "../../components/ui";
 import { colors, spacing } from "../../theme";
 import { parseDecimalInput } from "../../utils/currency";
+import { hapticSuccess } from "../../utils/haptics";
 import { getInitials } from "../../utils/initials";
 import {
-  AmountField,
-  DateField,
-  Field,
-  FormBanner,
-  FormFooter,
+  DateInput,
+  FormError,
+  FormField,
   TextField,
-} from "./components";
+} from "../../components/forms";
+import { AmountField, FormFooter } from "./components";
 
 export function NewExpenseScreen() {
   const { addExpense, couple, user, profile, partnerInfo } = useAuth();
@@ -78,6 +78,7 @@ export function NewExpenseScreen() {
     if (saveError) {
       setSubmitError(saveError);
     } else {
+      void hapticSuccess();
       router.back();
     }
   };
@@ -96,9 +97,9 @@ export function NewExpenseScreen() {
           Registre um gasto no planejamento do casal.
         </AppText>
 
-        <FormBanner message={submitError} />
+        <FormError message={submitError} />
 
-        <Field label="Valor" error={errors.amount?.message}>
+        <FormField label="Valor" error={errors.amount?.message}>
           <Controller
             control={control}
             name="amount"
@@ -112,9 +113,9 @@ export function NewExpenseScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
-        <Field label="Descrição" error={errors.description?.message}>
+        <FormField label="Descrição" error={errors.description?.message}>
           <Controller
             control={control}
             name="description"
@@ -129,9 +130,9 @@ export function NewExpenseScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
-        <Field label="Categoria" error={errors.category?.message}>
+        <FormField label="Categoria" error={errors.category?.message}>
           <Controller
             control={control}
             name="category"
@@ -139,9 +140,9 @@ export function NewExpenseScreen() {
               <CategoryPicker value={field.value} onChange={field.onChange} />
             )}
           />
-        </Field>
+        </FormField>
 
-        <Field label="Quem pagou?" error={errors.paidBy?.message}>
+        <FormField label="Quem pagou?" error={errors.paidBy?.message}>
           <Controller
             control={control}
             name="paidBy"
@@ -158,7 +159,7 @@ export function NewExpenseScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
         {partnerInfo ? (
           <ExpenseSplitPreview
@@ -172,7 +173,7 @@ export function NewExpenseScreen() {
           />
         ) : null}
 
-        <Field
+        <FormField
           label="Data de vencimento"
           hint="Opcional — informada como AAAA-MM-DD."
           error={errors.dueDate?.message}
@@ -181,7 +182,7 @@ export function NewExpenseScreen() {
             control={control}
             name="dueDate"
             render={({ field }) => (
-              <DateField
+              <DateInput
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -189,7 +190,7 @@ export function NewExpenseScreen() {
               />
             )}
           />
-        </Field>
+        </FormField>
 
         <Card variant="subtle" padded style={styles.toggles}>
           <Controller
