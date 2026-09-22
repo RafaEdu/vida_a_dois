@@ -230,7 +230,15 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      partner_profiles: {
+        Row: {
+          couple_id: string;
+          full_name: string;
+          id: string;
+          monthly_income: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       accept_invitation: {

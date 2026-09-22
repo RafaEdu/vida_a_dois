@@ -38,7 +38,7 @@ export async function fetchPartner(
 ): Promise<ServiceResult<PartnerInfo | null>> {
   const partnerId = couple.user_a === userId ? couple.user_b : couple.user_a;
   const { data, error } = await supabase
-    .from("profiles")
+    .from("partner_profiles")
     .select("id, full_name, monthly_income")
     .eq("id", partnerId)
     .maybeSingle();
@@ -175,31 +175,46 @@ export async function fetchIdealSplit(
   }
   if (!coupleData) return ok(null);
 
-  const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
+  const { data: partner, error: partnerError } = await supabase
+    .from("partner_profiles")
     .select("id, monthly_income")
-    .in("id", [coupleData.user_a, coupleData.user_b]);
+    .eq("couple_id", coupleId)
+    .maybeSingle();
 
-  if (profilesError) {
+  if (partnerError) {
     return fail(
-      toAppError(
-        profilesError,
-        "Não foi possível carregar as rendas do casal.",
-      ),
+      toAppError(partnerError, "Não foi possível carregar as rendas do casal."),
     );
   }
-  if (!profiles || profiles.length < 2) return ok(null);
+  if (!partner) return ok(null);
 
-  const incomeA = profiles.find(
-    (p) => p.id === coupleData.user_a,
-  )?.monthly_income;
-  const incomeB = profiles.find(
-    (p) => p.id === coupleData.user_b,
-  )?.monthly_income;
+  const selfId =
+    partner.id === coupleData.user_a ? coupleData.user_b : coupleData.user_a;
 
-  if (!incomeA || !incomeB || incomeA + incomeB === 0) return ok(null);
+  const { data: self, error: selfError } = await supabase
+    .from("profiles")
+    .select("id, monthly_income")
+    .eq("id", selfId)
+    .maybeSingle();
 
-  const ratioA = Math.round((incomeA / (incomeA + incomeB)) * 100 * 100) / 100;
+  if (selfError) {
+    return fail(
+      toAppError(selfError, "Não foi possível carregar as rendas do casal."),
+    );
+  }
+  if (!self) return ok(null);
+
+  const incomeSelf = self.monthly_income;
+  const incomePartner = partner.monthly_income;
+
+  if (!incomeSelf || !incomePartner || incomeSelf + incomePartner === 0) {
+    return ok(null);
+  }
+
+  const ratioSelf =
+    Math.round((incomeSelf / (incomeSelf + incomePartner)) * 100 * 100) / 100;
+  const selfIsA = selfId === coupleData.user_a;
+  const ratioA = selfIsA ? ratioSelf : 100 - ratioSelf;
   const ratioB = 100 - ratioA;
 
   return ok({
