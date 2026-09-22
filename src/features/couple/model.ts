@@ -58,3 +58,22 @@ export function buildCoupleDisplayName(
   if (partner) return partner;
   return "Nosso casal";
 }
+
+/** Frase exata exigida na confirmação forte do encerramento do vínculo. */
+export const END_RELATIONSHIP_CONFIRMATION_PHRASE = "ENCERRAR VÍNCULO";
+
+/**
+ * Confirmação deliberada do encerramento: exige o checkbox "Li e entendi" e a
+ * digitação exata da frase. Compara ignorando espaços nas bordas e maiúsculas,
+ * que é o que a tela apresenta ao usuário; não flexibiliza o conteúdo.
+ */
+export function isEndRelationshipConfirmationValid(params: {
+  acknowledged: boolean;
+  typedPhrase: string;
+}): boolean {
+  const normalized = params.typedPhrase.trim().toUpperCase();
+  return (
+    params.acknowledged &&
+    normalized === END_RELATIONSHIP_CONFIRMATION_PHRASE.toUpperCase()
+  );
+}

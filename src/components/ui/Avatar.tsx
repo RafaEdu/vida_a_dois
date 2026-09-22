@@ -1,4 +1,6 @@
+import { useState } from "react";
 import {
+  Image,
   Pressable,
   StyleSheet,
   View,
@@ -9,10 +11,12 @@ import { colors, radius, type ColorToken } from "../../theme";
 import { AppText } from "./AppText";
 
 export type AvatarTone = "primary" | "partnerA" | "partnerB" | "neutral";
-export type AvatarSize = "sm" | "md" | "lg" | "xl";
+export type AvatarSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
 export interface AvatarProps {
   initials: string;
+  /** Optional image source. Falls back to initials when missing or on error. */
+  uri?: string | null;
   tone?: AvatarTone;
   size?: AvatarSize;
   /** When provided the avatar becomes an accessible button. */
@@ -27,16 +31,18 @@ const dimensions: Record<AvatarSize, number> = {
   md: 40,
   lg: 48,
   xl: 64,
+  "2xl": 96,
 };
 
 const textVariant: Record<
   AvatarSize,
-  "label" | "bodySmallMedium" | "bodyMedium" | "h3"
+  "label" | "bodySmallMedium" | "bodyMedium" | "h3" | "h2"
 > = {
   sm: "label",
   md: "bodySmallMedium",
   lg: "bodyMedium",
   xl: "h3",
+  "2xl": "h2",
 };
 
 const toneStyles: Record<AvatarTone, { background: string; text: ColorToken }> =
@@ -49,6 +55,7 @@ const toneStyles: Record<AvatarTone, { background: string; text: ColorToken }> =
 
 export function Avatar({
   initials,
+  uri,
   tone = "primary",
   size = "md",
   onPress,
@@ -58,6 +65,9 @@ export function Avatar({
 }: AvatarProps) {
   const dimension = dimensions[size];
   const toneStyle = toneStyles[tone];
+  const [failedUri, setFailedUri] = useState<string | null>(null);
+
+  const showImage = Boolean(uri) && uri !== failedUri;
 
   const content = (
     <View
@@ -73,9 +83,22 @@ export function Avatar({
         style,
       ]}
     >
-      <AppText variant={textVariant[size]} color={toneStyle.text}>
-        {initials}
-      </AppText>
+      {showImage ? (
+        <Image
+          source={{ uri: uri as string }}
+          style={{
+            width: dimension,
+            height: dimension,
+            borderRadius: radius.full,
+          }}
+          onError={() => setFailedUri(uri ?? null)}
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        <AppText variant={textVariant[size]} color={toneStyle.text}>
+          {initials}
+        </AppText>
+      )}
     </View>
   );
 

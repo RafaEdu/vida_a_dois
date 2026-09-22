@@ -14,6 +14,7 @@ function makeProfile(): Profile {
     birth_date: null,
     monthly_income: null,
     invite_code: "ABCD1234",
+    avatar_path: null,
     created_at: "2026-01-01T00:00:00.000Z",
   };
 }

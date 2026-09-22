@@ -28,6 +28,7 @@ export interface AuthSessionContextValue {
   }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
+  updatePassword: (password: string) => Promise<{ error?: string }>;
   verifyOtp: (email: string, token: string) => Promise<{ error?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string }>;
 }
@@ -94,6 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authService.signOut();
   }, []);
 
+  const updatePassword = useCallback(
+    (password: string) => authService.updatePassword(password),
+    [],
+  );
+
   const verifyOtp = useCallback(
     (email: string, token: string) => authService.verifyOtp(email, token),
     [],
@@ -118,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signIn,
       signOut,
+      updatePassword,
       verifyOtp,
       resendVerification,
     }),
@@ -130,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signIn,
       signOut,
+      updatePassword,
       verifyOtp,
       resendVerification,
     ],

@@ -8,6 +8,8 @@ export interface CoupleSummaryProps {
   coupleName: string;
   selfInitials: string;
   partnerInitials: string;
+  selfAvatarUrl?: string | null;
+  partnerAvatarUrl?: string | null;
   link: CoupleLinkSummary;
 }
 
@@ -15,12 +17,19 @@ export function CoupleSummary({
   coupleName,
   selfInitials,
   partnerInitials,
+  selfAvatarUrl,
+  partnerAvatarUrl,
   link,
 }: CoupleSummaryProps) {
   return (
     <Card padded style={styles.card}>
       <View style={styles.avatars}>
-        <Avatar initials={selfInitials} tone="partnerA" size="xl" />
+        <Avatar
+          initials={selfInitials}
+          uri={selfAvatarUrl}
+          tone="partnerA"
+          size="xl"
+        />
         <View
           style={styles.linkIcon}
           accessible={false}
@@ -29,7 +38,12 @@ export function CoupleSummary({
         >
           <MaterialIcons name="favorite" size={18} color={colors.partnerA} />
         </View>
-        <Avatar initials={partnerInitials} tone="partnerB" size="xl" />
+        <Avatar
+          initials={partnerInitials}
+          uri={partnerAvatarUrl}
+          tone="partnerB"
+          size="xl"
+        />
       </View>
 
       <AppText variant="h2" align="center">

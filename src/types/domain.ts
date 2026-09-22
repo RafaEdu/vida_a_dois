@@ -36,6 +36,7 @@ export interface PartnerInfo {
   id: string;
   full_name: string;
   monthly_income: number | null;
+  avatar_path: string | null;
 }
 
 export interface PartnerLookup {

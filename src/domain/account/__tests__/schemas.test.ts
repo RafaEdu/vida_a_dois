@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
+  changePasswordFormSchema,
   partnerCodeFormSchema,
   profileEditFormSchema,
   profileSetupFormSchema,
@@ -83,23 +84,85 @@ describe("profileSetupFormSchema", () => {
 describe("profileEditFormSchema", () => {
   it("exige nome", () => {
     expect(
-      profileEditFormSchema.safeParse({ fullName: " ", income: "" }).success,
+      profileEditFormSchema.safeParse({
+        fullName: " ",
+        birthDate: "01/02/1990",
+        income: "",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejeita data de nascimento inválida com a mesma regra do onboarding", () => {
+    expect(
+      profileEditFormSchema.safeParse({
+        fullName: "Maria",
+        birthDate: "31/02/1990",
+        income: "",
+      }).success,
     ).toBe(false);
   });
 });
 
 describe("toProfileUpdateInput", () => {
-  it("converte a renda formatada para número", () => {
+  it("converte a renda formatada e a data para ISO", () => {
     expect(
-      toProfileUpdateInput({ fullName: "Rafael", income: "R$ 1.234,56" }),
-    ).toEqual({ full_name: "Rafael", monthly_income: 1234.56 });
+      toProfileUpdateInput({
+        fullName: "Rafael",
+        birthDate: "01/02/1990",
+        income: "R$ 1.234,56",
+      }),
+    ).toEqual({
+      full_name: "Rafael",
+      birth_date: "1990-02-01",
+      monthly_income: 1234.56,
+    });
   });
 
   it("envia renda nula quando o campo está vazio", () => {
-    expect(toProfileUpdateInput({ fullName: "Rafael", income: "" })).toEqual({
+    expect(
+      toProfileUpdateInput({
+        fullName: "Rafael",
+        birthDate: "01/02/1990",
+        income: "",
+      }),
+    ).toEqual({
       full_name: "Rafael",
+      birth_date: "1990-02-01",
       monthly_income: null,
     });
+  });
+});
+
+describe("changePasswordFormSchema", () => {
+  const base = {
+    currentPassword: "senha-antiga",
+    newPassword: "senha-nova-1",
+    confirmPassword: "senha-nova-1",
+  };
+
+  it("aceita dados válidos", () => {
+    expect(changePasswordFormSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("rejeita senha nova curta", () => {
+    expect(
+      changePasswordFormSchema.safeParse({
+        ...base,
+        newPassword: "123",
+        confirmPassword: "123",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejeita confirmação diferente", () => {
+    const result = changePasswordFormSchema.safeParse({
+      ...base,
+      confirmPassword: "outra",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toEqual(["confirmPassword"]);
+    }
   });
 });
 

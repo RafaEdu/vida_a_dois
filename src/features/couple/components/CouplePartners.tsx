@@ -13,6 +13,7 @@ import {
 interface PartnerCardProps {
   name: string;
   initials: string;
+  avatarUrl?: string | null;
   tone: AvatarTone;
   roleLabel: string;
   income: number | null;
@@ -21,13 +22,14 @@ interface PartnerCardProps {
 function PartnerCard({
   name,
   initials,
+  avatarUrl,
   tone,
   roleLabel,
   income,
 }: PartnerCardProps) {
   return (
     <Card padded style={styles.partnerCard}>
-      <Avatar initials={initials} tone={tone} size="lg" />
+      <Avatar initials={initials} uri={avatarUrl} tone={tone} size="lg" />
       <AppText variant="bodySmallMedium" align="center" numberOfLines={2}>
         {name}
       </AppText>
@@ -55,18 +57,22 @@ export interface CouplePartnersProps {
   selfName: string;
   selfInitials: string;
   selfIncome: number | null;
+  selfAvatarUrl?: string | null;
   partnerName: string;
   partnerInitials: string;
   partnerIncome: number | null;
+  partnerAvatarUrl?: string | null;
 }
 
 export function CouplePartners({
   selfName,
   selfInitials,
   selfIncome,
+  selfAvatarUrl,
   partnerName,
   partnerInitials,
   partnerIncome,
+  partnerAvatarUrl,
 }: CouplePartnersProps) {
   return (
     <View style={styles.section}>
@@ -78,6 +84,7 @@ export function CouplePartners({
         <PartnerCard
           name={selfName}
           initials={selfInitials}
+          avatarUrl={selfAvatarUrl}
           tone="partnerA"
           roleLabel="Você"
           income={selfIncome}
@@ -85,6 +92,7 @@ export function CouplePartners({
         <PartnerCard
           name={partnerName}
           initials={partnerInitials}
+          avatarUrl={partnerAvatarUrl}
           tone="partnerB"
           roleLabel="Parceiro"
           income={partnerIncome}

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
 import type { Couple } from "../../../types/domain";
-import { buildCoupleDisplayName, deriveCoupleLinkSummary } from "../model";
+import {
+  buildCoupleDisplayName,
+  deriveCoupleLinkSummary,
+  isEndRelationshipConfirmationValid,
+} from "../model";
 
 function couple(overrides: Partial<Couple> = {}): Couple {
   return {
@@ -65,5 +69,43 @@ describe("buildCoupleDisplayName", () => {
 
   it("usa um rótulo neutro quando não há nomes", () => {
     expect(buildCoupleDisplayName(null, null)).toBe("Nosso casal");
+  });
+});
+
+describe("isEndRelationshipConfirmationValid", () => {
+  it("exige o checkbox marcado e a frase exata", () => {
+    expect(
+      isEndRelationshipConfirmationValid({
+        acknowledged: true,
+        typedPhrase: "ENCERRAR VÍNCULO",
+      }),
+    ).toBe(true);
+  });
+
+  it("rejeita quando o checkbox não está marcado", () => {
+    expect(
+      isEndRelationshipConfirmationValid({
+        acknowledged: false,
+        typedPhrase: "ENCERRAR VÍNCULO",
+      }),
+    ).toBe(false);
+  });
+
+  it("rejeita frase diferente", () => {
+    expect(
+      isEndRelationshipConfirmationValid({
+        acknowledged: true,
+        typedPhrase: "encerrar",
+      }),
+    ).toBe(false);
+  });
+
+  it("tolera espaços nas bordas e diferença de caixa", () => {
+    expect(
+      isEndRelationshipConfirmationValid({
+        acknowledged: true,
+        typedPhrase: "  encerrar vínculo  ",
+      }),
+    ).toBe(true);
   });
 });

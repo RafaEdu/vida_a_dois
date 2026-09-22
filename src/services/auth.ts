@@ -36,6 +36,17 @@ export async function signOut(): Promise<{ error?: string }> {
   return { error: error?.message };
 }
 
+/**
+ * Fluxo oficial do Supabase para troca de senha. Não recebe e-mail/usuário: a
+ * identidade vem da sessão autenticada (`auth.uid()`).
+ */
+export async function updatePassword(
+  password: string,
+): Promise<{ error?: string }> {
+  const { error } = await supabase.auth.updateUser({ password });
+  return { error: error?.message };
+}
+
 export async function verifyOtp(
   email: string,
   token: string,

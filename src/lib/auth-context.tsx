@@ -10,6 +10,8 @@ import {
 } from "../providers/bootstrap";
 import type { ServiceResult } from "../utils/result";
 import type { CostPlanInput } from "../services/couple";
+import type { ProfileUpdateInput } from "../domain/account/schemas";
+import type { AvatarPickerAsset } from "../domain/account/avatar";
 import type {
   Profile,
   Couple,
@@ -33,6 +35,8 @@ export interface AuthContextType {
   couple: Couple | null;
   userState: UserState;
   partnerInfo: PartnerInfo | null;
+  selfAvatarUrl: string | null;
+  partnerAvatarUrl: string | null;
   loading: boolean;
   bootstrapStatus: BootstrapStatus;
   bootstrapError: string | null;
@@ -51,6 +55,7 @@ export interface AuthContextType {
   }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
+  updatePassword: (password: string) => Promise<{ error?: string }>;
   verifyOtp: (email: string, token: string) => Promise<{ error?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string }>;
   saveProfile: (data: {
@@ -58,10 +63,9 @@ export interface AuthContextType {
     birth_date: string;
     monthly_income?: number;
   }) => Promise<{ error?: string; inviteCode?: string }>;
-  updateProfile: (data: {
-    full_name: string;
-    monthly_income: number | null;
-  }) => Promise<{ error?: string }>;
+  updateProfile: (data: ProfileUpdateInput) => Promise<{ error?: string }>;
+  uploadAvatar: (asset: AvatarPickerAsset) => Promise<{ error?: string }>;
+  removeAvatar: () => Promise<{ error?: string }>;
   lookupPartner: (
     inviteCode: string,
   ) => Promise<{ error?: string; partner?: PartnerLookup }>;
@@ -120,6 +124,8 @@ export function useAuth(): AuthContextType {
       couple: coupleCtx.couple,
       userState: coupleCtx.userState,
       partnerInfo: coupleCtx.partnerInfo,
+      selfAvatarUrl: coupleCtx.selfAvatarUrl,
+      partnerAvatarUrl: coupleCtx.partnerAvatarUrl,
       loading,
       bootstrapStatus: status,
       bootstrapError,
@@ -131,10 +137,13 @@ export function useAuth(): AuthContextType {
       signUp: auth.signUp,
       signIn: auth.signIn,
       signOut: auth.signOut,
+      updatePassword: auth.updatePassword,
       verifyOtp: auth.verifyOtp,
       resendVerification: auth.resendVerification,
       saveProfile: coupleCtx.saveProfile,
       updateProfile: coupleCtx.updateProfile,
+      uploadAvatar: coupleCtx.uploadAvatar,
+      removeAvatar: coupleCtx.removeAvatar,
       lookupPartner: coupleCtx.lookupPartner,
       linkPartner: coupleCtx.linkPartner,
       acceptInvitation: coupleCtx.acceptInvitation,

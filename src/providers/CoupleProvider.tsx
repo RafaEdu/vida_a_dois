@@ -15,6 +15,13 @@ import { deriveUserState } from "../lib/user-state";
 import * as profileService from "../services/profile";
 import * as coupleService from "../services/couple";
 import type { CostPlanInput } from "../services/couple";
+import type { ProfileUpdateInput } from "../domain/account/schemas";
+import {
+  buildAvatarObjectPath,
+  decodeAvatarBase64,
+  validateAvatarAsset,
+  type AvatarPickerAsset,
+} from "../domain/account/avatar";
 import {
   subscribeToCoupleChanges,
   subscribeToCoupleInvites,
@@ -33,6 +40,8 @@ export interface CoupleContextValue {
   profile: Profile | null;
   couple: Couple | null;
   partnerInfo: PartnerInfo | null;
+  selfAvatarUrl: string | null;
+  partnerAvatarUrl: string | null;
   userState: UserState;
   status: LoadStatus;
   error: string | null;
@@ -44,16 +53,16 @@ export interface CoupleContextValue {
     birth_date: string;
     monthly_income?: number;
   }) => Promise<{ error?: string; inviteCode?: string }>;
-  updateProfile: (data: {
-    full_name: string;
-    monthly_income: number | null;
-  }) => Promise<{ error?: string }>;
+  updateProfile: (data: ProfileUpdateInput) => Promise<{ error?: string }>;
+  uploadAvatar: (asset: AvatarPickerAsset) => Promise<{ error?: string }>;
+  removeAvatar: () => Promise<{ error?: string }>;
   lookupPartner: (
     inviteCode: string,
   ) => Promise<{ error?: string; partner?: PartnerLookup }>;
   linkPartner: (inviteCode: string) => Promise<{ error?: string }>;
   acceptInvitation: (coupleId: string) => Promise<{ error?: string }>;
   rejectInvitation: (coupleId: string) => Promise<{ error?: string }>;
+  endRelationship: () => Promise<{ error?: string }>;
   fetchIdealSplit: () => Promise<ServiceResult<IdealSplit | null>>;
   updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
 }
@@ -65,18 +74,25 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
+  const [selfAvatarUrl, setSelfAvatarUrl] = useState<string | null>(null);
+  const [partnerAvatarUrl, setPartnerAvatarUrl] = useState<string | null>(null);
   const [internalStatus, setInternalStatus] = useState<LoadStatus>("loading");
   const [error, setError] = useState<string | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   const userRef = useRef<User | null>(user);
+  const profileRef = useRef<Profile | null>(profile);
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
   const coupleId = couple?.id ?? null;
 
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   const refreshProfile = useCallback(async (userId?: string): Promise<void> => {
     const uid = userId ?? userRef.current?.id;
@@ -90,10 +106,18 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       }
 
       setProfile(profileResult.data);
+      setSelfAvatarUrl(
+        profileResult.data?.avatar_path
+          ? await profileService.createAvatarSignedUrl(
+              profileResult.data.avatar_path,
+            )
+          : null,
+      );
 
       if (!profileResult.data) {
         setCouple(null);
         setPartnerInfo(null);
+        setPartnerAvatarUrl(null);
       } else {
         const coupleResult = await coupleService.fetchCurrentCouple(uid);
         if (coupleResult.error) {
@@ -111,8 +135,16 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
             throw new Error(partnerResult.error.message);
           }
           setPartnerInfo(partnerResult.data);
+          setPartnerAvatarUrl(
+            partnerResult.data?.avatar_path
+              ? await profileService.createAvatarSignedUrl(
+                  partnerResult.data.avatar_path,
+                )
+              : null,
+          );
         } else {
           setPartnerInfo(null);
+          setPartnerAvatarUrl(null);
         }
       }
 
@@ -132,6 +164,8 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setCouple(null);
       setPartnerInfo(null);
+      setSelfAvatarUrl(null);
+      setPartnerAvatarUrl(null);
       setLoadedUserId(null);
       setInternalStatus("ready");
       setError(null);
@@ -209,7 +243,7 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   );
 
   const updateProfile = useCallback(
-    async (data: { full_name: string; monthly_income: number | null }) => {
+    async (data: ProfileUpdateInput) => {
       const currentUser = userRef.current;
       if (!currentUser) return { error: "No user" };
 
@@ -224,6 +258,69 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     },
     [refreshProfile],
   );
+
+  const uploadAvatar = useCallback(
+    async (asset: AvatarPickerAsset) => {
+      const currentUser = userRef.current;
+      if (!currentUser) return { error: "No user" };
+
+      const validation = validateAvatarAsset(asset);
+      if (validation.error || !validation.value) {
+        return { error: validation.error ?? "Imagem inválida." };
+      }
+
+      const path = buildAvatarObjectPath(
+        currentUser.id,
+        validation.value.mimeType,
+        Date.now(),
+      );
+      const previousPath = profileRef.current?.avatar_path ?? null;
+
+      const uploadResult = await profileService.uploadAvatarObject(
+        path,
+        decodeAvatarBase64(validation.value.base64),
+        validation.value.mimeType,
+      );
+      if (uploadResult.error) return { error: uploadResult.error };
+
+      const updateResult = await profileService.updateAvatarPath(
+        currentUser.id,
+        path,
+      );
+      if (updateResult.error) {
+        // Não deixa objeto órfão se a referência não pôde ser persistida.
+        await profileService.removeAvatarObject(path);
+        return { error: updateResult.error };
+      }
+
+      if (previousPath && previousPath !== path) {
+        await profileService.removeAvatarObject(previousPath);
+      }
+
+      await refreshProfile(currentUser.id).catch(() => {});
+      return {};
+    },
+    [refreshProfile],
+  );
+
+  const removeAvatar = useCallback(async () => {
+    const currentUser = userRef.current;
+    if (!currentUser) return { error: "No user" };
+
+    const previousPath = profileRef.current?.avatar_path ?? null;
+    const updateResult = await profileService.updateAvatarPath(
+      currentUser.id,
+      null,
+    );
+    if (updateResult.error) return { error: updateResult.error };
+
+    if (previousPath) {
+      await profileService.removeAvatarObject(previousPath);
+    }
+
+    await refreshProfile(currentUser.id).catch(() => {});
+    return {};
+  }, [refreshProfile]);
 
   const lookupPartner = useCallback(
     (inviteCode: string) => coupleService.lookupPartner(inviteCode),
@@ -255,8 +352,25 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
     const result = await coupleService.rejectInvitation(coupleId);
     setCouple(null);
     setPartnerInfo(null);
+    setPartnerAvatarUrl(null);
     return result;
   }, []);
+
+  const endRelationship = useCallback(async () => {
+    if (!userRef.current) return { error: "No user" };
+
+    const result = await coupleService.endRelationship();
+    if (result.error) return result;
+
+    // O vínculo encerrado deixa de ser o vínculo atual imediatamente; a
+    // recarga do bootstrap confirma o estado do servidor e limpa o financeiro
+    // (o FinanceProvider reage a `couple` nulo/`ended`).
+    setCouple(null);
+    setPartnerInfo(null);
+    setPartnerAvatarUrl(null);
+    await refreshProfile().catch(() => {});
+    return {};
+  }, [refreshProfile]);
 
   const retry = useCallback(() => {
     setAttempt((current) => current + 1);
@@ -296,6 +410,8 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       profile,
       couple,
       partnerInfo,
+      selfAvatarUrl,
+      partnerAvatarUrl,
       userState,
       status,
       error,
@@ -304,10 +420,13 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       saveProfile,
       updateProfile,
+      uploadAvatar,
+      removeAvatar,
       lookupPartner,
       linkPartner,
       acceptInvitation,
       rejectInvitation,
+      endRelationship,
       fetchIdealSplit,
       updateCostPlan,
     }),
@@ -315,6 +434,8 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       profile,
       couple,
       partnerInfo,
+      selfAvatarUrl,
+      partnerAvatarUrl,
       userState,
       status,
       error,
@@ -322,10 +443,13 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       saveProfile,
       updateProfile,
+      uploadAvatar,
+      removeAvatar,
       lookupPartner,
       linkPartner,
       acceptInvitation,
       rejectInvitation,
+      endRelationship,
       fetchIdealSplit,
       updateCostPlan,
     ],

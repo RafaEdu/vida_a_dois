@@ -11,10 +11,20 @@ import { CoupleSummary } from "./components/CoupleSummary";
 import { CouplePartners } from "./components/CouplePartners";
 import { CoupleSplit } from "./components/CoupleSplit";
 import { CoupleLinkCard } from "./components/CoupleLinkCard";
+import { CoupleSettingsEntry } from "./components/CoupleSettingsEntry";
 
 export function CoupleScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, partnerInfo, couple, status, error, retry } = useCouple();
+  const {
+    profile,
+    partnerInfo,
+    couple,
+    selfAvatarUrl,
+    partnerAvatarUrl,
+    status,
+    error,
+    retry,
+  } = useCouple();
 
   if (status === "error") {
     return (
@@ -66,6 +76,8 @@ export function CoupleScreen() {
           coupleName={coupleName}
           selfInitials={getInitials(profile?.full_name, "??")}
           partnerInitials={getInitials(partnerInfo?.full_name, "??")}
+          selfAvatarUrl={selfAvatarUrl}
+          partnerAvatarUrl={partnerAvatarUrl}
           link={link}
         />
 
@@ -73,9 +85,11 @@ export function CoupleScreen() {
           selfName={profile?.full_name ?? "Você"}
           selfInitials={getInitials(profile?.full_name, "??")}
           selfIncome={profile?.monthly_income ?? null}
+          selfAvatarUrl={selfAvatarUrl}
           partnerName={partnerInfo?.full_name ?? "Parceiro"}
           partnerInitials={getInitials(partnerInfo?.full_name, "??")}
           partnerIncome={partnerInfo?.monthly_income ?? null}
+          partnerAvatarUrl={partnerAvatarUrl}
         />
 
         <CoupleSplit
@@ -89,6 +103,8 @@ export function CoupleScreen() {
           statusLabel={link.statusLabel}
           linkedAt={couple?.linked_at ?? null}
         />
+
+        <CoupleSettingsEntry />
       </ScrollView>
     </View>
   );

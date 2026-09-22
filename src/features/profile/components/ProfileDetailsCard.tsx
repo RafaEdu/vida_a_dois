@@ -20,7 +20,7 @@ import { formatCurrency } from "../../../utils/currency";
 import { formatDateOnlyForDisplay } from "../../../utils/date";
 import { colors, fontFamilies, radius, spacing } from "../../../theme";
 import { AppText, Button, Card, MoneyText } from "../../../components/ui";
-import { MoneyInput } from "../../../components/forms";
+import { DateInput, MoneyInput } from "../../../components/forms";
 
 export interface ProfileDetailsCardProps {
   profile: Profile | null;
@@ -54,12 +54,13 @@ export function ProfileDetailsCard({
     formState: { errors, isSubmitting },
   } = useForm<ProfileEditFormInput, unknown, ProfileEditFormValues>({
     resolver: zodResolver(profileEditFormSchema),
-    defaultValues: { fullName: "", income: "" },
+    defaultValues: { fullName: "", birthDate: "", income: "" },
   });
 
   const startEditing = () => {
     reset({
       fullName: profile?.full_name ?? "",
+      birthDate: formatDateOnlyForDisplay(profile?.birth_date),
       income:
         profile?.monthly_income != null
           ? formatCurrency(profile.monthly_income)
@@ -121,6 +122,32 @@ export function ProfileDetailsCard({
           {errors.fullName?.message ? (
             <AppText variant="bodySmall" color="danger">
               {errors.fullName.message}
+            </AppText>
+          ) : null}
+        </View>
+
+        <View style={styles.field}>
+          <AppText variant="label" color="textSecondary">
+            Data de nascimento
+          </AppText>
+          <Controller
+            control={control}
+            name="birthDate"
+            render={({ field }) => (
+              <DateInput
+                variant="br"
+                style={inputStyle}
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                invalid={Boolean(errors.birthDate)}
+                accessibilityLabel="Data de nascimento"
+              />
+            )}
+          />
+          {errors.birthDate?.message ? (
+            <AppText variant="bodySmall" color="danger">
+              {errors.birthDate.message}
             </AppText>
           ) : null}
         </View>

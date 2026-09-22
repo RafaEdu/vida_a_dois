@@ -155,7 +155,12 @@ describe("fetchRelationshipHistory", () => {
 describe("fetchPartner", () => {
   it("lê o parceiro pela view limitada partner_profiles", async () => {
     resultsByTable["partner_profiles"] = {
-      data: { id: "u2", full_name: "Bia", monthly_income: 3000 },
+      data: {
+        id: "u2",
+        full_name: "Bia",
+        monthly_income: 3000,
+        avatar_path: "u2/avatar-1.png",
+      },
       error: null,
     };
 
@@ -166,10 +171,11 @@ describe("fetchPartner", () => {
       id: "u2",
       full_name: "Bia",
       monthly_income: 3000,
+      avatar_path: "u2/avatar-1.png",
     });
     expect(calls).toContainEqual({
       table: "partner_profiles",
-      select: "id, full_name, monthly_income",
+      select: "id, full_name, monthly_income, avatar_path",
       eq: ["id", "u2"],
     });
   });

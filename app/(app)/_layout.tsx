@@ -44,6 +44,14 @@ export default function AppLayout() {
         name="monthly-closing"
         options={{ title: "Fechamento do mês" }}
       />
+      <Stack.Screen
+        name="couple-settings"
+        options={{ title: "Configurações do vínculo" }}
+      />
+      <Stack.Screen
+        name="end-relationship"
+        options={{ title: "Encerrar vínculo" }}
+      />
       <Stack.Screen name="profile" options={{ title: "Perfil" }} />
     </Stack>
   );

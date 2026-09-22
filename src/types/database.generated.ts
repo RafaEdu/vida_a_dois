@@ -208,6 +208,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_path: string | null;
           birth_date: string | null;
           created_at: string;
           full_name: string;
@@ -216,6 +217,7 @@ export type Database = {
           monthly_income: number | null;
         };
         Insert: {
+          avatar_path?: string | null;
           birth_date?: string | null;
           created_at?: string;
           full_name: string;
@@ -224,6 +226,7 @@ export type Database = {
           monthly_income?: number | null;
         };
         Update: {
+          avatar_path?: string | null;
           birth_date?: string | null;
           created_at?: string;
           full_name?: string;
@@ -245,6 +248,7 @@ export type Database = {
     Views: {
       partner_profiles: {
         Row: {
+          avatar_path: string | null;
           couple_id: string;
           full_name: string;
           id: string;
@@ -265,6 +269,16 @@ export type Database = {
           p_couple_id: string;
         };
         Returns: Json;
+      };
+      end_relationship: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      is_active_partner: {
+        Args: {
+          p_owner: string;
+        };
+        Returns: boolean;
       };
       link_partner: {
         Args: {

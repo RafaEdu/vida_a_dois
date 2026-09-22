@@ -1,5 +1,4 @@
 import { StyleSheet, View } from "react-native";
-import { useAuthSession } from "../../providers/AuthProvider";
 import { useCouple } from "../../providers/CoupleProvider";
 import { getInitials } from "../../utils/initials";
 import { colors, spacing } from "../../theme";
@@ -11,14 +10,23 @@ import {
 } from "../../components/ui";
 import { ProfileIdentityCard } from "./components/ProfileIdentityCard";
 import { ProfileDetailsCard } from "./components/ProfileDetailsCard";
+import { AccountSecurityCard } from "./components/AccountSecurityCard";
 
 /**
  * Área individual do usuário autenticado. Concentra apenas dados que pertencem
  * à própria pessoa — nunca informações do casal ou financeiras compartilhadas.
  */
 export function ProfileScreen() {
-  const { user } = useAuthSession();
-  const { profile, status, error, retry, updateProfile } = useCouple();
+  const {
+    profile,
+    selfAvatarUrl,
+    status,
+    error,
+    retry,
+    updateProfile,
+    uploadAvatar,
+    removeAvatar,
+  } = useCouple();
 
   if (status === "error") {
     return (
@@ -48,8 +56,10 @@ export function ProfileScreen() {
     >
       <ProfileIdentityCard
         fullName={profile?.full_name}
-        email={user?.email}
         initials={getInitials(profile?.full_name, "??")}
+        avatarUrl={selfAvatarUrl}
+        onUpload={uploadAvatar}
+        onRemove={removeAvatar}
       />
 
       <View style={styles.section}>
@@ -58,6 +68,14 @@ export function ProfileScreen() {
           subtitle="Informações usadas para calcular a divisão do casal"
         />
         <ProfileDetailsCard profile={profile} onUpdate={updateProfile} />
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader
+          title="Conta e segurança"
+          subtitle="E-mail, senha e sessão desta conta"
+        />
+        <AccountSecurityCard />
       </View>
     </Screen>
   );

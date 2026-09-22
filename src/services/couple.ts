@@ -68,7 +68,7 @@ export async function fetchPartner(
   const partnerId = couple.user_a === userId ? couple.user_b : couple.user_a;
   const { data, error } = await supabase
     .from("partner_profiles")
-    .select("id, full_name, monthly_income")
+    .select("id, full_name, monthly_income, avatar_path")
     .eq("id", partnerId)
     .maybeSingle();
 
@@ -145,6 +145,29 @@ export async function rejectInvitation(
         .message,
     };
   }
+  return {};
+}
+
+/**
+ * Encerra o vínculo ativo do usuário autenticado. Não recebe `couple_id`: a
+ * RPC deriva a identidade de `auth.uid()` e localiza o vínculo no servidor.
+ * Idempotente — repetir a chamada após o encerramento não é tratado como erro.
+ */
+export async function endRelationship(): Promise<{ error?: string }> {
+  const { data, error } = await supabase.rpc("end_relationship");
+
+  if (error || extractDomainError(data)) {
+    return {
+      error: rpcToAppError(data, error, "Não foi possível encerrar o vínculo.")
+        .message,
+    };
+  }
+
+  const status = (data as { status?: string } | null)?.status;
+  if (status !== "ended" && status !== "already_ended") {
+    return { error: "Não foi possível encerrar o vínculo." };
+  }
+
   return {};
 }
 

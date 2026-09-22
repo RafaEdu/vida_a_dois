@@ -38,6 +38,7 @@ export function HomeScreen() {
     profile,
     partnerInfo,
     couple,
+    selfAvatarUrl,
     expenses,
     incomes,
     expensesLoading,
@@ -185,6 +186,7 @@ export function HomeScreen() {
         right={
           <Avatar
             initials={getInitials(profile?.full_name, "??")}
+            uri={selfAvatarUrl}
             tone="primary"
             onPress={() => router.navigate("/profile")}
             accessibilityLabel="Abrir meu perfil"
