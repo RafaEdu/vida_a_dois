@@ -15,6 +15,16 @@ export type Couple = Omit<Tables["couples"]["Row"], "status" | "split_mode"> & {
 
 export type Expense = Tables["expenses"]["Row"];
 
+export type RecurrenceSeries = Tables["expense_recurrence_series"]["Row"];
+
+export type RecurrenceFrequency = "monthly";
+
+export interface RecurrenceSeriesInput {
+  description: string;
+  category: string;
+  amount: number;
+}
+
 export type Income = Tables["incomes"]["Row"];
 
 export interface ExpenseInput {

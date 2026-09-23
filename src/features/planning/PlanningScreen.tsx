@@ -211,6 +211,19 @@ export function PlanningScreen() {
 
           <View style={styles.section}>
             <SectionHeader
+              title="Recorrências"
+              subtitle="Contas fixas que se repetem todo mês"
+            />
+            <Button
+              title="Gerenciar recorrências"
+              icon="autorenew"
+              variant="secondary"
+              onPress={() => router.push("/recurrences")}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
               title="Fechamento do mês"
               subtitle="Consolida o saldo do mês no caixa comum do casal"
             />

@@ -91,6 +91,63 @@ export type Database = {
           },
         ];
       };
+      expense_recurrence_series: {
+        Row: {
+          active: boolean;
+          amount: number;
+          category: string;
+          couple_id: string;
+          created_at: string;
+          created_by: string;
+          description: string;
+          frequency: string;
+          id: string;
+          next_due_date: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          amount: number;
+          category: string;
+          couple_id: string;
+          created_at?: string;
+          created_by: string;
+          description: string;
+          frequency?: string;
+          id?: string;
+          next_due_date?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          amount?: number;
+          category?: string;
+          couple_id?: string;
+          created_at?: string;
+          created_by?: string;
+          description?: string;
+          frequency?: string;
+          id?: string;
+          next_due_date?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expense_recurrence_series_couple_id_fkey";
+            columns: ["couple_id"];
+            isOneToOne: false;
+            referencedRelation: "couples";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "expense_recurrence_series_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       expenses: {
         Row: {
           amount: number;
@@ -336,6 +393,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      end_recurrence_series: {
+        Args: {
+          p_series_id: string;
+        };
+        Returns: Json;
+      };
       end_relationship: {
         Args: Record<PropertyKey, never>;
         Returns: Json;
@@ -378,6 +441,22 @@ export type Database = {
           p_couple_id: string;
         };
         Returns: undefined;
+      };
+      set_recurrence_series_active: {
+        Args: {
+          p_active: boolean;
+          p_series_id: string;
+        };
+        Returns: Json;
+      };
+      update_recurrence_series: {
+        Args: {
+          p_amount: number;
+          p_category: string;
+          p_description: string;
+          p_series_id: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {

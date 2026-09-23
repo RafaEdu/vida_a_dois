@@ -50,6 +50,7 @@ export default function AppLayout() {
       />
       <Stack.Screen name="closing-detail" options={{ title: "Fechamento" }} />
       <Stack.Screen name="settlement" options={{ title: "Acerto do casal" }} />
+      <Stack.Screen name="recurrences" options={{ title: "Recorrências" }} />
       <Stack.Screen
         name="couple-settings"
         options={{ title: "Configurações do vínculo" }}
