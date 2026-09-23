@@ -28,6 +28,7 @@ export type Database = {
           linked_at: string | null;
           monthly_budget: number;
           shared_balance: number;
+          split_mode: string;
           split_ratio_a: number;
           split_ratio_b: number;
           status: string;
@@ -43,6 +44,7 @@ export type Database = {
           linked_at?: string | null;
           monthly_budget?: number;
           shared_balance?: number;
+          split_mode?: string;
           split_ratio_a?: number;
           split_ratio_b?: number;
           status?: string;
@@ -58,6 +60,7 @@ export type Database = {
           linked_at?: string | null;
           monthly_budget?: number;
           shared_balance?: number;
+          split_mode?: string;
           split_ratio_a?: number;
           split_ratio_b?: number;
           status?: string;

@@ -5,8 +5,8 @@ import { AppText, Avatar, Card, MoneyText } from "../ui";
 
 export interface ExpenseSplitPreviewProps {
   amount: number;
-  splitA: number;
-  splitB: number;
+  selfShare: number;
+  partnerShare: number;
   selfName: string;
   selfInitials: string;
   partnerName: string;
@@ -15,21 +15,21 @@ export interface ExpenseSplitPreviewProps {
 }
 
 /**
- * Read-only preview of how the couple's configured split (`split_ratio_a/b`)
- * applies to the current expense amount. There is no per-expense split mode in
- * the domain, so this intentionally does not offer selectable options.
+ * Read-only preview of how the couple's configured split applies to the
+ * current expense amount. Percentages come from the authenticated person's
+ * perspective (`resolvePartnerShares`), so self/partner are never swapped.
  */
 export function ExpenseSplitPreview({
   amount,
-  splitA,
-  splitB,
+  selfShare,
+  partnerShare,
   selfName,
   selfInitials,
   partnerName,
   partnerInitials,
   style,
 }: ExpenseSplitPreviewProps) {
-  const { shareA, shareB } = computeSplitShares(amount, splitA);
+  const { shareA, shareB } = computeSplitShares(amount, selfShare);
 
   return (
     <Card variant="subtle" padded style={[styles.card, style]}>
@@ -52,7 +52,7 @@ export function ExpenseSplitPreview({
           </AppText>
           <MoneyText value={shareA} variant="bodyMedium" />
           <AppText variant="label" color="textSecondary" tabular>
-            {splitA}%
+            {selfShare}%
           </AppText>
         </View>
 
@@ -69,7 +69,7 @@ export function ExpenseSplitPreview({
           </AppText>
           <MoneyText value={shareB} variant="bodyMedium" />
           <AppText variant="label" color="textSecondary" tabular>
-            {splitB}%
+            {partnerShare}%
           </AppText>
         </View>
       </View>

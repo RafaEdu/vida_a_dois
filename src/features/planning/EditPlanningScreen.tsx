@@ -1,10 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../lib/auth-context";
 import type { IdealSplit } from "../../types/domain";
+import type { CostPlanInput } from "../../services/couple";
+import {
+  coupleRatiosFromShares,
+  resolvePartnerShares,
+  roundPercent,
+} from "../../domain/finance/split";
 import { formatCurrency } from "../../utils/currency";
 import {
   costPlanFormSchema,
@@ -13,7 +19,14 @@ import {
 } from "../../domain/finance/schemas";
 import { getInitials } from "../../utils/initials";
 import { colors, spacing } from "../../theme";
-import { AppText, Avatar, Button, Card, Screen } from "../../components/ui";
+import {
+  AppText,
+  Avatar,
+  Button,
+  Card,
+  Screen,
+  SegmentedControl,
+} from "../../components/ui";
 import {
   FormError,
   FormField,
@@ -27,6 +40,11 @@ export function EditPlanningScreen() {
   const [idealSplit, setIdealSplit] = useState<IdealSplit | null>(null);
   const [submitError, setSubmitError] = useState("");
 
+  const defaultShares =
+    couple && profile
+      ? resolvePartnerShares(couple, profile.id)
+      : { selfShare: 50, partnerShare: 50 };
+
   const {
     control,
     handleSubmit,
@@ -38,7 +56,9 @@ export function EditPlanningScreen() {
       budget: couple?.monthly_budget
         ? formatCurrency(couple.monthly_budget)
         : "",
-      splitA: String(couple?.split_ratio_a ?? 50),
+      splitMode: couple?.split_mode ?? "manual",
+      selfSplit: String(defaultShares.selfShare),
+      partnerSplit: String(defaultShares.partnerShare),
     },
   });
 
@@ -46,16 +66,26 @@ export function EditPlanningScreen() {
     fetchIdealSplit().then((result) => setIdealSplit(result.data));
   }, [fetchIdealSplit]);
 
-  const splitAValue = useWatch({ control, name: "splitA" }) ?? "";
-  const splitB = String(100 - (parseFloat(splitAValue) || 0));
+  const splitMode = useWatch({ control, name: "splitMode" }) ?? "manual";
+
+  const selfIsA = Boolean(couple && profile && couple.user_a === profile.id);
+  const idealSelfShare = useMemo(() => {
+    if (!idealSplit) return null;
+    return selfIsA ? idealSplit.ratio_a : idealSplit.ratio_b;
+  }, [idealSplit, selfIsA]);
+  const idealPartnerShare =
+    idealSelfShare == null ? null : roundPercent(100 - idealSelfShare);
 
   const combinedIncome =
     (profile?.monthly_income ?? 0) + (partnerInfo?.monthly_income ?? 0);
 
   const handleUseIdeal = () => {
-    if (idealSplit) {
-      setValue("splitA", String(idealSplit.ratio_a));
-    }
+    if (idealSelfShare == null || idealPartnerShare == null) return;
+    setValue("splitMode", "manual", { shouldValidate: true });
+    setValue("selfSplit", String(idealSelfShare), { shouldValidate: true });
+    setValue("partnerSplit", String(idealPartnerShare), {
+      shouldValidate: true,
+    });
   };
 
   const handleUseIncomeBudget = () => {
@@ -66,13 +96,28 @@ export function EditPlanningScreen() {
 
   const onSubmit = async (values: CostPlanFormValues) => {
     setSubmitError("");
-    try {
-      const { error: saveError } = await updateCostPlan({
-        monthly_budget: values.budget,
-        split_ratio_a: values.splitA,
-        split_ratio_b: 100 - values.splitA,
-      });
+    if (!couple || !profile) {
+      setSubmitError("Nenhum casal vinculado.");
+      return;
+    }
 
+    try {
+      const payload: CostPlanInput = {
+        monthly_budget: values.budget,
+        split_mode: values.splitMode,
+      };
+
+      if (values.splitMode === "manual") {
+        const ratios = coupleRatiosFromShares(
+          { selfShare: values.selfSplit, partnerShare: values.partnerSplit },
+          couple,
+          profile.id,
+        );
+        payload.split_ratio_a = ratios.split_ratio_a;
+        payload.split_ratio_b = ratios.split_ratio_b;
+      }
+
+      const { error: saveError } = await updateCostPlan(payload);
       if (saveError) {
         setSubmitError(saveError);
         return;
@@ -137,10 +182,26 @@ export function EditPlanningScreen() {
         </Card>
 
         <Card style={styles.card}>
-          <AppText variant="h3">Divisão de custos</AppText>
+          <AppText variant="h3">Divisão do casal</AppText>
           <AppText variant="bodySmall" color="textSecondary">
-            Defina a porcentagem que cada pessoa contribui.
+            Escolha como os custos são divididos entre vocês.
           </AppText>
+
+          <SegmentedControl
+            value={splitMode}
+            onChange={(mode) =>
+              setValue("splitMode", mode, { shouldValidate: true })
+            }
+            options={[
+              {
+                value: "income_based",
+                label: "Proporcional à renda",
+                icon: "auto-graph",
+              },
+              { value: "manual", label: "Manual", icon: "tune" },
+            ]}
+            accessibilityLabel="Modo de divisão do casal"
+          />
 
           <View style={styles.splitRow}>
             <View style={styles.splitPerson}>
@@ -156,27 +217,40 @@ export function EditPlanningScreen() {
               >
                 {profile?.full_name ?? "Você"}
               </AppText>
-              <FormField
-                label="Contribuição (%)"
-                error={errors.splitA?.message}
-                containerStyle={styles.splitField}
-              >
-                <Controller
-                  control={control}
-                  name="splitA"
-                  render={({ field }) => (
-                    <TextField
-                      value={field.value}
-                      onChangeText={field.onChange}
-                      onBlur={field.onBlur}
-                      keyboardType="decimal-pad"
-                      maxLength={5}
-                      placeholder="50"
-                      accessibilityLabel={`Porcentagem de ${profile?.full_name ?? "você"}`}
-                    />
-                  )}
-                />
-              </FormField>
+              {splitMode === "manual" ? (
+                <FormField
+                  label="Sua parte (%)"
+                  error={errors.selfSplit?.message}
+                  containerStyle={styles.splitField}
+                >
+                  <Controller
+                    control={control}
+                    name="selfSplit"
+                    render={({ field }) => (
+                      <TextField
+                        value={field.value}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        keyboardType="decimal-pad"
+                        maxLength={5}
+                        placeholder="50"
+                        accessibilityLabel={`Porcentagem de ${profile?.full_name ?? "você"}`}
+                      />
+                    )}
+                  />
+                </FormField>
+              ) : (
+                <View style={styles.splitReadonly}>
+                  <AppText variant="h2" color="primary" tabular>
+                    {idealSelfShare != null ? `${idealSelfShare}%` : "--"}
+                  </AppText>
+                  <AppText variant="bodySmall" color="textSecondary">
+                    {profile?.monthly_income != null
+                      ? formatCurrency(profile.monthly_income)
+                      : "Renda não informada"}
+                  </AppText>
+                </View>
+              )}
             </View>
 
             <View style={styles.splitPerson}>
@@ -192,39 +266,67 @@ export function EditPlanningScreen() {
               >
                 {partnerInfo?.full_name ?? "Parceiro(a)"}
               </AppText>
-              <View style={styles.splitReadonly}>
-                <AppText variant="h2" color="primary" tabular>
-                  {splitB}%
-                </AppText>
-                <AppText variant="bodySmall" color="textSecondary">
-                  Automático
-                </AppText>
-              </View>
+              {splitMode === "manual" ? (
+                <FormField
+                  label="Parte do parceiro (%)"
+                  error={errors.partnerSplit?.message}
+                  containerStyle={styles.splitField}
+                >
+                  <Controller
+                    control={control}
+                    name="partnerSplit"
+                    render={({ field }) => (
+                      <TextField
+                        value={field.value}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        keyboardType="decimal-pad"
+                        maxLength={5}
+                        placeholder="50"
+                        accessibilityLabel={`Porcentagem de ${partnerInfo?.full_name ?? "parceiro"}`}
+                      />
+                    )}
+                  />
+                </FormField>
+              ) : (
+                <View style={styles.splitReadonly}>
+                  <AppText variant="h2" color="primary" tabular>
+                    {idealPartnerShare != null ? `${idealPartnerShare}%` : "--"}
+                  </AppText>
+                  <AppText variant="bodySmall" color="textSecondary">
+                    {partnerInfo?.monthly_income != null
+                      ? formatCurrency(partnerInfo.monthly_income)
+                      : "Renda não informada"}
+                  </AppText>
+                </View>
+              )}
             </View>
           </View>
 
-          {idealSplit ? (
-            <View style={styles.idealSuggestion}>
-              <AppText variant="bodySmallMedium" color="primary">
-                Divisão ideal sugerida
-              </AppText>
+          {splitMode === "manual" ? (
+            <View style={styles.hint}>
               <AppText variant="bodySmall" color="textSecondary">
-                {profile?.full_name}: {idealSplit.ratio_a}% /{" "}
-                {partnerInfo?.full_name}: {idealSplit.ratio_b}%
+                A soma das porcentagens deve ser 100%. A mudança de renda não
+                altera uma divisão manual.
               </AppText>
-              <AppText variant="bodySmall" color="textSecondary">
-                Calculado proporcionalmente com base na renda mensal.
-              </AppText>
-              <Button
-                title="Usar divisão ideal"
-                variant="secondary"
-                size="md"
-                fullWidth
-                onPress={handleUseIdeal}
-                accessibilityLabel="Usar divisão ideal sugerida"
-              />
+              {idealSelfShare != null && idealPartnerShare != null ? (
+                <Button
+                  title="Usar proporção pela renda"
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  onPress={handleUseIdeal}
+                  accessibilityLabel="Usar proporção pela renda"
+                />
+              ) : null}
             </View>
-          ) : null}
+          ) : (
+            <AppText variant="bodySmall" color="textSecondary">
+              {idealSplit
+                ? "Os percentuais são calculados pela renda e não podem ser editados neste modo."
+                : "Informe a renda mensal de cada pessoa no Perfil para calcular a divisão."}
+            </AppText>
+          )}
         </Card>
 
         <Button
@@ -271,7 +373,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.md,
   },
-  idealSuggestion: {
+  hint: {
     gap: spacing.sm,
     paddingTop: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -6,8 +6,11 @@ export type Profile = Tables["profiles"]["Row"];
 
 export type CoupleStatus = "pending" | "active" | "ended";
 
-export type Couple = Omit<Tables["couples"]["Row"], "status"> & {
+export type CoupleSplitMode = "manual" | "income_based";
+
+export type Couple = Omit<Tables["couples"]["Row"], "status" | "split_mode"> & {
   status: CoupleStatus;
+  split_mode: CoupleSplitMode;
 };
 
 export type Expense = Tables["expenses"]["Row"];

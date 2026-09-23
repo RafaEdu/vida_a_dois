@@ -19,6 +19,7 @@ import { AccountSecurityCard } from "./components/AccountSecurityCard";
 export function ProfileScreen() {
   const {
     profile,
+    couple,
     selfAvatarUrl,
     status,
     error,
@@ -67,7 +68,11 @@ export function ProfileScreen() {
           title="Dados pessoais"
           subtitle="Informações usadas para calcular a divisão do casal"
         />
-        <ProfileDetailsCard profile={profile} onUpdate={updateProfile} />
+        <ProfileDetailsCard
+          profile={profile}
+          onUpdate={updateProfile}
+          splitMode={couple?.split_mode ?? null}
+        />
       </View>
 
       <View style={styles.section}>

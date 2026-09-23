@@ -25,6 +25,7 @@ function makeCouple(status: Couple["status"]): Couple {
     user_a: "user-a",
     user_b: "user-b",
     status,
+    split_mode: "manual",
     split_ratio_a: 50,
     split_ratio_b: 50,
     monthly_budget: 0,

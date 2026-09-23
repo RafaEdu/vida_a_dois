@@ -19,6 +19,7 @@ function couple(overrides: Partial<Couple> = {}): Couple {
     last_closed_month: null,
     monthly_budget: 0,
     shared_balance: 0,
+    split_mode: "manual",
     split_ratio_a: 50,
     split_ratio_b: 50,
     ...overrides,

@@ -143,26 +143,64 @@ describe("edit schemas", () => {
 });
 
 describe("costPlanFormSchema", () => {
-  it("aceita orçamento e divisão válidos", () => {
+  it("aceita orçamento e divisão manual válidos", () => {
     const result = costPlanFormSchema.parse({
       budget: "5.000,00",
-      splitA: "60",
+      splitMode: "manual",
+      selfSplit: "60",
+      partnerSplit: "40",
     });
-    expect(result).toEqual({ budget: 5000, splitA: 60 });
+    expect(result).toEqual({
+      budget: 5000,
+      splitMode: "manual",
+      selfSplit: 60,
+      partnerSplit: 40,
+    });
   });
 
   it("rejeita orçamento zero", () => {
     expect(
-      costPlanFormSchema.safeParse({ budget: "0", splitA: "50" }).success,
+      costPlanFormSchema.safeParse({
+        budget: "0",
+        splitMode: "manual",
+        selfSplit: "50",
+        partnerSplit: "50",
+      }).success,
     ).toBe(false);
+  });
+
+  it("rejeita divisão manual que não soma 100", () => {
+    const result = costPlanFormSchema.safeParse({
+      budget: "1000",
+      splitMode: "manual",
+      selfSplit: "60",
+      partnerSplit: "30",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toEqual(["partnerSplit"]);
+    }
+  });
+
+  it("não exige soma 100 no modo proporcional", () => {
+    expect(
+      costPlanFormSchema.safeParse({
+        budget: "1000",
+        splitMode: "income_based",
+        selfSplit: "60",
+        partnerSplit: "30",
+      }).success,
+    ).toBe(true);
   });
 
   it("rejeita divisão fora de 0..100", () => {
     expect(
-      costPlanFormSchema.safeParse({ budget: "1000", splitA: "120" }).success,
+      costPlanFormSchema.safeParse({
+        budget: "1000",
+        splitMode: "manual",
+        selfSplit: "120",
+        partnerSplit: "-20",
+      }).success,
     ).toBe(false);
-    expect(
-      costPlanFormSchema.safeParse({ budget: "1000", splitA: "" }).success,
-    ).toBe(true);
   });
 });

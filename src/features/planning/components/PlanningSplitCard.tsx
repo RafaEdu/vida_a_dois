@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import type { IdealSplit } from "../../../types/domain";
+import type { CoupleSplitMode } from "../../../types/domain";
 import { colors, radius, spacing } from "../../../theme";
 import { AppText, Avatar, Card, MoneyText } from "../../../components/ui";
 
@@ -9,37 +9,44 @@ export interface PlanningSplitCardProps {
   selfInitials: string;
   partnerName: string;
   partnerInitials: string;
-  splitA: number;
-  splitB: number;
+  selfShare: number;
+  partnerShare: number;
   budget: number;
-  idealSplit: IdealSplit | null;
+  splitMode: CoupleSplitMode;
+  idealSelfShare: number | null;
+  idealPartnerShare: number | null;
 }
 
 /**
  * Shows how the monthly budget is split between the two partners, plus the
- * income-based ideal split when the service returns one. The split amounts are
- * the same display derived from `split_ratio_a/b` used before the redesign.
+ * income-based ideal split when both incomes are available. Percentages are
+ * shown from the authenticated person's perspective (see `resolvePartnerShares`).
  */
 export function PlanningSplitCard({
   selfName,
   selfInitials,
   partnerName,
   partnerInitials,
-  splitA,
-  splitB,
+  selfShare,
+  partnerShare,
   budget,
-  idealSplit,
+  splitMode,
+  idealSelfShare,
+  idealPartnerShare,
 }: PlanningSplitCardProps) {
-  const selfAmount = budget * (splitA / 100);
-  const partnerAmount = budget * (splitB / 100);
-  const differsFromIdeal = idealSplit != null && splitA !== idealSplit.ratio_a;
+  const selfAmount = budget * (selfShare / 100);
+  const partnerAmount = budget * (partnerShare / 100);
+  const differsFromIdeal =
+    idealSelfShare != null && selfShare !== idealSelfShare;
 
   return (
     <Card padded style={styles.card}>
       <View style={styles.header}>
         <AppText variant="h3">Divisão de custos</AppText>
         <AppText variant="bodySmall" color="textSecondary">
-          Como o orçamento mensal é dividido entre vocês
+          {splitMode === "income_based"
+            ? "Proporcional à renda do casal"
+            : "Divisão manual definida pelo casal"}
         </AppText>
       </View>
 
@@ -54,7 +61,7 @@ export function PlanningSplitCard({
             {selfName}
           </AppText>
           <AppText variant="h3" color="primary" tabular>
-            {splitA}%
+            {selfShare}%
           </AppText>
           <MoneyText
             value={selfAmount}
@@ -75,7 +82,7 @@ export function PlanningSplitCard({
             {partnerName}
           </AppText>
           <AppText variant="h3" color="primary" tabular>
-            {splitB}%
+            {partnerShare}%
           </AppText>
           <MoneyText
             value={partnerAmount}
@@ -85,7 +92,7 @@ export function PlanningSplitCard({
         </View>
       </View>
 
-      {idealSplit ? (
+      {idealSelfShare != null && idealPartnerShare != null ? (
         <View style={styles.idealBox}>
           <View style={styles.idealHeader}>
             <MaterialIcons name="auto-graph" size={16} color={colors.primary} />
@@ -94,8 +101,7 @@ export function PlanningSplitCard({
             </AppText>
           </View>
           <AppText variant="bodySmall" color="textSecondary" tabular>
-            {selfName}: {idealSplit.ratio_a}% · {partnerName}:{" "}
-            {idealSplit.ratio_b}%
+            {selfName}: {idealSelfShare}% · {partnerName}: {idealPartnerShare}%
           </AppText>
           {differsFromIdeal ? (
             <View style={styles.warningRow}>

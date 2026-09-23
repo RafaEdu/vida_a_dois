@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCouple } from "../../providers/CoupleProvider";
+import { resolvePartnerShares } from "../../domain/finance/split";
 import { getInitials } from "../../utils/initials";
 import { getFirstName } from "../../utils/name";
 import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
@@ -55,8 +56,10 @@ export function CoupleScreen() {
   );
   const selfFirstName = getFirstName(profile?.full_name) || "Você";
   const partnerFirstName = getFirstName(partnerInfo?.full_name) || "Parceiro";
-  const splitA = couple?.split_ratio_a ?? 50;
-  const splitB = couple?.split_ratio_b ?? 50;
+  const { selfShare, partnerShare } =
+    couple && profile
+      ? resolvePartnerShares(couple, profile.id)
+      : { selfShare: 50, partnerShare: 50 };
 
   return (
     <View style={styles.root}>
@@ -95,8 +98,9 @@ export function CoupleScreen() {
         <CoupleSplit
           selfName={selfFirstName}
           partnerName={partnerFirstName}
-          splitA={splitA}
-          splitB={splitB}
+          selfShare={selfShare}
+          partnerShare={partnerShare}
+          splitMode={couple?.split_mode ?? "manual"}
         />
 
         <CoupleLinkCard

@@ -35,6 +35,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     user_a: "u1",
     user_b: "u2",
     status: "active",
+    split_mode: "manual",
     split_ratio_a: 50,
     split_ratio_b: 50,
     monthly_budget: 0,

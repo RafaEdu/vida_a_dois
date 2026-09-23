@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../lib/auth-context";
+import { resolvePartnerShares } from "../../domain/finance/split";
 import { DEFAULT_CATEGORIES } from "../../constants/categories";
 import {
   expenseFormSchema,
@@ -54,8 +55,10 @@ export function NewExpenseScreen() {
   const paid = useWatch({ control, name: "paid" }) ?? false;
   const amountValue = parseDecimalInput(amount);
 
-  const splitA = couple?.split_ratio_a ?? 50;
-  const splitB = couple?.split_ratio_b ?? 50;
+  const { selfShare, partnerShare } =
+    couple && profile
+      ? resolvePartnerShares(couple, profile.id)
+      : { selfShare: 50, partnerShare: 50 };
   const selfName = profile?.full_name ?? "Você";
 
   const onSubmit = async (values: ExpenseFormValues) => {
@@ -167,8 +170,8 @@ export function NewExpenseScreen() {
         {partnerInfo ? (
           <ExpenseSplitPreview
             amount={amountValue}
-            splitA={splitA}
-            splitB={splitB}
+            selfShare={selfShare}
+            partnerShare={partnerShare}
             selfName={selfName}
             selfInitials={getInitials(selfName, "EU")}
             partnerName={partnerInfo.full_name}

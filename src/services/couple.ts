@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import type {
   Couple,
+  CoupleSplitMode,
   PartnerInfo,
   PartnerLookup,
   CloseMonthResult,
@@ -193,6 +194,7 @@ export async function closeMonth(
 
 export interface CostPlanInput {
   monthly_budget?: number;
+  split_mode?: CoupleSplitMode;
   split_ratio_a?: number;
   split_ratio_b?: number;
 }

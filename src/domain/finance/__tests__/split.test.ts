@@ -1,5 +1,9 @@
 import { describe, expect, it } from "@jest/globals";
-import { computeSplitShares } from "../split";
+import {
+  computeSplitShares,
+  coupleRatiosFromShares,
+  resolvePartnerShares,
+} from "../split";
 
 describe("computeSplitShares", () => {
   it("splits evenly for a 50% ratio", () => {
@@ -33,5 +37,43 @@ describe("computeSplitShares", () => {
       shareA: 0,
       shareB: 100,
     });
+  });
+});
+
+describe("resolvePartnerShares", () => {
+  const couple = { user_a: "u1", split_ratio_a: 60, split_ratio_b: 40 };
+
+  it("mantém os percentuais quando a pessoa é user_a", () => {
+    expect(resolvePartnerShares(couple, "u1")).toEqual({
+      selfShare: 60,
+      partnerShare: 40,
+    });
+  });
+
+  it("inverte os percentuais quando a pessoa é user_b", () => {
+    expect(resolvePartnerShares(couple, "u2")).toEqual({
+      selfShare: 40,
+      partnerShare: 60,
+    });
+  });
+});
+
+describe("coupleRatiosFromShares", () => {
+  it("mapeia a ótica da pessoa autenticada para user_a/user_b", () => {
+    expect(
+      coupleRatiosFromShares(
+        { selfShare: 60, partnerShare: 40 },
+        { user_a: "u1" },
+        "u1",
+      ),
+    ).toEqual({ split_ratio_a: 60, split_ratio_b: 40 });
+
+    expect(
+      coupleRatiosFromShares(
+        { selfShare: 60, partnerShare: 40 },
+        { user_a: "u1" },
+        "u2",
+      ),
+    ).toEqual({ split_ratio_a: 40, split_ratio_b: 60 });
   });
 });

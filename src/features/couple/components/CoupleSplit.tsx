@@ -1,31 +1,36 @@
 import { StyleSheet, View } from "react-native";
+import type { CoupleSplitMode } from "../../../types/domain";
 import { colors, spacing } from "../../../theme";
 import { AppText, Card } from "../../../components/ui";
 
 export interface CoupleSplitProps {
   selfName: string;
   partnerName: string;
-  splitA: number;
-  splitB: number;
+  selfShare: number;
+  partnerShare: number;
+  splitMode: CoupleSplitMode;
 }
 
 export function CoupleSplit({
   selfName,
   partnerName,
-  splitA,
-  splitB,
+  selfShare,
+  partnerShare,
+  splitMode,
 }: CoupleSplitProps) {
   return (
     <Card padded style={styles.card}>
       <AppText variant="h3">Divisão padrão</AppText>
       <AppText variant="bodySmall" color="textSecondary">
-        Proporção usada para dividir os custos do casal.
+        {splitMode === "income_based"
+          ? "Proporcional à renda de cada pessoa."
+          : "Divisão manual definida pelo casal."}
       </AppText>
 
       <View style={styles.row}>
         <View style={styles.person}>
           <AppText variant="h2" color="primary" tabular>
-            {splitA}%
+            {selfShare}%
           </AppText>
           <AppText
             variant="bodySmall"
@@ -41,7 +46,7 @@ export function CoupleSplit({
 
         <View style={styles.person}>
           <AppText variant="h2" color="primary" tabular>
-            {splitB}%
+            {partnerShare}%
           </AppText>
           <AppText
             variant="bodySmall"

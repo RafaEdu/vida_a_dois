@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Profile } from "../../../types/domain";
+import type { CoupleSplitMode, Profile } from "../../../types/domain";
 import {
   profileEditFormSchema,
   toProfileUpdateInput,
@@ -25,6 +25,19 @@ import { DateInput, MoneyInput } from "../../../components/forms";
 export interface ProfileDetailsCardProps {
   profile: Profile | null;
   onUpdate: (data: ProfileUpdateInput) => Promise<{ error?: string }>;
+  splitMode?: CoupleSplitMode | null;
+}
+
+function incomeSplitHint(
+  splitMode: CoupleSplitMode | null | undefined,
+): string {
+  if (splitMode === "income_based") {
+    return "Modo atual: Proporcional à renda. Alterar sua renda recalcula a divisão do casal.";
+  }
+  if (splitMode === "manual") {
+    return "Modo atual: Manual. Alterar sua renda não muda a divisão do casal.";
+  }
+  return "Sua renda afeta a divisão apenas quando o casal usa “Proporcional à renda”.";
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -43,6 +56,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export function ProfileDetailsCard({
   profile,
   onUpdate,
+  splitMode,
 }: ProfileDetailsCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -176,6 +190,9 @@ export function ProfileDetailsCard({
               {errors.income.message}
             </AppText>
           ) : null}
+          <AppText variant="bodySmall" color="textSecondary">
+            {incomeSplitHint(splitMode)}
+          </AppText>
         </View>
 
         <View style={styles.actions}>

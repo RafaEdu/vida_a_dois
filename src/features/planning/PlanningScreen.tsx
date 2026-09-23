@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../lib/auth-context";
 import type { IdealSplit } from "../../types/domain";
+import { resolvePartnerShares, roundPercent } from "../../domain/finance/split";
 import { getCurrentYearMonth } from "../../utils/date";
 import { getInitials } from "../../utils/initials";
 import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
@@ -74,8 +75,20 @@ export function PlanningScreen() {
 
   const selfName = profile?.full_name ?? "Você";
   const partnerName = partnerInfo?.full_name ?? "Parceiro";
-  const splitA = couple?.split_ratio_a ?? 50;
-  const splitB = couple?.split_ratio_b ?? 50;
+  const { selfShare, partnerShare } =
+    couple && profile
+      ? resolvePartnerShares(couple, profile.id)
+      : { selfShare: 50, partnerShare: 50 };
+  const splitMode = couple?.split_mode ?? "manual";
+  const selfIsA = Boolean(couple && profile && couple.user_a === profile.id);
+  const idealSelfShare =
+    idealSplit == null
+      ? null
+      : selfIsA
+        ? idealSplit.ratio_a
+        : idealSplit.ratio_b;
+  const idealPartnerShare =
+    idealSelfShare == null ? null : roundPercent(100 - idealSelfShare);
   const sharedBalance = couple?.shared_balance ?? 0;
 
   return (
@@ -150,10 +163,12 @@ export function PlanningScreen() {
             selfInitials={getInitials(profile?.full_name, "??")}
             partnerName={partnerName}
             partnerInitials={getInitials(partnerInfo?.full_name, "??")}
-            splitA={splitA}
-            splitB={splitB}
+            selfShare={selfShare}
+            partnerShare={partnerShare}
             budget={budget}
-            idealSplit={idealSplit}
+            splitMode={splitMode}
+            idealSelfShare={idealSelfShare}
+            idealPartnerShare={idealPartnerShare}
           />
 
           {sharedBalance !== 0 ? (

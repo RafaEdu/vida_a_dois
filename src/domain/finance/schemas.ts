@@ -63,19 +63,33 @@ export const incomeEditFormSchema = z.object({
 export type IncomeEditFormInput = z.input<typeof incomeEditFormSchema>;
 export type IncomeEditFormValues = z.output<typeof incomeEditFormSchema>;
 
-export const costPlanFormSchema = z.object({
-  budget: z
-    .string()
-    .transform((value) => parseDecimalInput(value))
-    .refine((value) => value > 0, "Informe um orçamento válido."),
-  splitA: z
-    .string()
-    .transform((value) => parseFloat(value) || 0)
-    .refine(
-      (value) => value >= 0 && value <= 100,
-      "A porcentagem deve estar entre 0 e 100.",
-    ),
-});
+const percent = z
+  .string()
+  .transform((value) => parseFloat(value) || 0)
+  .refine(
+    (value) => value >= 0 && value <= 100,
+    "A porcentagem deve estar entre 0 e 100.",
+  );
+
+export const costPlanFormSchema = z
+  .object({
+    budget: z
+      .string()
+      .transform((value) => parseDecimalInput(value))
+      .refine((value) => value > 0, "Informe um orçamento válido."),
+    splitMode: z.enum(["manual", "income_based"]),
+    selfSplit: percent,
+    partnerSplit: percent,
+  })
+  .refine(
+    (data) =>
+      data.splitMode !== "manual" ||
+      Math.abs(data.selfSplit + data.partnerSplit - 100) < 0.01,
+    {
+      message: "A soma das porcentagens deve ser 100%.",
+      path: ["partnerSplit"],
+    },
+  );
 
 export type CostPlanFormInput = z.input<typeof costPlanFormSchema>;
 export type CostPlanFormValues = z.output<typeof costPlanFormSchema>;
