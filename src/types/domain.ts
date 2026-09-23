@@ -17,6 +17,13 @@ export type Expense = Tables["expenses"]["Row"];
 
 export type RecurrenceSeries = Tables["expense_recurrence_series"]["Row"];
 
+export type CategoryBudget = Tables["category_budgets"]["Row"];
+
+export interface CategoryBudgetInput {
+  category: string;
+  monthly_amount: number;
+}
+
 export type RecurrenceFrequency = "monthly";
 
 export interface RecurrenceSeriesInput {

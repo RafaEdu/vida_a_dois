@@ -24,6 +24,8 @@ import type {
   IncomeInput,
   CloseMonthResult,
   IdealSplit,
+  CategoryBudget,
+  CategoryBudgetInput,
 } from "../types/domain";
 
 export type { BootstrapStatus };
@@ -90,6 +92,12 @@ export interface AuthContextType {
   ) => Promise<{ error?: string }>;
   deleteIncome: (id: string) => Promise<{ error?: string }>;
   fetchIncomes: () => Promise<void>;
+  categoryBudgets: CategoryBudget[];
+  saveCategoryBudget: (
+    data: CategoryBudgetInput,
+  ) => Promise<{ error?: string }>;
+  removeCategoryBudget: (id: string) => Promise<{ error?: string }>;
+  fetchCategoryBudgets: () => Promise<void>;
   closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
   fetchIdealSplit: () => Promise<ServiceResult<IdealSplit | null>>;
   updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
@@ -160,6 +168,10 @@ export function useAuth(): AuthContextType {
       updateIncome: finance.updateIncome,
       deleteIncome: finance.deleteIncome,
       fetchIncomes: finance.fetchIncomes,
+      categoryBudgets: finance.categoryBudgets,
+      saveCategoryBudget: finance.saveCategoryBudget,
+      removeCategoryBudget: finance.removeCategoryBudget,
+      fetchCategoryBudgets: finance.fetchCategoryBudgets,
       closeMonth: finance.closeMonth,
       fetchIdealSplit: coupleCtx.fetchIdealSplit,
       updateCostPlan: coupleCtx.updateCostPlan,

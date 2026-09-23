@@ -2,6 +2,9 @@ import { describe, expect, it } from "@jest/globals";
 import {
   categoryBudgetShare,
   derivePlanningMonthStatus,
+  resolveCategoryBudgetBadgeTone,
+  resolveCategoryBudgetProgressTone,
+  resolveCategoryBudgetStatusLabel,
   resolveClosingAuthorLabel,
   resolveSettlementHeadline,
 } from "../model";
@@ -61,6 +64,30 @@ describe("categoryBudgetShare", () => {
 
   it("allows values above one when the category exceeds the budget", () => {
     expect(categoryBudgetShare(1500, 1000)).toBe(1.5);
+  });
+});
+
+describe("resolveCategoryBudgetStatusLabel", () => {
+  it("traduz o estado do limite", () => {
+    expect(resolveCategoryBudgetStatusLabel("ok")).toBe("Dentro do limite");
+    expect(resolveCategoryBudgetStatusLabel("warning")).toBe("Perto do limite");
+    expect(resolveCategoryBudgetStatusLabel("over")).toBe("Acima do limite");
+  });
+});
+
+describe("resolveCategoryBudgetProgressTone", () => {
+  it("mapeia o estado para o tom da barra", () => {
+    expect(resolveCategoryBudgetProgressTone("ok")).toBe("primary");
+    expect(resolveCategoryBudgetProgressTone("warning")).toBe("warning");
+    expect(resolveCategoryBudgetProgressTone("over")).toBe("danger");
+  });
+});
+
+describe("resolveCategoryBudgetBadgeTone", () => {
+  it("mapeia o estado para o tom do selo", () => {
+    expect(resolveCategoryBudgetBadgeTone("ok")).toBe("success");
+    expect(resolveCategoryBudgetBadgeTone("warning")).toBe("warning");
+    expect(resolveCategoryBudgetBadgeTone("over")).toBe("danger");
   });
 });
 

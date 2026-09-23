@@ -52,6 +52,10 @@ export default function AppLayout() {
       <Stack.Screen name="settlement" options={{ title: "Acerto do casal" }} />
       <Stack.Screen name="recurrences" options={{ title: "Recorrências" }} />
       <Stack.Screen
+        name="category-budgets"
+        options={{ title: "Orçamento por categoria" }}
+      />
+      <Stack.Screen
         name="couple-settings"
         options={{ title: "Configurações do vínculo" }}
       />

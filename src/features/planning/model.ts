@@ -1,4 +1,5 @@
 import type { SettlementOutcomeResult } from "../../domain/finance/settlement";
+import type { CategoryBudgetStatus } from "../../domain/finance/categoryBudgets";
 import { formatCurrency } from "../../utils/currency";
 
 export type PlanningMonthTone = "primary" | "neutral";
@@ -67,6 +68,32 @@ export function categoryBudgetShare(amount: number, budget: number): number {
     return 0;
   }
   return amount / budget;
+}
+
+export type CategoryBudgetTone = "primary" | "success" | "warning" | "danger";
+
+export function resolveCategoryBudgetStatusLabel(
+  status: CategoryBudgetStatus,
+): string {
+  if (status === "over") return "Acima do limite";
+  if (status === "warning") return "Perto do limite";
+  return "Dentro do limite";
+}
+
+export function resolveCategoryBudgetProgressTone(
+  status: CategoryBudgetStatus,
+): Exclude<CategoryBudgetTone, "success"> {
+  if (status === "over") return "danger";
+  if (status === "warning") return "warning";
+  return "primary";
+}
+
+export function resolveCategoryBudgetBadgeTone(
+  status: CategoryBudgetStatus,
+): CategoryBudgetTone {
+  if (status === "over") return "danger";
+  if (status === "warning") return "warning";
+  return "success";
 }
 
 /**

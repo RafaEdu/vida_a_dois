@@ -12,6 +12,7 @@ import { useCouple } from "./CoupleProvider";
 import { deriveFinanceLoadStatus } from "./bootstrap";
 import * as expenseService from "../services/expense";
 import * as incomeService from "../services/income";
+import * as categoryBudgetService from "../services/categoryBudget";
 import * as coupleService from "../services/couple";
 import {
   applyExpenseDelta,
@@ -21,6 +22,8 @@ import {
 import { sortExpenses, sortIncomes } from "../domain/finance/order";
 import { toAppError } from "../utils/result";
 import type {
+  CategoryBudget,
+  CategoryBudgetInput,
   CloseMonthResult,
   Expense,
   ExpenseInput,
@@ -31,10 +34,13 @@ import type {
 export interface FinanceContextValue {
   expenses: Expense[];
   incomes: Income[];
+  categoryBudgets: CategoryBudget[];
   expensesLoading: boolean;
   incomesLoading: boolean;
+  categoryBudgetsLoading: boolean;
   expensesError: string | null;
   incomesError: string | null;
+  categoryBudgetsError: string | null;
   isBootstrapping: boolean;
   addExpense: (data: ExpenseInput) => Promise<{ error?: string }>;
   updateExpense: (
@@ -51,6 +57,11 @@ export interface FinanceContextValue {
   ) => Promise<{ error?: string }>;
   deleteIncome: (id: string) => Promise<{ error?: string }>;
   fetchIncomes: () => Promise<void>;
+  saveCategoryBudget: (
+    data: CategoryBudgetInput,
+  ) => Promise<{ error?: string }>;
+  removeCategoryBudget: (id: string) => Promise<{ error?: string }>;
+  fetchCategoryBudgets: () => Promise<void>;
   closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
 }
 
@@ -61,10 +72,15 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const { couple, refreshProfile } = useCouple();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(false);
   const [incomesLoading, setIncomesLoading] = useState(false);
+  const [categoryBudgetsLoading, setCategoryBudgetsLoading] = useState(false);
   const [expensesError, setExpensesError] = useState<string | null>(null);
   const [incomesError, setIncomesError] = useState<string | null>(null);
+  const [categoryBudgetsError, setCategoryBudgetsError] = useState<
+    string | null
+  >(null);
   const [loadedCoupleId, setLoadedCoupleId] = useState<string | null>(null);
 
   const coupleId = couple?.status === "active" ? couple.id : null;
@@ -75,22 +91,27 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!coupleId) {
       setExpenses([]);
       setIncomes([]);
+      setCategoryBudgets([]);
       setExpensesError(null);
       setIncomesError(null);
+      setCategoryBudgetsError(null);
       setLoadedCoupleId(null);
       return;
     }
 
     setExpensesLoading(true);
     setIncomesLoading(true);
+    setCategoryBudgetsLoading(true);
     setExpensesError(null);
     setIncomesError(null);
+    setCategoryBudgetsError(null);
 
     Promise.all([
       expenseService.fetchExpenses(coupleId),
       incomeService.fetchIncomes(coupleId),
+      categoryBudgetService.fetchCategoryBudgets(coupleId),
     ])
-      .then(([expenseResult, incomeResult]) => {
+      .then(([expenseResult, incomeResult, budgetResult]) => {
         if (!active) return;
 
         if (expenseResult.error) {
@@ -107,6 +128,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           setIncomesError(null);
         }
 
+        if (budgetResult.error) {
+          setCategoryBudgetsError(budgetResult.error.message);
+        } else {
+          setCategoryBudgets(budgetResult.data);
+          setCategoryBudgetsError(null);
+        }
+
         setLoadedCoupleId(coupleId);
       })
       .catch((err) => {
@@ -117,12 +145,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         ).message;
         setExpensesError(message);
         setIncomesError(message);
+        setCategoryBudgetsError(message);
         setLoadedCoupleId(coupleId);
       })
       .finally(() => {
         if (!active) return;
         setExpensesLoading(false);
         setIncomesLoading(false);
+        setCategoryBudgetsLoading(false);
       });
 
     return () => {
@@ -178,6 +208,61 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       setIncomesLoading(false);
     }
   }, [coupleId]);
+
+  const fetchCategoryBudgets = useCallback(async () => {
+    if (!coupleId) return;
+    setCategoryBudgetsLoading(true);
+    setCategoryBudgetsError(null);
+    try {
+      const result = await categoryBudgetService.fetchCategoryBudgets(coupleId);
+      if (result.error) {
+        setCategoryBudgetsError(result.error.message);
+        return;
+      }
+      setCategoryBudgets(result.data);
+    } catch (err) {
+      setCategoryBudgetsError(
+        toAppError(err, "Erro ao carregar o orçamento por categoria.").message,
+      );
+    } finally {
+      setCategoryBudgetsLoading(false);
+    }
+  }, [coupleId]);
+
+  const saveCategoryBudget = useCallback(
+    async (data: CategoryBudgetInput) => {
+      if (!coupleId) return { error: "No couple" };
+      try {
+        const result = await categoryBudgetService.saveCategoryBudget(
+          coupleId,
+          data,
+        );
+        if (result.error) return { error: result.error.message };
+
+        const saved = result.data;
+        setCategoryBudgets((prev) => {
+          const next = prev.filter((budget) => budget.id !== saved.id);
+          return [...next, saved].sort((a, b) =>
+            a.category.localeCompare(b.category),
+          );
+        });
+        return {};
+      } catch (err) {
+        return {
+          error: toAppError(err, "Erro ao salvar o orçamento da categoria.")
+            .message,
+        };
+      }
+    },
+    [coupleId],
+  );
+
+  const removeCategoryBudget = useCallback(async (id: string) => {
+    const { error } = await categoryBudgetService.deleteCategoryBudget(id);
+    if (error) return { error };
+    setCategoryBudgets((prev) => prev.filter((budget) => budget.id !== id));
+    return {};
+  }, []);
 
   const addExpense = useCallback(
     async (data: ExpenseInput) => {
@@ -343,10 +428,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     () => ({
       expenses,
       incomes,
+      categoryBudgets,
       expensesLoading,
       incomesLoading,
+      categoryBudgetsLoading,
       expensesError,
       incomesError,
+      categoryBudgetsError,
       isBootstrapping: status === "loading",
       addExpense,
       updateExpense,
@@ -357,15 +445,21 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       updateIncome,
       deleteIncome,
       fetchIncomes,
+      saveCategoryBudget,
+      removeCategoryBudget,
+      fetchCategoryBudgets,
       closeMonth,
     }),
     [
       expenses,
       incomes,
+      categoryBudgets,
       expensesLoading,
       incomesLoading,
+      categoryBudgetsLoading,
       expensesError,
       incomesError,
+      categoryBudgetsError,
       status,
       addExpense,
       updateExpense,
@@ -376,6 +470,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       updateIncome,
       deleteIncome,
       fetchIncomes,
+      saveCategoryBudget,
+      removeCategoryBudget,
+      fetchCategoryBudgets,
       closeMonth,
     ],
   );

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Expense } from "../../../types/domain";
+import type { CategoryBudget, Expense } from "../../../types/domain";
 import {
   calculateBudgetProgress,
   groupExpensesByCategory,
@@ -8,6 +8,13 @@ import {
   type BudgetProgress,
   type CategoryTotal,
 } from "../../../domain/finance/selectors";
+import {
+  calculateCategoryBudgetProgresses,
+  resolveCategoryBudgetOverflow,
+  sumCategoryBudgetLimits,
+  type CategoryBudgetOverflow,
+  type CategoryBudgetProgress,
+} from "../../../domain/finance/categoryBudgets";
 
 export interface UsePlanningParams {
   expenses: Expense[];
@@ -15,6 +22,8 @@ export interface UsePlanningParams {
   budget: number;
   /** Selected period in `YYYY-MM`. */
   selectedMonth: string;
+  /** Per-category monthly limits configured by the couple. */
+  categoryBudgets: CategoryBudget[];
 }
 
 export interface UsePlanningResult {
@@ -23,6 +32,9 @@ export interface UsePlanningResult {
   remaining: number;
   progress: BudgetProgress;
   categories: CategoryTotal[];
+  categoryProgresses: CategoryBudgetProgress[];
+  categoryBudgetTotal: number;
+  categoryBudgetOverflow: CategoryBudgetOverflow;
 }
 
 /**
@@ -34,6 +46,7 @@ export function usePlanning({
   expenses,
   budget,
   selectedMonth,
+  categoryBudgets,
 }: UsePlanningParams): UsePlanningResult {
   const monthExpenses = useMemo(
     () => selectExpensesByMonth(expenses, selectedMonth),
@@ -52,11 +65,29 @@ export function usePlanning({
     [monthExpenses],
   );
 
+  const categoryProgresses = useMemo(
+    () => calculateCategoryBudgetProgresses(categoryBudgets, monthExpenses),
+    [categoryBudgets, monthExpenses],
+  );
+
+  const categoryBudgetTotal = useMemo(
+    () => sumCategoryBudgetLimits(categoryBudgets),
+    [categoryBudgets],
+  );
+
+  const categoryBudgetOverflow = useMemo(
+    () => resolveCategoryBudgetOverflow(categoryBudgetTotal, budget),
+    [categoryBudgetTotal, budget],
+  );
+
   return {
     spent,
     budget,
     remaining: progress.remaining,
     progress,
     categories,
+    categoryProgresses,
+    categoryBudgetTotal,
+    categoryBudgetOverflow,
   };
 }

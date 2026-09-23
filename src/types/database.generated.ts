@@ -18,6 +18,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      category_budgets: {
+        Row: {
+          category: string;
+          couple_id: string;
+          created_at: string;
+          id: string;
+          monthly_amount: number;
+          updated_at: string;
+        };
+        Insert: {
+          category: string;
+          couple_id: string;
+          created_at?: string;
+          id?: string;
+          monthly_amount: number;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          couple_id?: string;
+          created_at?: string;
+          id?: string;
+          monthly_amount?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "category_budgets_couple_id_fkey";
+            columns: ["couple_id"];
+            isOneToOne: false;
+            referencedRelation: "couples";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       couples: {
         Row: {
           created_at: string;

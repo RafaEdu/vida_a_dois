@@ -15,12 +15,17 @@ import {
   selectExpensesByMonth,
   selectIncomesByMonth,
 } from "../../domain/finance/selectors";
+import {
+  calculateCategoryBudgetProgresses,
+  selectCategoryBudgetHighlights,
+} from "../../domain/finance/categoryBudgets";
 import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
 import { Avatar, ErrorState, LoadingState } from "../../components/ui";
 import { TabScreenHeader } from "../../components/shell";
 import { BalanceCard, MonthPicker } from "../../components/finance";
 import { HomeGreeting } from "./components/HomeGreeting";
 import { QuickActions } from "./components/QuickActions";
+import { CategoryBudgetHighlights } from "./components/CategoryBudgetHighlights";
 import {
   RecentTransactions,
   type RecentTransactionItem,
@@ -41,6 +46,7 @@ export function HomeScreen() {
     selfAvatarUrl,
     expenses,
     incomes,
+    categoryBudgets,
     expensesLoading,
     incomesLoading,
     expensesError,
@@ -66,6 +72,17 @@ export function HomeScreen() {
   const progress = useMemo(
     () => calculateBudgetProgress(summary.totalExpenses, summary.budget),
     [summary],
+  );
+
+  const categoryHighlights = useMemo(
+    () =>
+      selectCategoryBudgetHighlights(
+        calculateCategoryBudgetProgresses(
+          categoryBudgets,
+          selectExpensesByMonth(expenses, selectedMonth),
+        ),
+      ),
+    [categoryBudgets, expenses, selectedMonth],
   );
 
   const recent = useMemo<RecentTransactionItem[]>(() => {
@@ -224,6 +241,12 @@ export function HomeScreen() {
           />
 
           <BalanceCard summary={summary} progress={progress} />
+
+          <CategoryBudgetHighlights
+            highlights={categoryHighlights}
+            hasBudgets={categoryBudgets.length > 0}
+            onManage={() => router.push("/category-budgets")}
+          />
 
           <QuickActions
             onOpenPlanning={() => router.navigate("/cost-plan")}

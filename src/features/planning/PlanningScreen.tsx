@@ -7,6 +7,7 @@ import type { IdealSplit } from "../../types/domain";
 import { resolvePartnerShares, roundPercent } from "../../domain/finance/split";
 import { getCurrentYearMonth } from "../../utils/date";
 import { getInitials } from "../../utils/initials";
+import { formatCurrency } from "../../utils/currency";
 import { colors, maxContentWidth, screenPadding, spacing } from "../../theme";
 import {
   AppText,
@@ -25,6 +26,7 @@ import { derivePlanningMonthStatus } from "./model";
 import { usePlanning } from "./hooks/usePlanning";
 import { PlanningSummaryCard } from "./components/PlanningSummaryCard";
 import { PlanningSplitCard } from "./components/PlanningSplitCard";
+import { CategoryBudgetCard } from "./components/CategoryBudgetCard";
 
 export function PlanningScreen() {
   const insets = useSafeAreaInsets();
@@ -35,6 +37,7 @@ export function PlanningScreen() {
     expenses,
     expensesLoading,
     expensesError,
+    categoryBudgets,
     fetchExpenses,
     fetchIdealSplit,
   } = useAuth();
@@ -48,10 +51,18 @@ export function PlanningScreen() {
   }, [fetchIdealSplit]);
 
   const budget = couple?.monthly_budget ?? 0;
-  const { spent, progress, categories } = usePlanning({
+  const {
+    spent,
+    progress,
+    categories,
+    categoryProgresses,
+    categoryBudgetTotal,
+    categoryBudgetOverflow,
+  } = usePlanning({
     expenses,
     budget,
     selectedMonth,
+    categoryBudgets,
   });
 
   const monthStatus = useMemo(
@@ -156,6 +167,61 @@ export function PlanningScreen() {
                 description="Quando houver despesas no mês, elas aparecem aqui por categoria."
               />
             )}
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
+              title="Orçamento por categoria"
+              subtitle="Limites mensais e o quanto já foi consumido no período"
+            />
+            {categoryProgresses.length > 0 ? (
+              <>
+                <Card padded style={styles.budgetSummary}>
+                  <View style={styles.budgetSummaryRow}>
+                    <AppText variant="labelCaps" color="textSecondary">
+                      Soma dos limites
+                    </AppText>
+                    <MoneyText
+                      value={categoryBudgetTotal}
+                      variant="bodySemibold"
+                    />
+                  </View>
+                  {budget > 0 ? (
+                    <AppText variant="bodySmall" color="textSecondary">
+                      Orçamento global do mês: {formatCurrency(budget)}
+                    </AppText>
+                  ) : null}
+                  {categoryBudgetOverflow.exceeded ? (
+                    <AppText variant="bodySmall" color="warning">
+                      Os limites somam{" "}
+                      {formatCurrency(categoryBudgetOverflow.difference)} acima
+                      do orçamento global.
+                    </AppText>
+                  ) : null}
+                </Card>
+                <View style={styles.categoryList}>
+                  {categoryProgresses.map((budgetProgress) => (
+                    <CategoryBudgetCard
+                      key={budgetProgress.id}
+                      progress={budgetProgress}
+                      readOnly
+                    />
+                  ))}
+                </View>
+              </>
+            ) : (
+              <EmptyState
+                icon="account-balance-wallet"
+                title="Nenhum limite por categoria"
+                description="Defina limites para Mercado, Moradia, Transporte e outras categorias e acompanhe o progresso do mês."
+              />
+            )}
+            <Button
+              title="Editar orçamentos por categoria"
+              icon="edit"
+              variant="secondary"
+              onPress={() => router.push("/category-budgets")}
+            />
           </View>
 
           <PlanningSplitCard
@@ -274,6 +340,15 @@ const styles = StyleSheet.create({
   },
   categoryList: {
     gap: spacing.md,
+  },
+  budgetSummary: {
+    gap: spacing.xs,
+  },
+  budgetSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
   },
   balanceCard: {
     gap: spacing.xs,

@@ -56,6 +56,16 @@ export type RecurrenceEditFormValues = z.output<
   typeof recurrenceEditFormSchema
 >;
 
+export const categoryBudgetFormSchema = z.object({
+  category: z.string().trim().min(1, "Selecione uma categoria."),
+  amount: requiredAmount,
+});
+
+export type CategoryBudgetFormInput = z.input<typeof categoryBudgetFormSchema>;
+export type CategoryBudgetFormValues = z.output<
+  typeof categoryBudgetFormSchema
+>;
+
 export const incomeFormSchema = z.object({
   description: z.string().trim().min(1, "Informe a descrição da receita."),
   amount: requiredAmount,
