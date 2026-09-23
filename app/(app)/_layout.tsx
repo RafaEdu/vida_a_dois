@@ -63,6 +63,14 @@ export default function AppLayout() {
         options={{ title: "Notificações" }}
       />
       <Stack.Screen
+        name="relationship-history"
+        options={{ title: "Relacionamentos" }}
+      />
+      <Stack.Screen
+        name="relationship-detail"
+        options={{ title: "Relacionamento" }}
+      />
+      <Stack.Screen
         name="couple-settings"
         options={{ title: "Configurações do vínculo" }}
       />

@@ -12,6 +12,7 @@ import { ProfileIdentityCard } from "./components/ProfileIdentityCard";
 import { ProfileDetailsCard } from "./components/ProfileDetailsCard";
 import { AccountSecurityCard } from "./components/AccountSecurityCard";
 import { NotificationSettingsEntry } from "../notifications/components/NotificationSettingsEntry";
+import { RelationshipHistoryEntry } from "../relationships/components/RelationshipHistoryEntry";
 
 /**
  * Área individual do usuário autenticado. Concentra apenas dados que pertencem
@@ -74,6 +75,14 @@ export function ProfileScreen() {
           onUpdate={updateProfile}
           splitMode={couple?.split_mode ?? null}
         />
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader
+          title="Relacionamentos"
+          subtitle="Seu vínculo atual e os encerrados"
+        />
+        <RelationshipHistoryEntry />
       </View>
 
       <View style={styles.section}>

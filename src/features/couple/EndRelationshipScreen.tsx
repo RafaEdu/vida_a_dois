@@ -16,6 +16,7 @@ import {
 import { colors, spacing } from "../../theme";
 import { AppText, Button, Card, Screen } from "../../components/ui";
 import { FormError, FormField, TextField } from "../../components/forms";
+import { RelationshipExportCard } from "../relationships/components/RelationshipExportCard";
 
 const CONSEQUENCES = [
   "O vínculo compartilhado será encerrado para as duas pessoas.",
@@ -62,7 +63,7 @@ function ConfirmCheckbox({
  * "tem certeza?". O estado só muda após a confirmação do servidor.
  */
 export function EndRelationshipScreen() {
-  const { endRelationship } = useCouple();
+  const { endRelationship, couple } = useCouple();
   const [step, setStep] = useState<"consequences" | "confirm">("consequences");
   const [acknowledged, setAcknowledged] = useState(false);
   const [typedPhrase, setTypedPhrase] = useState("");
@@ -134,6 +135,16 @@ export function EndRelationshipScreen() {
                 </View>
               ))}
             </Card>
+
+            {couple ? (
+              <>
+                <AppText variant="bodySmall" color="textSecondary">
+                  Antes de encerrar, você pode exportar o histórico. Esta etapa
+                  é opcional e não é necessária para sair do vínculo.
+                </AppText>
+                <RelationshipExportCard couple={couple} />
+              </>
+            ) : null}
 
             <View style={styles.actions}>
               <Button

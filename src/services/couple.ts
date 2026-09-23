@@ -62,6 +62,26 @@ export async function fetchRelationshipHistory(
   return ok((data as Couple[]) ?? []);
 }
 
+/**
+ * Vínculo por id, em qualquer estado. Usado pelo histórico de relacionamentos
+ * (Fase 13) para abrir um vínculo encerrado específico como somente leitura. A
+ * RLS garante que o usuário só lê vínculos dos quais participa.
+ */
+export async function fetchCoupleById(
+  id: string,
+): Promise<ServiceResult<Couple | null>> {
+  const { data, error } = await supabase
+    .from("couples")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    return fail(toAppError(error, "Não foi possível carregar o vínculo."));
+  }
+  return ok((data as Couple | null) ?? null);
+}
+
 export async function fetchPartner(
   couple: Couple,
   userId: string,
