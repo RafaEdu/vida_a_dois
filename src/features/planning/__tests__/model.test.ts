@@ -3,7 +3,9 @@ import {
   categoryBudgetShare,
   derivePlanningMonthStatus,
   resolveClosingAuthorLabel,
+  resolveSettlementHeadline,
 } from "../model";
+import { formatCurrency } from "../../../utils/currency";
 
 describe("derivePlanningMonthStatus", () => {
   it("marks the current month as active and closable", () => {
@@ -59,6 +61,42 @@ describe("categoryBudgetShare", () => {
 
   it("allows values above one when the category exceeds the budget", () => {
     expect(categoryBudgetShare(1500, 1000)).toBe(1.5);
+  });
+});
+
+describe("resolveSettlementHeadline", () => {
+  it("descreve quando você adiantou", () => {
+    const headline = resolveSettlementHeadline(
+      { outcome: "self_advanced", amount: 80 },
+      "Bia",
+    );
+    expect(headline.title).toBe(`Você adiantou ${formatCurrency(80)}`);
+    expect(headline.description).toContain("Bia");
+  });
+
+  it("descreve quando o parceiro adiantou", () => {
+    const headline = resolveSettlementHeadline(
+      { outcome: "partner_advanced", amount: 42.5 },
+      "Bia",
+    );
+    expect(headline.title).toBe(`Bia adiantou ${formatCurrency(42.5)}`);
+  });
+
+  it("descreve o equilíbrio", () => {
+    expect(
+      resolveSettlementHeadline({ outcome: "balanced", amount: 0 }, "Bia"),
+    ).toEqual({
+      title: "Tudo equilibrado",
+      description: "Cada um pagou exatamente a sua parte no período.",
+    });
+  });
+
+  it("usa um rótulo neutro quando não há nome do parceiro", () => {
+    const headline = resolveSettlementHeadline(
+      { outcome: "partner_advanced", amount: 10 },
+      "",
+    );
+    expect(headline.title).toBe(`Seu parceiro adiantou ${formatCurrency(10)}`);
   });
 });
 

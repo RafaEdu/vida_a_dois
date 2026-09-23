@@ -193,6 +193,24 @@ export function PlanningScreen() {
 
           <View style={styles.section}>
             <SectionHeader
+              title="Acerto do casal"
+              subtitle="Quanto cada um deveria pagar e quem adiantou a diferença"
+            />
+            <Button
+              title="Ver acerto do período"
+              icon="balance"
+              variant="secondary"
+              onPress={() =>
+                router.push({
+                  pathname: "/settlement",
+                  params: { yearMonth: selectedMonth },
+                })
+              }
+            />
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
               title="Fechamento do mês"
               subtitle="Consolida o saldo do mês no caixa comum do casal"
             />

@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { supabase } from "../../lib/supabase";
 import type { MonthlyClosing } from "../../types/domain";
-import { fetchMonthlyClosing, fetchMonthlyClosings } from "../monthlyClosing";
+import {
+  fetchMonthlyClosing,
+  fetchMonthlyClosingByMonth,
+  fetchMonthlyClosings,
+} from "../monthlyClosing";
 
 jest.mock("../../lib/supabase", () => ({
   supabase: {
@@ -108,6 +112,47 @@ describe("fetchMonthlyClosings", () => {
     };
 
     const result = await fetchMonthlyClosings("c1");
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toBe("permission denied");
+  });
+});
+
+describe("fetchMonthlyClosingByMonth", () => {
+  it("busca o snapshot do mês pelo casal", async () => {
+    const closing = makeClosing({ year_month: "2026-09" });
+    resultsByTable["monthly_closings"] = { data: closing, error: null };
+
+    const result = await fetchMonthlyClosingByMonth("c1", "2026-09");
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual(closing);
+    expect(calls).toContainEqual({
+      table: "monthly_closings",
+      select: "*",
+      eq: [
+        ["couple_id", "c1"],
+        ["year_month", "2026-09"],
+      ],
+    });
+  });
+
+  it("devolve null quando o mês ainda não foi fechado", async () => {
+    resultsByTable["monthly_closings"] = { data: null, error: null };
+
+    const result = await fetchMonthlyClosingByMonth("c1", "2026-10");
+
+    expect(result.error).toBeNull();
+    expect(result.data).toBeNull();
+  });
+
+  it("propaga erro de leitura", async () => {
+    resultsByTable["monthly_closings"] = {
+      data: null,
+      error: { message: "permission denied" },
+    };
+
+    const result = await fetchMonthlyClosingByMonth("c1", "2026-09");
 
     expect(result.data).toBeNull();
     expect(result.error?.message).toBe("permission denied");

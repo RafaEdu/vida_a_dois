@@ -28,6 +28,30 @@ export async function fetchMonthlyClosings(
   return ok((data as MonthlyClosing[]) ?? []);
 }
 
+/**
+ * Snapshot de um mês específico do vínculo. Usado pelo acerto do casal para
+ * preferir os valores congelados no fechamento (split/totais) quando o mês já
+ * está fechado. Retorna `null` quando o mês ainda não foi consolidado.
+ */
+export async function fetchMonthlyClosingByMonth(
+  coupleId: string,
+  yearMonth: string,
+): Promise<ServiceResult<MonthlyClosing | null>> {
+  const { data, error } = await supabase
+    .from("monthly_closings")
+    .select("*")
+    .eq("couple_id", coupleId)
+    .eq("year_month", yearMonth)
+    .maybeSingle();
+
+  if (error) {
+    return fail(
+      toAppError(error, "Não foi possível carregar o fechamento do mês."),
+    );
+  }
+  return ok((data as MonthlyClosing) ?? null);
+}
+
 export async function fetchMonthlyClosing(
   id: string,
 ): Promise<ServiceResult<MonthlyClosing | null>> {

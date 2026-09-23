@@ -1,3 +1,6 @@
+import type { SettlementOutcomeResult } from "../../domain/finance/settlement";
+import { formatCurrency } from "../../utils/currency";
+
 export type PlanningMonthTone = "primary" | "neutral";
 
 export interface PlanningMonthStatus {
@@ -83,4 +86,40 @@ export function resolveClosingAuthorLabel(
   if (partnerId && closedBy === partnerId)
     return partnerName?.trim() || "Seu parceiro";
   return "Não identificado";
+}
+
+export interface SettlementHeadline {
+  title: string;
+  description: string;
+}
+
+/**
+ * Neutral text for the settlement result from the authenticated person's
+ * perspective. Does not announce a real transfer — only who advanced the
+ * difference (Fase 8, Parte B).
+ */
+export function resolveSettlementHeadline(
+  outcome: SettlementOutcomeResult,
+  partnerName: string,
+): SettlementHeadline {
+  const name = partnerName.trim() || "Seu parceiro";
+
+  if (outcome.outcome === "self_advanced") {
+    return {
+      title: `Você adiantou ${formatCurrency(outcome.amount)}`,
+      description: `${name} deve acertar essa diferença com você.`,
+    };
+  }
+
+  if (outcome.outcome === "partner_advanced") {
+    return {
+      title: `${name} adiantou ${formatCurrency(outcome.amount)}`,
+      description: `Você deve acertar essa diferença com ${name}.`,
+    };
+  }
+
+  return {
+    title: "Tudo equilibrado",
+    description: "Cada um pagou exatamente a sua parte no período.",
+  };
 }
