@@ -79,7 +79,7 @@ export interface AuthContextType {
     id: string,
     data: Partial<ExpenseInput>,
   ) => Promise<{ error?: string }>;
-  markExpensePaid: (id: string) => Promise<{ error?: string }>;
+  markExpensePaid: (id: string, payerId: string) => Promise<{ error?: string }>;
   deleteExpense: (id: string) => Promise<{ error?: string }>;
   fetchExpenses: () => Promise<void>;
   incomes: Income[];

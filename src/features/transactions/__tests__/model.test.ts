@@ -80,7 +80,7 @@ describe("buildTransactionEntries / sortTransactionEntries", () => {
 
   it("atribui metadados de pagador/recebedor por parceiro", () => {
     const entries = buildTransactionEntries(
-      [makeExpense({ id: "e1", paid_by: "u2" })],
+      [makeExpense({ id: "e1", paid: true, paid_by: "u2" })],
       [makeIncome({ id: "i1", user_id: "u1" })],
       identity,
     );
@@ -91,6 +91,17 @@ describe("buildTransactionEntries / sortTransactionEntries", () => {
     expect(entries.find((entry) => entry.id === "i1")?.meta).toBe(
       "Recebido por você",
     );
+  });
+
+  it("não exibe pagador em despesa pendente", () => {
+    const [entry] = buildTransactionEntries(
+      [makeExpense({ id: "e1", paid: false, paid_by: null })],
+      [],
+      identity,
+    );
+
+    expect(entry.meta).toBeUndefined();
+    expect(entry.status.label).toBe("Pendente");
   });
 
   it("usa created_at como data quando não há data própria", () => {
@@ -159,8 +170,15 @@ describe("filterTransactionEntries", () => {
         id: "e2",
         category: "Transporte",
         paid: false,
-        paid_by: "u2",
+        paid_by: null,
         due_date: "2026-09-11",
+      }),
+      makeExpense({
+        id: "e3",
+        category: "Lazer",
+        paid: true,
+        paid_by: "u2",
+        due_date: "2026-09-12",
       }),
     ],
     [makeIncome({ id: "i1", user_id: "u1" })],
@@ -184,7 +202,7 @@ describe("filterTransactionEntries", () => {
         filters({ person: "partner" }),
         identity,
       ).map((entry) => entry.id),
-    ).toEqual(["e2"]);
+    ).toEqual(["e3"]);
   });
 
   it("filtra por categoria apenas em despesas", () => {
@@ -211,12 +229,12 @@ describe("filterTransactionEntries", () => {
         filters({ status: "paid" }),
         identity,
       ).map((entry) => entry.id),
-    ).toEqual(["e1"]);
+    ).toEqual(["e3", "e1"]);
   });
 
   it("sem filtros retorna tudo", () => {
     expect(filterTransactionEntries(entries, filters(), identity)).toHaveLength(
-      3,
+      4,
     );
   });
 });

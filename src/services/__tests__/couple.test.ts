@@ -69,7 +69,8 @@ beforeEach(() => {
         return api;
       },
       eq(column: string, value: unknown) {
-        record.eq = [column, value];
+        const current = (record.eq as [string, unknown][] | undefined) ?? [];
+        record.eq = [...current, [column, value]];
         return api;
       },
       or(filter: string) {
@@ -146,7 +147,7 @@ describe("fetchRelationshipHistory", () => {
       table: "couples",
       select: "*",
       or: "user_a.eq.u1,user_b.eq.u1",
-      eq: ["status", "ended"],
+      eq: [["status", "ended"]],
       order: ["ended_at", { ascending: false }],
     });
   });
@@ -176,7 +177,10 @@ describe("fetchPartner", () => {
     expect(calls).toContainEqual({
       table: "partner_profiles",
       select: "id, full_name, monthly_income, avatar_path",
-      eq: ["id", "u2"],
+      eq: [
+        ["couple_id", "c1"],
+        ["id", "u2"],
+      ],
     });
   });
 });

@@ -31,6 +31,7 @@ import { useTransactions } from "./hooks/useTransactions";
 import { TransactionsSummary } from "./components/TransactionsSummary";
 import { TransactionFiltersSheet } from "./components/TransactionFiltersSheet";
 import { TransactionActionsSheet } from "./components/TransactionActionsSheet";
+import { MarkPaidSheet } from "./components/MarkPaidSheet";
 
 const TYPE_OPTIONS: SegmentedControlOption<TransactionTypeFilter>[] = [
   { value: "all", label: "Todos" },
@@ -68,6 +69,10 @@ export function TransactionsScreen() {
   const [actionsTarget, setActionsTarget] = useState<TransactionEntry | null>(
     null,
   );
+  const [payingTarget, setPayingTarget] = useState<TransactionEntry | null>(
+    null,
+  );
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
   const identity = useMemo<TransactionIdentity>(
     () => ({
@@ -146,12 +151,31 @@ export function TransactionsScreen() {
       if (!item) return;
 
       if (item.paid) {
-        void updateExpense(item.id, { paid: false, paid_at: null });
+        void updateExpense(item.id, {
+          paid: false,
+          paid_at: null,
+          paid_by: null,
+        });
       } else {
-        void markExpensePaid(item.id);
+        setPayingTarget(entry);
       }
     },
-    [expenses, updateExpense, markExpensePaid],
+    [expenses, updateExpense],
+  );
+
+  const handleConfirmPaid = useCallback(
+    async (payerId: string) => {
+      if (!payingTarget) return;
+      setIsMarkingPaid(true);
+      const { error } = await markExpensePaid(payingTarget.id, payerId);
+      setIsMarkingPaid(false);
+      if (error) {
+        Alert.alert("Não foi possível confirmar o pagamento", error);
+        return;
+      }
+      setPayingTarget(null);
+    },
+    [payingTarget, markExpensePaid],
   );
 
   const handleDelete = useCallback(
@@ -317,6 +341,23 @@ export function TransactionsScreen() {
           onTogglePaid={handleTogglePaid}
           onDelete={handleDelete}
           onClose={() => setActionsTarget(null)}
+        />
+      ) : null}
+
+      {payingTarget && profile ? (
+        <MarkPaidSheet
+          entry={payingTarget}
+          self={{ id: profile.id, full_name: profile.full_name }}
+          partner={
+            partnerInfo
+              ? { id: partnerInfo.id, full_name: partnerInfo.full_name }
+              : null
+          }
+          submitting={isMarkingPaid}
+          onConfirm={(payerId) => {
+            void handleConfirmPaid(payerId);
+          }}
+          onClose={() => setPayingTarget(null)}
         />
       ) : null}
 

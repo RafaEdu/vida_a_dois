@@ -41,7 +41,7 @@ export interface FinanceContextValue {
     id: string,
     data: Partial<ExpenseInput>,
   ) => Promise<{ error?: string }>;
-  markExpensePaid: (id: string) => Promise<{ error?: string }>;
+  markExpensePaid: (id: string, payerId: string) => Promise<{ error?: string }>;
   deleteExpense: (id: string) => Promise<{ error?: string }>;
   fetchExpenses: () => Promise<void>;
   addIncome: (data: IncomeInput) => Promise<{ error?: string }>;
@@ -226,9 +226,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const markExpensePaid = useCallback(async (id: string) => {
+  const markExpensePaid = useCallback(async (id: string, payerId: string) => {
     try {
-      const { error, result } = await expenseService.markExpensePaid(id);
+      const { error, result } = await expenseService.markExpensePaid(
+        id,
+        payerId,
+      );
       if (error) return { error };
 
       if (result) {

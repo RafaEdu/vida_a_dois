@@ -297,6 +297,7 @@ export type Database = {
       mark_expense_paid: {
         Args: {
           p_expense_id: string;
+          p_payer_id: string;
         };
         Returns: Json;
       };

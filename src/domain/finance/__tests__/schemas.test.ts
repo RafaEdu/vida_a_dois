@@ -66,6 +66,34 @@ describe("expenseFormSchema", () => {
       expect(result.error.issues[0].path).toEqual(["dueDate"]);
     }
   });
+
+  it("não exige pagador em despesa pendente", () => {
+    const result = expenseFormSchema.safeParse({
+      ...base,
+      paid: false,
+      paidBy: "",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("exige pagador em despesa paga", () => {
+    const result = expenseFormSchema.safeParse({
+      ...base,
+      paid: true,
+      paidBy: "",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toEqual(["paidBy"]);
+    }
+  });
+
+  it("aceita despesa paga com pagador", () => {
+    expect(
+      expenseFormSchema.safeParse({ ...base, paid: true, paidBy: "user-1" })
+        .success,
+    ).toBe(true);
+  });
 });
 
 describe("incomeFormSchema", () => {

@@ -29,14 +29,15 @@ export async function createExpense(
   userId: string,
   data: ExpenseInput,
 ): Promise<ServiceResult<Expense>> {
+  const paid = data.paid ?? false;
   const { data: created, error } = await supabase
     .from("expenses")
     .insert({
       ...data,
       couple_id: coupleId,
       created_by: userId,
-      paid: data.paid ?? false,
-      paid_by: data.paid_by || userId,
+      paid,
+      paid_by: paid ? (data.paid_by ?? userId) : null,
       is_recurring: data.is_recurring ?? false,
     })
     .select()
@@ -79,9 +80,11 @@ interface MarkExpensePaidPayload {
 
 export async function markExpensePaid(
   id: string,
+  payerId: string,
 ): Promise<{ error?: string; result?: MarkExpensePaidResult }> {
   const { data, error } = await supabase.rpc("mark_expense_paid", {
     p_expense_id: id,
+    p_payer_id: payerId,
   });
 
   if (error || extractDomainError(data)) {

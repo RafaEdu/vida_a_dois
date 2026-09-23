@@ -21,7 +21,7 @@ export interface ExpenseInput {
   due_date?: string;
   paid?: boolean;
   paid_at?: string | null;
-  paid_by?: string;
+  paid_by?: string | null;
   is_recurring?: boolean;
 }
 

@@ -20,13 +20,17 @@ export const expenseFormSchema = z
     amount: requiredAmount,
     category: z.string().min(1, "Selecione uma categoria."),
     dueDate: optionalDateOnly,
-    paidBy: z.string().min(1, "Selecione quem pagou."),
+    paidBy: z.string(),
     isRecurring: z.boolean(),
     paid: z.boolean(),
   })
   .refine((data) => !data.isRecurring || data.dueDate !== "", {
     message: "Despesa recorrente precisa de uma data de vencimento.",
     path: ["dueDate"],
+  })
+  .refine((data) => !data.paid || data.paidBy.length > 0, {
+    message: "Selecione quem pagou.",
+    path: ["paidBy"],
   });
 
 export type ExpenseFormInput = z.input<typeof expenseFormSchema>;

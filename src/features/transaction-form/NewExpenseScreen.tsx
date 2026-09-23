@@ -51,6 +51,7 @@ export function NewExpenseScreen() {
   });
 
   const amount = useWatch({ control, name: "amount" }) ?? "";
+  const paid = useWatch({ control, name: "paid" }) ?? false;
   const amountValue = parseDecimalInput(amount);
 
   const splitA = couple?.split_ratio_a ?? 50;
@@ -71,7 +72,7 @@ export function NewExpenseScreen() {
       category: values.category,
       due_date: values.dueDate || undefined,
       paid: values.paid,
-      paid_by: values.paidBy,
+      paid_by: values.paid ? values.paidBy : null,
       is_recurring: values.isRecurring,
     });
 
@@ -142,24 +143,26 @@ export function NewExpenseScreen() {
           />
         </FormField>
 
-        <FormField label="Quem pagou?" error={errors.paidBy?.message}>
-          <Controller
-            control={control}
-            name="paidBy"
-            render={({ field }) => (
-              <PayerSelector
-                value={field.value}
-                onChange={field.onChange}
-                self={{ id: user?.id ?? "", full_name: selfName }}
-                partner={
-                  partnerInfo
-                    ? { id: partnerInfo.id, full_name: partnerInfo.full_name }
-                    : null
-                }
-              />
-            )}
-          />
-        </FormField>
+        {paid ? (
+          <FormField label="Quem pagou?" error={errors.paidBy?.message}>
+            <Controller
+              control={control}
+              name="paidBy"
+              render={({ field }) => (
+                <PayerSelector
+                  value={field.value}
+                  onChange={field.onChange}
+                  self={{ id: user?.id ?? "", full_name: selfName }}
+                  partner={
+                    partnerInfo
+                      ? { id: partnerInfo.id, full_name: partnerInfo.full_name }
+                      : null
+                  }
+                />
+              )}
+            />
+          </FormField>
+        ) : null}
 
         {partnerInfo ? (
           <ExpenseSplitPreview

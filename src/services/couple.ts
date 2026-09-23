@@ -66,9 +66,13 @@ export async function fetchPartner(
   userId: string,
 ): Promise<ServiceResult<PartnerInfo | null>> {
   const partnerId = couple.user_a === userId ? couple.user_b : couple.user_a;
+  // Escopo pelo vínculo atual: desde a Fase 3 um mesmo par pode ter vínculos
+  // `ended` e um novo `pending`/`active`; sem o filtro de `couple_id` a view
+  // devolveria mais de uma linha para o mesmo parceiro e o maybeSingle falharia.
   const { data, error } = await supabase
     .from("partner_profiles")
     .select("id, full_name, monthly_income, avatar_path")
+    .eq("couple_id", couple.id)
     .eq("id", partnerId)
     .maybeSingle();
 

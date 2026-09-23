@@ -47,17 +47,17 @@ describe("markExpensePaid", () => {
     rpcMock.mockReset();
   });
 
-  it("chama a RPC mark_expense_paid com o id da despesa", async () => {
+  it("chama a RPC mark_expense_paid com a despesa e o pagador", async () => {
     rpcMock.mockResolvedValue({
       data: { status: "paid", expense: makeExpense(), next_expense: null },
       error: null,
     });
 
-    await markExpensePaid("e1");
+    await markExpensePaid("e1", "u2");
 
     expect(rpcMock.mock.calls[0]).toEqual([
       "mark_expense_paid",
-      { p_expense_id: "e1" },
+      { p_expense_id: "e1", p_payer_id: "u2" },
     ]);
   });
 
@@ -73,7 +73,7 @@ describe("markExpensePaid", () => {
       error: null,
     });
 
-    const { error, result } = await markExpensePaid("e1");
+    const { error, result } = await markExpensePaid("e1", "u2");
 
     expect(error).toBeUndefined();
     expect(result?.status).toBe("paid");
@@ -91,7 +91,7 @@ describe("markExpensePaid", () => {
       error: null,
     });
 
-    const { error, result } = await markExpensePaid("e1");
+    const { error, result } = await markExpensePaid("e1", "u2");
 
     expect(error).toBeUndefined();
     expect(result?.status).toBe("already_paid");
@@ -104,7 +104,7 @@ describe("markExpensePaid", () => {
       error: null,
     });
 
-    const { error, result } = await markExpensePaid("e1");
+    const { error, result } = await markExpensePaid("e1", "u2");
 
     expect(result).toBeUndefined();
     expect(error).toBe("Despesa nao encontrada.");
@@ -116,7 +116,7 @@ describe("markExpensePaid", () => {
       error: { code: "42501", message: "permission denied" },
     });
 
-    const { error } = await markExpensePaid("e1");
+    const { error } = await markExpensePaid("e1", "u2");
 
     expect(error).toBe("permission denied");
   });
@@ -127,7 +127,7 @@ describe("markExpensePaid", () => {
       error: null,
     });
 
-    const { error, result } = await markExpensePaid("e1");
+    const { error, result } = await markExpensePaid("e1", "u2");
 
     expect(result).toBeUndefined();
     expect(error).toBe("Resposta inválida ao confirmar o pagamento.");
@@ -175,6 +175,56 @@ describe("createExpense", () => {
     expect(result.data?.id).toBe("e9");
     expect(chain.insert).toHaveBeenCalledWith(
       expect.objectContaining({ couple_id: "c1", created_by: "u1" }),
+    );
+  });
+
+  it("despesa pendente nasce sem pagador, ignorando paid_by enviado", async () => {
+    const created = makeExpense({ id: "e9", paid: false, paid_by: null });
+    const chain = mockFromMutation({ data: created, error: null });
+
+    await createExpense("c1", "u1", {
+      description: "Aluguel",
+      amount: 1500,
+      category: "Aluguel / Financiamento",
+      paid: false,
+      paid_by: "u2",
+    });
+
+    expect(chain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: false, paid_by: null }),
+    );
+  });
+
+  it("despesa paga mantém o pagador informado", async () => {
+    const created = makeExpense({ id: "e9", paid: true, paid_by: "u2" });
+    const chain = mockFromMutation({ data: created, error: null });
+
+    await createExpense("c1", "u1", {
+      description: "Aluguel",
+      amount: 1500,
+      category: "Aluguel / Financiamento",
+      paid: true,
+      paid_by: "u2",
+    });
+
+    expect(chain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: true, paid_by: "u2" }),
+    );
+  });
+
+  it("despesa paga sem pagador usa o próprio criador", async () => {
+    const created = makeExpense({ id: "e9", paid: true, paid_by: "u1" });
+    const chain = mockFromMutation({ data: created, error: null });
+
+    await createExpense("c1", "u1", {
+      description: "Aluguel",
+      amount: 1500,
+      category: "Aluguel / Financiamento",
+      paid: true,
+    });
+
+    expect(chain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ paid: true, paid_by: "u1" }),
     );
   });
 
