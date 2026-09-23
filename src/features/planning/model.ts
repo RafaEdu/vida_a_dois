@@ -65,3 +65,22 @@ export function categoryBudgetShare(amount: number, budget: number): number {
   }
   return amount / budget;
 }
+
+/**
+ * Label for who consolidated a month. Prefers the current user's own name, then
+ * the partner's, and falls back to a neutral label when the id is unknown
+ * (e.g. account without a visible profile).
+ */
+export function resolveClosingAuthorLabel(
+  closedBy: string | null | undefined,
+  selfId: string | null | undefined,
+  selfName: string | null | undefined,
+  partnerId: string | null | undefined,
+  partnerName: string | null | undefined,
+): string {
+  if (!closedBy) return "Não identificado";
+  if (selfId && closedBy === selfId) return selfName?.trim() || "Você";
+  if (partnerId && closedBy === partnerId)
+    return partnerName?.trim() || "Seu parceiro";
+  return "Não identificado";
+}

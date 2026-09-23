@@ -209,6 +209,69 @@ export type Database = {
           },
         ];
       };
+      monthly_closings: {
+        Row: {
+          closed_at: string;
+          closed_by: string | null;
+          couple_id: string;
+          id: string;
+          month_delta: number;
+          monthly_budget: number;
+          shared_balance_after: number;
+          shared_balance_before: number;
+          split_ratio_a: number;
+          split_ratio_b: number;
+          total_expenses: number;
+          total_incomes: number;
+          year_month: string;
+        };
+        Insert: {
+          closed_at?: string;
+          closed_by?: string | null;
+          couple_id: string;
+          id?: string;
+          month_delta?: number;
+          monthly_budget?: number;
+          shared_balance_after?: number;
+          shared_balance_before?: number;
+          split_ratio_a?: number;
+          split_ratio_b?: number;
+          total_expenses?: number;
+          total_incomes?: number;
+          year_month: string;
+        };
+        Update: {
+          closed_at?: string;
+          closed_by?: string | null;
+          couple_id?: string;
+          id?: string;
+          month_delta?: number;
+          monthly_budget?: number;
+          shared_balance_after?: number;
+          shared_balance_before?: number;
+          split_ratio_a?: number;
+          split_ratio_b?: number;
+          total_expenses?: number;
+          total_incomes?: number;
+          year_month?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "monthly_closings_couple_id_fkey";
+            columns: ["couple_id"];
+            isOneToOne: false;
+            referencedRelation: "couples";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "monthly_closings_closed_by_fkey";
+            columns: ["closed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_path: string | null;

@@ -46,14 +46,23 @@ export interface PartnerLookup {
   full_name: string;
 }
 
+export type MonthlyClosing = Tables["monthly_closings"]["Row"];
+
 export interface CloseMonthResult {
   success: boolean;
+  already_closed: boolean;
+  id: string;
+  year_month: string;
   total_incomes: number;
   total_expenses: number;
-  month_balance: number;
-  previous_balance: number;
-  new_shared_balance: number;
   monthly_budget: number;
+  split_ratio_a: number;
+  split_ratio_b: number;
+  shared_balance_before: number;
+  month_delta: number;
+  shared_balance_after: number;
+  closed_by: string | null;
+  closed_at: string;
   last_closed_month: string;
 }
 

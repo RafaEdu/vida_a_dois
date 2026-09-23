@@ -1,5 +1,9 @@
 import { describe, expect, it } from "@jest/globals";
-import { categoryBudgetShare, derivePlanningMonthStatus } from "../model";
+import {
+  categoryBudgetShare,
+  derivePlanningMonthStatus,
+  resolveClosingAuthorLabel,
+} from "../model";
 
 describe("derivePlanningMonthStatus", () => {
   it("marks the current month as active and closable", () => {
@@ -55,5 +59,29 @@ describe("categoryBudgetShare", () => {
 
   it("allows values above one when the category exceeds the budget", () => {
     expect(categoryBudgetShare(1500, 1000)).toBe(1.5);
+  });
+});
+
+describe("resolveClosingAuthorLabel", () => {
+  it("names the current user when they closed the month", () => {
+    expect(resolveClosingAuthorLabel("u1", "u1", "Ana", "u2", "Bia")).toBe(
+      "Ana",
+    );
+  });
+
+  it("names the partner when they closed the month", () => {
+    expect(resolveClosingAuthorLabel("u2", "u1", "Ana", "u2", "Bia")).toBe(
+      "Bia",
+    );
+  });
+
+  it("falls back when there is no id or name", () => {
+    expect(resolveClosingAuthorLabel(null, "u1", "Ana", "u2", "Bia")).toBe(
+      "Não identificado",
+    );
+    expect(resolveClosingAuthorLabel("u1", "u1", "", "u2", "Bia")).toBe("Você");
+    expect(resolveClosingAuthorLabel("u9", "u1", "Ana", "u2", "Bia")).toBe(
+      "Não identificado",
+    );
   });
 });

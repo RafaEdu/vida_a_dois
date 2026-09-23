@@ -203,6 +203,12 @@ export function PlanningScreen() {
               disabled={!monthStatus.canCloseMonth}
               onPress={() => router.push("/monthly-closing")}
             />
+            <Button
+              title="Histórico de fechamentos"
+              icon="history"
+              variant="ghost"
+              onPress={() => router.push("/closing-history")}
+            />
             {!monthStatus.isCurrentMonth ? (
               <AppText variant="bodySmall" color="textSecondary">
                 O fechamento acontece apenas no mês atual.

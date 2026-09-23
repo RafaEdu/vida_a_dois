@@ -117,7 +117,7 @@ export function compareMonthlySummaryWithCloseResult(
   const pairs: [string, number, number][] = [
     ["totalExpenses", summary.totalExpenses, result.total_expenses],
     ["totalIncomes", summary.totalIncomes, result.total_incomes],
-    ["balance", summary.balance, result.month_balance],
+    ["balance", summary.balance, result.month_delta],
     ["budget", summary.budget, result.monthly_budget],
   ];
 

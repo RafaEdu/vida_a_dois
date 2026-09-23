@@ -141,20 +141,20 @@ export function MonthlyClosingScreen() {
 
           <InfoRow
             label="Saldo do mês"
-            value={formatCurrency(result.month_balance)}
+            value={formatCurrency(result.month_delta)}
             emphasis
-            valueColor={result.month_balance >= 0 ? "success" : "danger"}
+            valueColor={result.month_delta >= 0 ? "success" : "danger"}
           />
 
           <View style={styles.divider} />
 
           <InfoRow
             label="Saldo anterior do caixa"
-            value={formatCurrency(result.previous_balance)}
+            value={formatCurrency(result.shared_balance_before)}
           />
           <InfoRow
             label="Novo saldo do caixa comum"
-            value={formatCurrency(result.new_shared_balance)}
+            value={formatCurrency(result.shared_balance_after)}
             emphasis
             valueColor="primary"
           />

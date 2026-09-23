@@ -178,12 +178,19 @@ describe("compareMonthlySummaryWithCloseResult", () => {
 
   const result: CloseMonthResult = {
     success: true,
+    already_closed: false,
+    id: "closing-1",
+    year_month: SEPTEMBER,
     total_incomes: 1000,
     total_expenses: 400,
-    month_balance: 600,
-    previous_balance: 0,
-    new_shared_balance: 600,
     monthly_budget: 500,
+    split_ratio_a: 50,
+    split_ratio_b: 50,
+    shared_balance_before: 0,
+    month_delta: 600,
+    shared_balance_after: 600,
+    closed_by: "u1",
+    closed_at: "2026-09-30T00:00:00.000Z",
     last_closed_month: SEPTEMBER,
   };
 

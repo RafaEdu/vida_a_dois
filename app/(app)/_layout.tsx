@@ -45,6 +45,11 @@ export default function AppLayout() {
         options={{ title: "Fechamento do mês" }}
       />
       <Stack.Screen
+        name="closing-history"
+        options={{ title: "Histórico de fechamentos" }}
+      />
+      <Stack.Screen name="closing-detail" options={{ title: "Fechamento" }} />
+      <Stack.Screen
         name="couple-settings"
         options={{ title: "Configurações do vínculo" }}
       />
