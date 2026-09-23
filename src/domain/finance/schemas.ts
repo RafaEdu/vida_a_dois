@@ -66,6 +66,28 @@ export type CategoryBudgetFormValues = z.output<
   typeof categoryBudgetFormSchema
 >;
 
+export const goalFormSchema = z.object({
+  title: z.string().trim().min(1, "Informe o título da meta."),
+  targetAmount: requiredAmount,
+  targetDate: optionalDateOnly,
+});
+
+export type GoalFormInput = z.input<typeof goalFormSchema>;
+export type GoalFormValues = z.output<typeof goalFormSchema>;
+
+export const goalContributionFormSchema = z.object({
+  amount: requiredAmount,
+  contributedDate: optionalDateOnly,
+  note: z.string().trim().max(140, "Use no máximo 140 caracteres."),
+});
+
+export type GoalContributionFormInput = z.input<
+  typeof goalContributionFormSchema
+>;
+export type GoalContributionFormValues = z.output<
+  typeof goalContributionFormSchema
+>;
+
 export const incomeFormSchema = z.object({
   description: z.string().trim().min(1, "Informe a descrição da receita."),
   amount: requiredAmount,

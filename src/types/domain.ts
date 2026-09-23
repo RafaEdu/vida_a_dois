@@ -63,6 +63,26 @@ export interface PartnerLookup {
   full_name: string;
 }
 
+export type GoalStatus = "active" | "completed" | "archived";
+
+export type FinancialGoal = Omit<Tables["financial_goals"]["Row"], "status"> & {
+  status: GoalStatus;
+};
+
+export interface FinancialGoalInput {
+  title: string;
+  target_amount: number;
+  target_date: string | null;
+}
+
+export type GoalContribution = Tables["goal_contributions"]["Row"];
+
+export interface GoalContributionInput {
+  amount: number;
+  note?: string | null;
+  contributed_at?: string;
+}
+
 export type MonthlyClosing = Tables["monthly_closings"]["Row"];
 
 export interface CloseMonthResult {

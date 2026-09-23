@@ -13,6 +13,7 @@ import { deriveFinanceLoadStatus } from "./bootstrap";
 import * as expenseService from "../services/expense";
 import * as incomeService from "../services/income";
 import * as categoryBudgetService from "../services/categoryBudget";
+import * as goalService from "../services/goal";
 import * as coupleService from "../services/couple";
 import {
   applyExpenseDelta,
@@ -27,6 +28,11 @@ import type {
   CloseMonthResult,
   Expense,
   ExpenseInput,
+  FinancialGoal,
+  FinancialGoalInput,
+  GoalContribution,
+  GoalContributionInput,
+  GoalStatus,
   Income,
   IncomeInput,
 } from "../types/domain";
@@ -35,12 +41,16 @@ export interface FinanceContextValue {
   expenses: Expense[];
   incomes: Income[];
   categoryBudgets: CategoryBudget[];
+  goals: FinancialGoal[];
+  goalContributions: GoalContribution[];
   expensesLoading: boolean;
   incomesLoading: boolean;
   categoryBudgetsLoading: boolean;
+  goalsLoading: boolean;
   expensesError: string | null;
   incomesError: string | null;
   categoryBudgetsError: string | null;
+  goalsError: string | null;
   isBootstrapping: boolean;
   addExpense: (data: ExpenseInput) => Promise<{ error?: string }>;
   updateExpense: (
@@ -62,6 +72,20 @@ export interface FinanceContextValue {
   ) => Promise<{ error?: string }>;
   removeCategoryBudget: (id: string) => Promise<{ error?: string }>;
   fetchCategoryBudgets: () => Promise<void>;
+  createGoal: (data: FinancialGoalInput) => Promise<{ error?: string }>;
+  updateGoal: (
+    id: string,
+    data: FinancialGoalInput,
+  ) => Promise<{ error?: string }>;
+  setGoalStatus: (
+    id: string,
+    status: GoalStatus,
+  ) => Promise<{ error?: string }>;
+  addGoalContribution: (
+    goalId: string,
+    data: GoalContributionInput,
+  ) => Promise<{ error?: string }>;
+  fetchGoals: () => Promise<void>;
   closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
 }
 
@@ -73,14 +97,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([]);
+  const [goals, setGoals] = useState<FinancialGoal[]>([]);
+  const [goalContributions, setGoalContributions] = useState<
+    GoalContribution[]
+  >([]);
   const [expensesLoading, setExpensesLoading] = useState(false);
   const [incomesLoading, setIncomesLoading] = useState(false);
   const [categoryBudgetsLoading, setCategoryBudgetsLoading] = useState(false);
+  const [goalsLoading, setGoalsLoading] = useState(false);
   const [expensesError, setExpensesError] = useState<string | null>(null);
   const [incomesError, setIncomesError] = useState<string | null>(null);
   const [categoryBudgetsError, setCategoryBudgetsError] = useState<
     string | null
   >(null);
+  const [goalsError, setGoalsError] = useState<string | null>(null);
   const [loadedCoupleId, setLoadedCoupleId] = useState<string | null>(null);
 
   const coupleId = couple?.status === "active" ? couple.id : null;
@@ -92,9 +122,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       setExpenses([]);
       setIncomes([]);
       setCategoryBudgets([]);
+      setGoals([]);
+      setGoalContributions([]);
       setExpensesError(null);
       setIncomesError(null);
       setCategoryBudgetsError(null);
+      setGoalsError(null);
       setLoadedCoupleId(null);
       return;
     }
@@ -102,16 +135,19 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setExpensesLoading(true);
     setIncomesLoading(true);
     setCategoryBudgetsLoading(true);
+    setGoalsLoading(true);
     setExpensesError(null);
     setIncomesError(null);
     setCategoryBudgetsError(null);
+    setGoalsError(null);
 
     Promise.all([
       expenseService.fetchExpenses(coupleId),
       incomeService.fetchIncomes(coupleId),
       categoryBudgetService.fetchCategoryBudgets(coupleId),
+      goalService.fetchGoalsOverview(coupleId),
     ])
-      .then(([expenseResult, incomeResult, budgetResult]) => {
+      .then(([expenseResult, incomeResult, budgetResult, goalResult]) => {
         if (!active) return;
 
         if (expenseResult.error) {
@@ -135,6 +171,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           setCategoryBudgetsError(null);
         }
 
+        if (goalResult.error) {
+          setGoalsError(goalResult.error.message);
+        } else {
+          setGoals(goalResult.data.goals);
+          setGoalContributions(goalResult.data.contributions);
+          setGoalsError(null);
+        }
+
         setLoadedCoupleId(coupleId);
       })
       .catch((err) => {
@@ -146,6 +190,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setExpensesError(message);
         setIncomesError(message);
         setCategoryBudgetsError(message);
+        setGoalsError(message);
         setLoadedCoupleId(coupleId);
       })
       .finally(() => {
@@ -153,6 +198,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setExpensesLoading(false);
         setIncomesLoading(false);
         setCategoryBudgetsLoading(false);
+        setGoalsLoading(false);
       });
 
     return () => {
@@ -263,6 +309,91 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setCategoryBudgets((prev) => prev.filter((budget) => budget.id !== id));
     return {};
   }, []);
+
+  const fetchGoals = useCallback(async () => {
+    if (!coupleId) return;
+    setGoalsLoading(true);
+    setGoalsError(null);
+    try {
+      const result = await goalService.fetchGoalsOverview(coupleId);
+      if (result.error) {
+        setGoalsError(result.error.message);
+        return;
+      }
+      setGoals(result.data.goals);
+      setGoalContributions(result.data.contributions);
+    } catch (err) {
+      setGoalsError(toAppError(err, "Erro ao carregar as metas.").message);
+    } finally {
+      setGoalsLoading(false);
+    }
+  }, [coupleId]);
+
+  const createGoal = useCallback(
+    async (data: FinancialGoalInput) => {
+      if (!coupleId) return { error: "No couple" };
+      try {
+        const result = await goalService.createFinancialGoal(coupleId, data);
+        if (result.error) return { error: result.error.message };
+
+        setGoals((prev) => [result.data, ...prev]);
+        return {};
+      } catch (err) {
+        return { error: toAppError(err, "Erro ao criar a meta.").message };
+      }
+    },
+    [coupleId],
+  );
+
+  const updateGoal = useCallback(
+    async (id: string, data: FinancialGoalInput) => {
+      try {
+        const result = await goalService.updateFinancialGoal(id, data);
+        if (result.error) return { error: result.error.message };
+
+        setGoals((prev) =>
+          prev.map((goal) => (goal.id === id ? result.data : goal)),
+        );
+        return {};
+      } catch (err) {
+        return { error: toAppError(err, "Erro ao salvar a meta.").message };
+      }
+    },
+    [],
+  );
+
+  const setGoalStatus = useCallback(async (id: string, status: GoalStatus) => {
+    try {
+      const result = await goalService.setFinancialGoalStatus(id, status);
+      if (result.error) return { error: result.error.message };
+
+      setGoals((prev) =>
+        prev.map((goal) => (goal.id === id ? result.data : goal)),
+      );
+      return {};
+    } catch (err) {
+      return {
+        error: toAppError(err, "Erro ao atualizar o estado da meta.").message,
+      };
+    }
+  }, []);
+
+  const addGoalContribution = useCallback(
+    async (goalId: string, data: GoalContributionInput) => {
+      try {
+        const result = await goalService.createGoalContribution(goalId, data);
+        if (result.error) return { error: result.error.message };
+
+        setGoalContributions((prev) => [...prev, result.data]);
+        return {};
+      } catch (err) {
+        return {
+          error: toAppError(err, "Erro ao registrar a contribuição.").message,
+        };
+      }
+    },
+    [],
+  );
 
   const addExpense = useCallback(
     async (data: ExpenseInput) => {
@@ -429,12 +560,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       expenses,
       incomes,
       categoryBudgets,
+      goals,
+      goalContributions,
       expensesLoading,
       incomesLoading,
       categoryBudgetsLoading,
+      goalsLoading,
       expensesError,
       incomesError,
       categoryBudgetsError,
+      goalsError,
       isBootstrapping: status === "loading",
       addExpense,
       updateExpense,
@@ -448,18 +583,27 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       saveCategoryBudget,
       removeCategoryBudget,
       fetchCategoryBudgets,
+      createGoal,
+      updateGoal,
+      setGoalStatus,
+      addGoalContribution,
+      fetchGoals,
       closeMonth,
     }),
     [
       expenses,
       incomes,
       categoryBudgets,
+      goals,
+      goalContributions,
       expensesLoading,
       incomesLoading,
       categoryBudgetsLoading,
+      goalsLoading,
       expensesError,
       incomesError,
       categoryBudgetsError,
+      goalsError,
       status,
       addExpense,
       updateExpense,
@@ -473,6 +617,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       saveCategoryBudget,
       removeCategoryBudget,
       fetchCategoryBudgets,
+      createGoal,
+      updateGoal,
+      setGoalStatus,
+      addGoalContribution,
+      fetchGoals,
       closeMonth,
     ],
   );

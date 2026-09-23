@@ -290,6 +290,19 @@ export function PlanningScreen() {
 
           <View style={styles.section}>
             <SectionHeader
+              title="Metas do casal"
+              subtitle="Objetivos compartilhados e o quanto já foi guardado"
+            />
+            <Button
+              title="Ver metas"
+              icon="flag"
+              variant="secondary"
+              onPress={() => router.push("/goals")}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
               title="Fechamento do mês"
               subtitle="Consolida o saldo do mês no caixa comum do casal"
             />

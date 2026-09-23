@@ -26,6 +26,11 @@ import type {
   IdealSplit,
   CategoryBudget,
   CategoryBudgetInput,
+  FinancialGoal,
+  FinancialGoalInput,
+  GoalContribution,
+  GoalContributionInput,
+  GoalStatus,
 } from "../types/domain";
 
 export type { BootstrapStatus };
@@ -98,6 +103,22 @@ export interface AuthContextType {
   ) => Promise<{ error?: string }>;
   removeCategoryBudget: (id: string) => Promise<{ error?: string }>;
   fetchCategoryBudgets: () => Promise<void>;
+  goals: FinancialGoal[];
+  goalContributions: GoalContribution[];
+  createGoal: (data: FinancialGoalInput) => Promise<{ error?: string }>;
+  updateGoal: (
+    id: string,
+    data: FinancialGoalInput,
+  ) => Promise<{ error?: string }>;
+  setGoalStatus: (
+    id: string,
+    status: GoalStatus,
+  ) => Promise<{ error?: string }>;
+  addGoalContribution: (
+    goalId: string,
+    data: GoalContributionInput,
+  ) => Promise<{ error?: string }>;
+  fetchGoals: () => Promise<void>;
   closeMonth: () => Promise<{ error?: string; result?: CloseMonthResult }>;
   fetchIdealSplit: () => Promise<ServiceResult<IdealSplit | null>>;
   updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
@@ -172,6 +193,13 @@ export function useAuth(): AuthContextType {
       saveCategoryBudget: finance.saveCategoryBudget,
       removeCategoryBudget: finance.removeCategoryBudget,
       fetchCategoryBudgets: finance.fetchCategoryBudgets,
+      goals: finance.goals,
+      goalContributions: finance.goalContributions,
+      createGoal: finance.createGoal,
+      updateGoal: finance.updateGoal,
+      setGoalStatus: finance.setGoalStatus,
+      addGoalContribution: finance.addGoalContribution,
+      fetchGoals: finance.fetchGoals,
       closeMonth: finance.closeMonth,
       fetchIdealSplit: coupleCtx.fetchIdealSplit,
       updateCostPlan: coupleCtx.updateCostPlan,

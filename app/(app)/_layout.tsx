@@ -55,6 +55,8 @@ export default function AppLayout() {
         name="category-budgets"
         options={{ title: "Orçamento por categoria" }}
       />
+      <Stack.Screen name="goals" options={{ title: "Metas" }} />
+      <Stack.Screen name="goal-detail" options={{ title: "Meta" }} />
       <Stack.Screen
         name="couple-settings"
         options={{ title: "Configurações do vínculo" }}

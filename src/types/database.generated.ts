@@ -253,6 +253,99 @@ export type Database = {
           },
         ];
       };
+      financial_goals: {
+        Row: {
+          couple_id: string;
+          created_at: string;
+          created_by: string;
+          id: string;
+          status: string;
+          target_amount: number;
+          target_date: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          couple_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          status?: string;
+          target_amount: number;
+          target_date?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          couple_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          status?: string;
+          target_amount?: number;
+          target_date?: string | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "financial_goals_couple_id_fkey";
+            columns: ["couple_id"];
+            isOneToOne: false;
+            referencedRelation: "couples";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "financial_goals_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      goal_contributions: {
+        Row: {
+          amount: number;
+          contributed_at: string;
+          goal_id: string;
+          id: string;
+          note: string | null;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          contributed_at?: string;
+          goal_id: string;
+          id?: string;
+          note?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          amount?: number;
+          contributed_at?: string;
+          goal_id?: string;
+          id?: string;
+          note?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goal_contributions_goal_id_fkey";
+            columns: ["goal_id"];
+            isOneToOne: false;
+            referencedRelation: "financial_goals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goal_contributions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       incomes: {
         Row: {
           amount: number;
