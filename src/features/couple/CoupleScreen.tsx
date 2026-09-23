@@ -13,6 +13,7 @@ import { CouplePartners } from "./components/CouplePartners";
 import { CoupleSplit } from "./components/CoupleSplit";
 import { CoupleLinkCard } from "./components/CoupleLinkCard";
 import { CoupleSettingsEntry } from "./components/CoupleSettingsEntry";
+import { ActivityEntry } from "../activity/components/ActivityEntry";
 
 export function CoupleScreen() {
   const insets = useSafeAreaInsets();
@@ -107,6 +108,8 @@ export function CoupleScreen() {
           statusLabel={link.statusLabel}
           linkedAt={couple?.linked_at ?? null}
         />
+
+        <ActivityEntry />
 
         <CoupleSettingsEntry />
       </ScrollView>

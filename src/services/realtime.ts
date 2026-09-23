@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { Couple, Expense, Income } from "../types/domain";
+import type { Couple, CoupleActivity, Expense, Income } from "../types/domain";
 import { sortExpenses, sortIncomes } from "../domain/finance/order";
 
 export type RealtimePayload<T> = {
@@ -107,6 +107,33 @@ export function subscribeToCoupleInvites(
         filter: `user_b=eq.${userId}`,
       },
       onDelete,
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+ * Assina os novos eventos de atividade do vínculo. O feed é append-only, então
+ * só INSERT importa; a RLS continua valendo no canal de realtime.
+ */
+export function subscribeToCoupleActivity(
+  coupleId: string,
+  onInsert: (activity: CoupleActivity) => void,
+): () => void {
+  const channel = supabase
+    .channel(`activity-${coupleId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "couple_activity",
+        filter: `couple_id=eq.${coupleId}`,
+      },
+      (payload) => onInsert(payload.new as CoupleActivity),
     )
     .subscribe();
 

@@ -57,6 +57,11 @@ export default function AppLayout() {
       />
       <Stack.Screen name="goals" options={{ title: "Metas" }} />
       <Stack.Screen name="goal-detail" options={{ title: "Meta" }} />
+      <Stack.Screen name="activity" options={{ title: "Atividade" }} />
+      <Stack.Screen
+        name="notification-settings"
+        options={{ title: "Notificações" }}
+      />
       <Stack.Screen
         name="couple-settings"
         options={{ title: "Configurações do vínculo" }}

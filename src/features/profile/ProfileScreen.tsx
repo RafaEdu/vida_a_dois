@@ -11,6 +11,7 @@ import {
 import { ProfileIdentityCard } from "./components/ProfileIdentityCard";
 import { ProfileDetailsCard } from "./components/ProfileDetailsCard";
 import { AccountSecurityCard } from "./components/AccountSecurityCard";
+import { NotificationSettingsEntry } from "../notifications/components/NotificationSettingsEntry";
 
 /**
  * Área individual do usuário autenticado. Concentra apenas dados que pertencem
@@ -73,6 +74,14 @@ export function ProfileScreen() {
           onUpdate={updateProfile}
           splitMode={couple?.split_mode ?? null}
         />
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader
+          title="Preferências"
+          subtitle="Avisos individuais no seu aparelho"
+        />
+        <NotificationSettingsEntry />
       </View>
 
       <View style={styles.section}>

@@ -109,5 +109,23 @@ export interface IdealSplit {
   calculated: boolean;
 }
 
+export type ActivityEventType =
+  | "expense_paid"
+  | "month_closed"
+  | "budget_changed"
+  | "split_changed"
+  | "goal_completed"
+  | "recurrence_ended"
+  | "relationship_ended";
+
+export type CoupleActivity = Omit<
+  Tables["couple_activity"]["Row"],
+  "event_type"
+> & {
+  event_type: ActivityEventType;
+};
+
+export type NotificationPreferences = Tables["notification_preferences"]["Row"];
+
 export type UserState =
   "unverified" | "profile_incomplete" | "awaiting_partner" | "linked";

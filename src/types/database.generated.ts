@@ -53,6 +53,54 @@ export type Database = {
           },
         ];
       };
+      couple_activity: {
+        Row: {
+          actor_id: string | null;
+          couple_id: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+        };
+        Insert: {
+          actor_id?: string | null;
+          couple_id: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+        };
+        Update: {
+          actor_id?: string | null;
+          couple_id?: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "couple_activity_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "couple_activity_couple_id_fkey";
+            columns: ["couple_id"];
+            isOneToOne: false;
+            referencedRelation: "couples";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       couples: {
         Row: {
           created_at: string;
@@ -452,6 +500,56 @@ export type Database = {
             foreignKeyName: "monthly_closings_closed_by_fkey";
             columns: ["closed_by"];
             isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          closing_reminder_enabled: boolean;
+          created_at: string;
+          due_soon_enabled: boolean;
+          invite_updates_enabled: boolean;
+          last_activity_seen_at: string | null;
+          notifications_enabled: boolean;
+          pending_expenses_enabled: boolean;
+          reminder_time: string;
+          shared_activity_enabled: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          closing_reminder_enabled?: boolean;
+          created_at?: string;
+          due_soon_enabled?: boolean;
+          invite_updates_enabled?: boolean;
+          last_activity_seen_at?: string | null;
+          notifications_enabled?: boolean;
+          pending_expenses_enabled?: boolean;
+          reminder_time?: string;
+          shared_activity_enabled?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          closing_reminder_enabled?: boolean;
+          created_at?: string;
+          due_soon_enabled?: boolean;
+          invite_updates_enabled?: boolean;
+          last_activity_seen_at?: string | null;
+          notifications_enabled?: boolean;
+          pending_expenses_enabled?: boolean;
+          reminder_time?: string;
+          shared_activity_enabled?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },

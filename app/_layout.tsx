@@ -2,6 +2,7 @@ import { Stack } from "expo-router/stack";
 import { AuthProvider } from "../src/providers/AuthProvider";
 import { CoupleProvider } from "../src/providers/CoupleProvider";
 import { FinanceProvider } from "../src/providers/FinanceProvider";
+import { NotificationProvider } from "../src/providers/NotificationProvider";
 import { useAuth } from "../src/lib/auth-context";
 import {
   StyleSheet,
@@ -85,7 +86,9 @@ export default function RootLayout() {
     <AuthProvider>
       <CoupleProvider>
         <FinanceProvider>
-          <AppNavigator />
+          <NotificationProvider>
+            <AppNavigator />
+          </NotificationProvider>
         </FinanceProvider>
       </CoupleProvider>
     </AuthProvider>

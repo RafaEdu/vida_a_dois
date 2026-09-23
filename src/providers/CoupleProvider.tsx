@@ -12,6 +12,7 @@ import type { User } from "@supabase/supabase-js";
 import { useAuthSession } from "./AuthProvider";
 import { deriveCoupleLoadStatus, type LoadStatus } from "./bootstrap";
 import { deriveUserState } from "../lib/user-state";
+import * as activityService from "../services/activity";
 import * as profileService from "../services/profile";
 import * as coupleService from "../services/couple";
 import type { CostPlanInput } from "../services/couple";
@@ -23,12 +24,14 @@ import {
   type AvatarPickerAsset,
 } from "../domain/account/avatar";
 import {
+  subscribeToCoupleActivity,
   subscribeToCoupleChanges,
   subscribeToCoupleInvites,
 } from "../services/realtime";
 import { ok, type ServiceResult } from "../utils/result";
 import type {
   Couple,
+  CoupleActivity,
   IdealSplit,
   PartnerInfo,
   PartnerLookup,
@@ -65,6 +68,10 @@ export interface CoupleContextValue {
   endRelationship: () => Promise<{ error?: string }>;
   fetchIdealSplit: () => Promise<ServiceResult<IdealSplit | null>>;
   updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
+  activity: CoupleActivity[];
+  activityLoading: boolean;
+  activityError: string | null;
+  fetchActivity: () => Promise<void>;
 }
 
 const CoupleContext = createContext<CoupleContextValue | null>(null);
@@ -76,6 +83,9 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
   const [selfAvatarUrl, setSelfAvatarUrl] = useState<string | null>(null);
   const [partnerAvatarUrl, setPartnerAvatarUrl] = useState<string | null>(null);
+  const [activity, setActivity] = useState<CoupleActivity[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
   const [internalStatus, setInternalStatus] = useState<LoadStatus>("loading");
   const [error, setError] = useState<string | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
@@ -85,6 +95,9 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
   const profileRef = useRef<Profile | null>(profile);
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
   const coupleId = couple?.id ?? null;
+  // Feed só existe para vínculo `active`/`ended` (regra 2.6); `pending` não lê.
+  const activityCoupleId =
+    couple && couple.status !== "pending" ? couple.id : null;
 
   useEffect(() => {
     userRef.current = user;
@@ -222,6 +235,82 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       },
     });
   }, [user, refreshProfile]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!activityCoupleId) {
+      setActivity([]);
+      setActivityError(null);
+      setActivityLoading(false);
+      return;
+    }
+
+    setActivityLoading(true);
+    setActivityError(null);
+
+    activityService
+      .fetchCoupleActivity(activityCoupleId)
+      .then((result) => {
+        if (!active) return;
+        if (result.error) {
+          setActivityError(result.error.message);
+          return;
+        }
+        setActivity(result.data);
+      })
+      .catch((err) => {
+        if (active) {
+          setActivityError(
+            err instanceof Error
+              ? err.message
+              : "Erro ao carregar a atividade do casal.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setActivityLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activityCoupleId]);
+
+  useEffect(() => {
+    if (!activityCoupleId) return;
+
+    return subscribeToCoupleActivity(activityCoupleId, (item) => {
+      setActivity((prev) =>
+        prev.some((existing) => existing.id === item.id)
+          ? prev
+          : [item, ...prev],
+      );
+    });
+  }, [activityCoupleId]);
+
+  const fetchActivity = useCallback(async () => {
+    if (!activityCoupleId) return;
+    setActivityLoading(true);
+    setActivityError(null);
+    try {
+      const result =
+        await activityService.fetchCoupleActivity(activityCoupleId);
+      if (result.error) {
+        setActivityError(result.error.message);
+        return;
+      }
+      setActivity(result.data);
+    } catch (err) {
+      setActivityError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao carregar a atividade do casal.",
+      );
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [activityCoupleId]);
 
   const saveProfile = useCallback(
     async (data: {
@@ -429,6 +518,10 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       endRelationship,
       fetchIdealSplit,
       updateCostPlan,
+      activity,
+      activityLoading,
+      activityError,
+      fetchActivity,
     }),
     [
       profile,
@@ -452,6 +545,10 @@ export function CoupleProvider({ children }: { children: ReactNode }) {
       endRelationship,
       fetchIdealSplit,
       updateCostPlan,
+      activity,
+      activityLoading,
+      activityError,
+      fetchActivity,
     ],
   );
 
