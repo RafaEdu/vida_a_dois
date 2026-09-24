@@ -17,6 +17,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.rafadreissig.vidaadois",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FAFAFA"
@@ -40,6 +41,13 @@
           "microphonePermission": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "975505c3-487d-4b14-9a51-656992d9e161"
+      }
+    },
+    "owner": "rafadreissig"
   }
 }
