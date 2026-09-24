@@ -148,6 +148,7 @@ nova migration em `supabase/migrations/`, numerada em sequência.
 | 21/09/2026 | `001`–`008`       | Divergência encontrada: o export de lints do remoto ainda expõe as assinaturas antigas `accept_invitation(uuid, uuid)`, `link_partner(text, uuid)` e `reject_invitation(uuid, uuid)`, removidas pela migration `006`. Indício de migration `006` não aplicada (ou aplicada manualmente) no remoto. Ver `docs/BANCO_DADOS.md`. |
 | 22/09/2026 | `001`–`012`       | Inspeção somente-leitura confirmou o DDL de `009`–`012` no remoto (`ended_at`/`ended_by`, `avatar_path`, view `partner_profiles`, `recurrence_series_id`). Seguem abertas as dívidas: grants de `anon` em RPCs e a divergência de histórico da `006`.                                                                         |
 | 23/09/2026 | `001`–`019`       | Inspeções REST indicaram `010`–`018` aplicadas; `019` é a próxima pendente e a `006` (hardening de RPCs) segue sem confirmação. Reconciliar o histórico antes de qualquer push novo.                                                                                                                                          |
+| 23/09/2026 | `001`–`020`       | Security Advisor: `020` corrige o `security_definer_view` de `partner_profiles`, revoga `execute` de `anon` (default privileges do Supabase) e das funções internas, e remove as assinaturas antigas de convite. `auth_leaked_password_protection` é config de Auth/Dashboard.                                                |
 
 ### RLS
 

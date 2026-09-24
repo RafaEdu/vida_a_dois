@@ -6,27 +6,28 @@ aplicada**; toda correção gera uma nova migration numerada.
 
 ## 1. Inventário das migrations
 
-| Migration                                   | Conteúdo principal                                                                                                                   |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `001_initial_schema.sql`                    | Tabelas `profiles`/`couples`, RPCs `lookup_partner`/`link_partner`, RLS e Realtime de `couples`.                                     |
-| `002_fix_invite_code.sql`                   | `invite_code` de `char(8)` para `varchar(8)` e correção de códigos com padding.                                                      |
-| `003_financial.sql`                         | `couples.monthly_budget`, tabela `expenses`, RPCs `accept_invitation`/`reject_invitation`, RLS.                                      |
-| `004_financial_extensions.sql`              | `expenses.paid_by`/`is_recurring`, tabela `incomes`, `couples.shared_balance`, split e `close_month`.                                |
-| `005_consolidated_fixes.sql`                | RLS de perfil (próprio ou parceiro), `last_closed_month` e `close_month` idempotente.                                                |
-| `006_security_and_finalize.sql`             | RPCs de convite passam a usar `auth.uid()` e `invite_code` gerado no servidor.                                                       |
-| `007_expense_recurrence_series.sql`         | `expenses.recurrence_series_id`, trigger de série, check de consistência e índice único de ocorrência.                               |
-| `008_mark_expense_paid_rpc.sql`             | RPC `mark_expense_paid` transacional/idempotente e grants restritos a `authenticated`.                                               |
-| `009_financial_invariants_and_rls.sql`      | RLS financeira exige vínculo `active`; `amount > 0`; validação de `paid_by`; policy `profiles_select_own` + view `partner_profiles`. |
-| `010_relationship_lifecycle.sql`            | Estado `ended`, `ended_at`/`ended_by`, trigger de vínculo único aberto, leitura histórica e `rotate_couple_invite_codes`.            |
-| `011_end_relationship.sql`                  | RPC `end_relationship()` (encerra sem apagar histórico e rotaciona invite codes).                                                    |
-| `012_profile_avatar.sql`                    | `profiles.avatar_path`, view `partner_profiles.avatar_path`, bucket privado `avatars` e policies de Storage.                         |
-| `013_expense_payment_semantics.sql`         | Backfill/constraint/trigger de `paid`/`paid_by` e RPC `mark_expense_paid(uuid, uuid)` com pagador explícito.                         |
-| `014_split_mode.sql`                        | `couples.split_mode` (`manual`/`income_based`), constraints de divisão e recálculo condicional.                                      |
-| `015_monthly_closings.sql`                  | Tabela `monthly_closings`, `close_month` com snapshot e triggers de imutabilidade de mês fechado.                                    |
-| `016_expense_recurrence_series.sql`         | Tabela `expense_recurrence_series`, backfill, geração de ocorrência só de série ativa e RPCs de gerenciamento.                       |
-| `017_category_budgets.sql`                  | Tabela `category_budgets` (orçamento por categoria) com RLS.                                                                         |
-| `018_financial_goals.sql`                   | Tabelas `financial_goals` e `goal_contributions` (metas compartilhadas) com RLS.                                                     |
-| `019_couple_activity_and_notifications.sql` | Tabela `couple_activity` (feed append-only), triggers de eventos e `notification_preferences`.                                       |
+| Migration                                   | Conteúdo principal                                                                                                                                          |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `001_initial_schema.sql`                    | Tabelas `profiles`/`couples`, RPCs `lookup_partner`/`link_partner`, RLS e Realtime de `couples`.                                                            |
+| `002_fix_invite_code.sql`                   | `invite_code` de `char(8)` para `varchar(8)` e correção de códigos com padding.                                                                             |
+| `003_financial.sql`                         | `couples.monthly_budget`, tabela `expenses`, RPCs `accept_invitation`/`reject_invitation`, RLS.                                                             |
+| `004_financial_extensions.sql`              | `expenses.paid_by`/`is_recurring`, tabela `incomes`, `couples.shared_balance`, split e `close_month`.                                                       |
+| `005_consolidated_fixes.sql`                | RLS de perfil (próprio ou parceiro), `last_closed_month` e `close_month` idempotente.                                                                       |
+| `006_security_and_finalize.sql`             | RPCs de convite passam a usar `auth.uid()` e `invite_code` gerado no servidor.                                                                              |
+| `007_expense_recurrence_series.sql`         | `expenses.recurrence_series_id`, trigger de série, check de consistência e índice único de ocorrência.                                                      |
+| `008_mark_expense_paid_rpc.sql`             | RPC `mark_expense_paid` transacional/idempotente e grants restritos a `authenticated`.                                                                      |
+| `009_financial_invariants_and_rls.sql`      | RLS financeira exige vínculo `active`; `amount > 0`; validação de `paid_by`; policy `profiles_select_own` + view `partner_profiles`.                        |
+| `010_relationship_lifecycle.sql`            | Estado `ended`, `ended_at`/`ended_by`, trigger de vínculo único aberto, leitura histórica e `rotate_couple_invite_codes`.                                   |
+| `011_end_relationship.sql`                  | RPC `end_relationship()` (encerra sem apagar histórico e rotaciona invite codes).                                                                           |
+| `012_profile_avatar.sql`                    | `profiles.avatar_path`, view `partner_profiles.avatar_path`, bucket privado `avatars` e policies de Storage.                                                |
+| `013_expense_payment_semantics.sql`         | Backfill/constraint/trigger de `paid`/`paid_by` e RPC `mark_expense_paid(uuid, uuid)` com pagador explícito.                                                |
+| `014_split_mode.sql`                        | `couples.split_mode` (`manual`/`income_based`), constraints de divisão e recálculo condicional.                                                             |
+| `015_monthly_closings.sql`                  | Tabela `monthly_closings`, `close_month` com snapshot e triggers de imutabilidade de mês fechado.                                                           |
+| `016_expense_recurrence_series.sql`         | Tabela `expense_recurrence_series`, backfill, geração de ocorrência só de série ativa e RPCs de gerenciamento.                                              |
+| `017_category_budgets.sql`                  | Tabela `category_budgets` (orçamento por categoria) com RLS.                                                                                                |
+| `018_financial_goals.sql`                   | Tabelas `financial_goals` e `goal_contributions` (metas compartilhadas) com RLS.                                                                            |
+| `019_couple_activity_and_notifications.sql` | Tabela `couple_activity` (feed append-only), triggers de eventos e `notification_preferences`.                                                              |
+| `020_security_advisor_hardening.sql`        | View `partner_profiles` vira `security_invoker` (sobre `get_partner_profiles`); revoga `execute` de `anon`/internas; remove assinaturas antigas de convite. |
 
 ## 2. Modelo de dados
 
@@ -46,9 +47,12 @@ aplicada**; toda correção gera uma nova migration numerada.
 | `couple_activity`           | `id`, `couple_id`, `actor_id`, `event_type`, `entity_type`, `entity_id`, `metadata`, `created_at`                                                                 | Append-only; escrita só por triggers/RPCs; leitura para `active`/`ended`.                          |
 | `notification_preferences`  | `user_id`, flags de categorias, `reminder_time`, `last_activity_seen_at`                                                                                          | Uma linha por usuário; leitura/escrita apenas do próprio `auth.uid()`.                             |
 
-A view `partner_profiles` (`security definer`) expõe somente `couple_id`, `id`,
-`full_name`, `monthly_income` e `avatar_path` do parceiro, respeitando o estado
-do vínculo. É a interface limitada para leitura do parceiro.
+A view `partner_profiles` (`security_invoker = true`) expõe somente `couple_id`,
+`id`, `full_name`, `monthly_income` e `avatar_path` do parceiro, respeitando o
+estado do vínculo. É a interface limitada para leitura do parceiro: a filtragem
+por `auth.uid()` e o recorte de colunas ficam na função interna
+`get_partner_profiles()` (`security definer`, execute só para `authenticated`),
+e a view roda com as permissões do consultante.
 
 ### Estado do vínculo x acesso
 
@@ -71,9 +75,12 @@ do vínculo. É a interface limitada para leitura do parceiro.
 | `update_recurrence_series` / `set_recurrence_series_active` / `end_recurrence_series` | Gerenciam séries recorrentes sem tocar meses fechados.                                              |
 | `rotate_couple_invite_codes(p_couple_id)`                                             | Interna; regenera códigos após encerramento.                                                        |
 | `is_active_partner(p_owner)`                                                          | Helper das policies de Storage do bucket de avatar.                                                 |
+| `get_partner_profiles()`                                                              | Interna (`020`); recorte seguro do parceiro usado pela view `partner_profiles`.                     |
 
 Todas as RPCs não públicas são `security definer` com `search_path` fixo e
-`execute` revogado de `public`/`anon` (concedido apenas a `authenticated`).
+`execute` revogado de `public`, `anon` e do que for interno (concedido apenas a
+`authenticated` nas RPCs do cliente). A migration `020` passa a revogar `anon`
+nominalmente, porque o Supabase concede `execute` a ele por default privileges.
 Funções de trigger não devem ser chamáveis pela API.
 
 ## 4. Triggers e invariantes no servidor
@@ -96,22 +103,28 @@ inspeção somente-leitura via REST e a leitura estática das migrations.
 
 ### Divergências conhecidas
 
-1. **RPCs antigas de convite podem ainda existir no remoto.** O hardening da
-   migration `006` remove as assinaturas `link_partner(text, uuid)`,
-   `accept_invitation(uuid, uuid)` e `reject_invitation(uuid, uuid)`. A hipótese
-   registrada é que a `006` foi consolidada mantendo o mesmo número de versão,
-   então o `db push` pode considerá-la aplicada sem executá-la.
+1. **RPCs antigas de convite.** O hardening da migration `006` remove as
+   assinaturas `link_partner(text, uuid)`, `accept_invitation(uuid, uuid)` e
+   `reject_invitation(uuid, uuid)`. A hipótese registrada é que a `006` foi
+   consolidada mantendo o mesmo número de versão, então o `db push` pode
+   considerá-la aplicada sem executá-la. A migration `020` volta a fazer o
+   `drop` dessas assinaturas, recria as canônicas derivando de `auth.uid()` e
+   restaura `generate_invite_code`/`set_invite_code_on_insert` (com backfill dos
+   perfis sem código), que também estavam ausentes no remoto.
 2. **Grants de `anon` em funções `security definer`.** Apesar de `revoke ...
-from public`, o Supabase pode manter grants explícitos a `anon`. A dívida é
-   revogar `execute` de `anon` em toda função que não seja pública.
+from public`, o Supabase mantém grants explícitos a `anon` por default
+   privileges. A migration `020` revoga `anon` nominalmente de todas as funções
+   e remove `execute` de `authenticated` das funções internas de trigger.
 
 ### Ações ao reconciliar (onde houver link)
 
 1. `npx supabase migration list --linked` para confirmar as versões aplicadas.
 2. Aplicar pendências com `npm run db:push:dry` e depois `npm run db:push`.
 3. Confirmar que as assinaturas antigas sumiram.
-4. Revogar `execute` de `anon`/`public` das funções internas (migration própria).
-5. Reexportar os lints e comparar.
+4. Reexportar os lints e comparar: espera-se resolver o `security_definer_view`
+   e os avisos de `anon`; a view passa a ser `security_invoker` e as funções
+   internas deixam de ser chamáveis. Permanece intencional o aviso de
+   `authenticated` em `get_partner_profiles()` e nas RPCs do cliente.
 
 > Fora do escopo de migrations: o lint `auth_leaked_password_protection`
 > (proteção de senhas vazadas) é configuração de Auth do Dashboard.
