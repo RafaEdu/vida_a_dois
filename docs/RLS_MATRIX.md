@@ -1,84 +1,95 @@
 # Matriz de testes de RLS
 
-Fase 12 do plano de melhoria. Objetivo: confirmar no **banco** que as policies,
-RPCs e constraints bloqueiam o que precisa ser bloqueado, sem depender da UI.
+Objetivo: confirmar no **banco** que as policies, RPCs e constraints bloqueiam
+o que precisa ser bloqueado, sem depender da UI.
 
-> Status: matriz definida e roteiro de execução manual documentados. A
-> automação em pgTAP (`npm run db:test`) fica para as Fases 13/14, quando a
-> regra de negócio já estiver coberta por testes de domínio.
+> **Ambiente:** este fluxo de trabalho não usa Supabase/Docker local. As
+> verificações possíveis são de inspeção somente-leitura no Supabase online e
+> por testes de aplicação com o Supabase mockado. A automação em pgTAP fica
+> registrada como pendência (ver final do documento).
 
 ## Cenários
 
-| #   | Cenário                                          | Esperado                                               | Referência                                                                    |
-| --- | ------------------------------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| 1   | Usuário A lê o próprio perfil                    | permitido                                              | policy `Users can view own or partner profile` (`005`)                        |
-| 2   | Usuário A lê o perfil necessário do parceiro     | permitido                                              | mesma policy (`005`)                                                          |
-| 3   | Usuário de fora do casal lê o perfil do casal    | negado                                                 | mesma policy (`005`)                                                          |
-| 4   | Usuário A lê despesas do próprio casal           | permitido                                              | `Couple members can view expenses` (`003`)                                    |
-| 5   | Usuário de outro casal lê despesas               | negado                                                 | mesma policy (`003`)                                                          |
-| 6   | Usuário A altera despesa do próprio casal        | permitido                                              | `Couple members can update expenses` (`003`)                                  |
-| 7   | Usuário de outro casal altera despesa            | negado                                                 | mesma policy (`003`)                                                          |
-| 8   | Usuário insere despesa com `created_by` de outro | negado                                                 | `Couple members can insert expenses` (`003`, exige `created_by = auth.uid()`) |
-| 9   | Usuário lê receitas do casal (status `active`)   | permitido                                              | `incomes_select` (`004`)                                                      |
-| 10  | Usuário lê receitas de casal `pending`           | negado                                                 | `incomes_*` exigem `status = 'active'` (`004`)                                |
-| 11  | Usuário vincula a si mesmo                       | negado (`"Voce nao pode se vincular com voce mesmo."`) | `link_partner` (`006`)                                                        |
-| 12  | Convite com código inválido                      | rejeitado (`"Codigo invalido..."`)                     | `link_partner` (`006`)                                                        |
-| 13  | Vínculo duplicado / usuário já em casal ativo    | rejeitado (`already_linked` / `"Voce ja esta..."`)     | `link_partner` (`006`)                                                        |
-| 14  | Aceitar o mesmo convite duas vezes               | segunda chamada rejeitada de forma controlada          | `accept_invitation` (`006`)                                                   |
-| 15  | `lookup_partner` sem sessão                      | retorna vazio                                          | `lookup_partner` (`006`)                                                      |
-| 16  | Fechar o mês duas vezes                          | sem duplicar saldo                                     | `close_month` + `last_closed_month` (`005`)                                   |
-| 17  | Pagar despesa recorrente duas vezes              | uma única ocorrência criada                            | `mark_expense_paid` + índice único (`007`/`008`)                              |
+### Perfil e casal
 
-## Roteiro de execução
+| #   | Cenário                                              | Esperado                             | Referência                                           |
+| --- | ---------------------------------------------------- | ------------------------------------ | ---------------------------------------------------- |
+| 1   | Usuário lê o próprio perfil                          | permitido                            | `profiles_select_own` (`009`)                        |
+| 2   | Parceiro ativo lê nome/renda/avatar do parceiro      | permitido (campos limitados)         | view `partner_profiles` (`009`/`012`)                |
+| 3   | Usuário de fora do casal lê perfil/finanças          | negado                               | `profiles_select_own` + RLS financeira (`009`/`010`) |
+| 4   | Participante lê o vínculo próprio (`active`/`ended`) | permitido                            | RLS de `couples` (`001`+`010`)                       |
+| 5   | Escrita em `couples` por membro de vínculo `ended`   | negado                               | `couples_update_active_members` (`009`)              |
+| 6   | `active -> ended` por `update` comum do cliente      | negado (só a RPC `end_relationship`) | `couples_update_active_members` (`009`/`011`)        |
+| 7   | Mesmo usuário em dois vínculos abertos               | negado                               | `trg_couples_single_open` (`010`)                    |
+| 8   | Mesmo par forma novo vínculo após `ended`            | permitido                            | unicidade vitalícia removida (`010`)                 |
 
-### Local
+### Financeiro
+
+| #   | Cenário                                                  | Esperado                        | Referência                                                                   |
+| --- | -------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------- |
+| 9   | Leitura de despesas/receitas em vínculo `active`/`ended` | permitido                       | policies de SELECT (`009`/`010`)                                             |
+| 10  | Leitura/escrita financeira em vínculo `pending`          | negado                          | policies exigem `status='active'` na escrita (`009`)                         |
+| 11  | Escrita financeira em vínculo `ended`                    | negado                          | policies de INSERT/UPDATE/DELETE (`009`/`010`)                               |
+| 12  | Despesa com `paid_by` fora do casal                      | negado                          | `trg_expenses_validate_paid_by` (`009`/`013`)                                |
+| 13  | Despesa pendente com `paid_by` preenchido                | negado                          | `expenses_paid_paid_by_consistency` + trigger (`013`)                        |
+| 14  | Despesa/receita com `amount <= 0`                        | negado                          | `expenses_amount_positive` / `incomes` (`009`)                               |
+| 15  | INSERT de despesa com `created_by` de outro usuário      | negado                          | policy de INSERT exige `created_by = auth.uid()` (`009`)                     |
+| 16  | INSERT/UPDATE/DELETE de lançamento de mês fechado        | negado                          | `trg_expenses_block_closed_month` / `trg_incomes_block_closed_month` (`015`) |
+| 17  | Fechar o mês duas vezes                                  | não duplica saldo (idempotente) | `close_month` + snapshot (`015`)                                             |
+| 18  | Pagar despesa recorrente duas vezes                      | uma única ocorrência gerada     | `mark_expense_paid` + índice único (`016`)                                   |
+| 19  | Editar/encerrar série recorrente tocando mês fechado     | mês fechado preservado          | RPCs de recorrência (`016`)                                                  |
+
+### Metas, notificações e RPCs
+
+| #   | Cenário                                                     | Esperado                     | Referência                                                      |
+| --- | ----------------------------------------------------------- | ---------------------------- | --------------------------------------------------------------- |
+| 20  | Contribuição com `user_id` fora do casal da meta            | negado                       | policies de `goal_contributions` (`018`)                        |
+| 21  | Contribuição em meta arquivada/concluída ou vínculo `ended` | negado                       | policy de INSERT exige meta `active` + vínculo `active` (`018`) |
+| 22  | `notification_preferences` de outro usuário                 | negado                       | policies `notification_preferences_*_own` (`019`)               |
+| 23  | Leitura de `couple_activity` de outro casal                 | negado                       | `couple_activity_select_members` (`019`)                        |
+| 24  | RPCs de convite/pagamento sem sessão (`anon`)               | negado (`permission denied`) | grants `revoke` + `grant authenticated` (`011`/`013`/`016`)     |
+
+## Cobertura por testes de aplicação
+
+Os cenários puramente de UI/serviço têm cobertura automatizada:
+
+- bootstrap: `src/lib/__tests__/user-state.test.ts`,
+  `src/providers/__tests__/bootstrap.test.ts` (sem perfil, sem parceiro,
+  convite pendente, casal ativo, vínculo encerrado, financeiro `idle` em
+  `pending`);
+- pagamento/pagador: `src/services/__tests__/expense.test.ts`;
+- recorrência: `src/services/__tests__/recurrence.test.ts`,
+  `src/features/recurrences/__tests__/model.test.ts`;
+- divisão manual/proporcional: `src/domain/finance/__tests__/split.test.ts`;
+- fechamento: `src/services/__tests__/couple-rpc.test.ts`,
+  `src/services/__tests__/monthlyClosing.test.ts`,
+  `src/domain/finance/__tests__/selectors.test.ts`;
+- acerto: `src/domain/finance/__tests__/settlement.test.ts`;
+- encerramento preservando histórico:
+  `src/services/__tests__/couple-end-relationship.test.ts` +
+  `src/services/__tests__/couple.test.ts` (`fetchRelationshipHistory`,
+  `fetchCoupleById`).
+
+Os cenários de RLS/trigger/constraint (4–8, 10–24) dependem do banco e são
+verificados por inspeção/smoke, conforme o roteiro abaixo.
+
+## Roteiro de execução (quando houver projeto linkado)
 
 ```text
-npm run db:start
-npm run db:reset
-# conectar no banco local (porta 54322)
-psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+1. npx supabase migration list --linked
+2. npm run gen:types:linked && npm run typecheck
+3. inspeção somente-leitura (REST) das tabelas/views e policies
+4. smoke manual com duas contas (ver docs/SMOKE_TEST.md)
+5. registrar o resultado na tabela do SMOKE_TEST.md
 ```
 
-Alternativa sem `psql` instalado:
+Reconcilie o histórico da migration `006` antes de qualquer push novo (ver
+[`BANCO_DADOS.md`](BANCO_DADOS.md#5-auditoria-local-x-remoto)).
 
-```text
-docker exec -it supabase_db_vida_a_dois psql -U postgres
-```
+## Pendências
 
-### Simulando usuários e papéis
-
-`auth.uid()` deriva de `request.jwt.claims`. Para testar cada usuário, rode no
-banco local:
-
-```sql
-begin;
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"<uuid-do-usuario>","role":"authenticated"}';
-
--- probe: ex.: select * from public.expenses;
--- probe: ex.: update public.expenses set amount = 1 where id = '<expense-id>';
-
-reset role;
-rollback;
-```
-
-Sempre que possível, envolver em `begin; ... rollback;` para não poluir o banco
-local. Para os cenários de RPC, chamar a função com os argumentos reais e
-inspecionar o `jsonb` de retorno (`select public.link_partner('<codigo>');`).
-
-### Casos que exigem massa de teste
-
-Os cenários 4–14 precisam de dois casais (um ativo, um `pending`) e de despesas
-e receitas vinculadas. Criar essa massa como script de seed (`supabase/seed.sql`)
-ou como bloco de `insert` antes dos probes; a automação definitiva (pgTAP) deve
-seguir o padrão `begin; select plan(n); ... select * from finish(); rollback;`.
-
-## Achados de segurança relacionados
-
-O export de lints do remoto (20/09/2026) mostra funções `security definer`
-executáveis por `anon`/`authenticated`, incluindo `link_partner`,
-`accept_invitation`, `reject_invitation` e `close_month`. A reconciliação das
-migrations (`006`) e o endurecimento de `execute` estão descritos em
-[`BANCO_DADOS.md`](BANCO_DADOS.md#2-auditoria-local-x-remoto).
+- Automação em pgTAP (`supabase/tests/`) não foi criada: exige banco local, que
+  este fluxo não usa. Fica como evolução futura.
+- Exercitar `close_month`, `mark_expense_paid`, `end_relationship` e as RPCs de
+  recorrência com sessão autenticada real.
+- Confirmar os grants de `anon` após o hardening definitivo da `006`.

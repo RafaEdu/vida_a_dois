@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { supabase } from "../../lib/supabase";
 import type { Couple } from "../../types/domain";
 import {
+  fetchCoupleById,
   fetchCurrentCouple,
   fetchIdealSplit,
   fetchPartner,
@@ -151,6 +152,38 @@ describe("fetchRelationshipHistory", () => {
       eq: [["status", "ended"]],
       order: ["ended_at", { ascending: false }],
     });
+  });
+});
+
+describe("fetchCoupleById", () => {
+  it("lê um vínculo encerrado por id (histórico somente leitura)", async () => {
+    const ended = makeCouple({
+      id: "c-old",
+      status: "ended",
+      ended_at: "2026-03-01T00:00:00.000Z",
+      ended_by: "u1",
+    });
+    resultsByTable["couples"] = { data: ended, error: null };
+
+    const result = await fetchCoupleById("c-old");
+
+    expect(result.error).toBeNull();
+    expect(result.data?.id).toBe("c-old");
+    expect(result.data?.status).toBe("ended");
+    expect(calls).toContainEqual({
+      table: "couples",
+      select: "*",
+      eq: [["id", "c-old"]],
+    });
+  });
+
+  it("devolve null quando o vínculo não existe ou não é acessível", async () => {
+    resultsByTable["couples"] = { data: null, error: null };
+
+    const result = await fetchCoupleById("missing");
+
+    expect(result.error).toBeNull();
+    expect(result.data).toBeNull();
   });
 });
 

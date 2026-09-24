@@ -21,7 +21,7 @@ export async function fetchExpenses(
   if (error) {
     return fail(toAppError(error, "Não foi possível carregar as despesas."));
   }
-  return ok((data as Expense[]) ?? []);
+  return ok(data ?? []);
 }
 
 export async function createExpense(
@@ -46,7 +46,7 @@ export async function createExpense(
   if (error) {
     return fail(toAppError(error, "Não foi possível salvar a despesa."));
   }
-  return ok(created as Expense);
+  return ok(created);
 }
 
 export async function updateExpense(
@@ -63,7 +63,7 @@ export async function updateExpense(
   if (error) {
     return fail(toAppError(error, "Não foi possível atualizar a despesa."));
   }
-  return ok(updated as Expense);
+  return ok(updated);
 }
 
 export interface MarkExpensePaidResult {

@@ -35,6 +35,19 @@ import type {
 
 export type { BootstrapStatus };
 
+/**
+ * Fachada de compatibilidade que agrega sessão, perfil/casal e finanças.
+ *
+ * **Não usar em código novo.** A separação canônica de contextos é:
+ *
+ * - autenticação/sessão -> `useAuthSession` (`providers/AuthProvider`);
+ * - perfil e casal -> `useCouple` (`providers/CoupleProvider`);
+ * - finanças -> `useFinance` (`providers/FinanceProvider`).
+ *
+ * Este agregador existe apenas para telas legadas que ainda consomem várias
+ * áreas de uma vez. Novos consumidores devem importar os providers específicos
+ * para não aumentar o acoplamento.
+ */
 export interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -124,6 +137,11 @@ export interface AuthContextType {
   updateCostPlan: (data: CostPlanInput) => Promise<{ error?: string }>;
 }
 
+/**
+ * @deprecated Use `useAuthSession`, `useCouple` e `useFinance` diretamente.
+ * Mantido apenas como fachada de compatibilidade para telas legadas; não
+ * adicionar novos consumidores.
+ */
 export function useAuth(): AuthContextType {
   const auth = useAuthSession();
   const coupleCtx = useCouple();

@@ -22,7 +22,7 @@ export async function fetchNotificationPreferences(): Promise<
       toAppError(error, "Não foi possível carregar suas preferências."),
     );
   }
-  return ok((data as NotificationPreferences | null) ?? null);
+  return ok(data);
 }
 
 /**
@@ -44,7 +44,7 @@ export async function saveNotificationPreferences(
       toAppError(error, "Não foi possível salvar suas preferências."),
     );
   }
-  return ok(data as NotificationPreferences);
+  return ok(data);
 }
 
 /**
@@ -65,5 +65,5 @@ export async function markActivitySeen(
       toAppError(error, "Não foi possível atualizar a atividade como lida."),
     );
   }
-  return ok(data as NotificationPreferences);
+  return ok(data);
 }

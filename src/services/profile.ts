@@ -15,7 +15,7 @@ export async function fetchProfile(
   if (error) {
     return fail(toAppError(error, "Não foi possível carregar o perfil."));
   }
-  return ok((data as Profile) ?? null);
+  return ok(data);
 }
 
 export interface SaveProfileInput {
@@ -43,7 +43,7 @@ export async function saveProfile(
     .single();
 
   if (error) return { error: error.message };
-  return { profile: profile as Profile };
+  return { profile };
 }
 
 export interface UpdateProfileInput {
@@ -64,7 +64,7 @@ export async function updateProfile(
     .single();
 
   if (error) return { error: error.message };
-  return { profile: profile as Profile };
+  return { profile };
 }
 
 // ============================================================
@@ -90,7 +90,7 @@ export async function updateAvatarPath(
     .single();
 
   if (error) return { error: error.message };
-  return { profile: profile as Profile };
+  return { profile };
 }
 
 /**

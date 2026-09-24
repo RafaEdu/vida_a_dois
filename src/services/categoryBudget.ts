@@ -22,7 +22,7 @@ export async function fetchCategoryBudgets(
       toAppError(error, "Não foi possível carregar o orçamento por categoria."),
     );
   }
-  return ok((data as CategoryBudget[]) ?? []);
+  return ok(data ?? []);
 }
 
 /**
@@ -52,7 +52,7 @@ export async function saveCategoryBudget(
       toAppError(error, "Não foi possível salvar o orçamento da categoria."),
     );
   }
-  return ok(data as CategoryBudget);
+  return ok(data);
 }
 
 export async function deleteCategoryBudget(

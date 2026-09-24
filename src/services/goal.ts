@@ -50,7 +50,7 @@ export async function fetchGoalContributions(
       toAppError(error, "Não foi possível carregar as contribuições da meta."),
     );
   }
-  return ok((data as GoalContribution[]) ?? []);
+  return ok(data ?? []);
 }
 
 export interface GoalsOverview {
@@ -91,7 +91,7 @@ export async function fetchGoalsOverview(
     );
   }
 
-  return ok({ goals, contributions: (data as GoalContribution[]) ?? [] });
+  return ok({ goals, contributions: data ?? [] });
 }
 
 export async function createFinancialGoal(
@@ -185,5 +185,5 @@ export async function createGoalContribution(
       toAppError(error, "Não foi possível registrar a contribuição."),
     );
   }
-  return ok(data as GoalContribution);
+  return ok(data);
 }

@@ -25,7 +25,7 @@ export async function fetchMonthlyClosings(
       ),
     );
   }
-  return ok((data as MonthlyClosing[]) ?? []);
+  return ok(data ?? []);
 }
 
 /**
@@ -49,7 +49,7 @@ export async function fetchMonthlyClosingByMonth(
       toAppError(error, "Não foi possível carregar o fechamento do mês."),
     );
   }
-  return ok((data as MonthlyClosing) ?? null);
+  return ok(data);
 }
 
 export async function fetchMonthlyClosing(
@@ -64,5 +64,5 @@ export async function fetchMonthlyClosing(
   if (error) {
     return fail(toAppError(error, "Não foi possível carregar o fechamento."));
   }
-  return ok((data as MonthlyClosing) ?? null);
+  return ok(data);
 }

@@ -102,7 +102,7 @@ export async function fetchPartner(
       toAppError(error, "Não foi possível carregar os dados do parceiro."),
     );
   }
-  return ok((data as PartnerInfo) ?? null);
+  return ok(data);
 }
 
 export async function lookupPartner(
@@ -122,7 +122,7 @@ export async function lookupPartner(
   }
 
   const partner = Array.isArray(data) ? data[0] : data;
-  return { partner: partner as PartnerLookup };
+  return { partner };
 }
 
 export async function linkPartner(
@@ -299,5 +299,5 @@ export async function fetchIdealSplit(
     ratio_a: ratioA,
     ratio_b: ratioB,
     calculated: true,
-  } as IdealSplit);
+  });
 }

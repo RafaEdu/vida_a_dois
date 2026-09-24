@@ -15,7 +15,7 @@ export async function fetchIncomes(
   if (error) {
     return fail(toAppError(error, "Não foi possível carregar as receitas."));
   }
-  return ok((data as Income[]) ?? []);
+  return ok(data ?? []);
 }
 
 export async function createIncome(
@@ -39,7 +39,7 @@ export async function createIncome(
   if (error) {
     return fail(toAppError(error, "Não foi possível salvar a receita."));
   }
-  return ok(created as Income);
+  return ok(created);
 }
 
 export async function updateIncome(
@@ -56,7 +56,7 @@ export async function updateIncome(
   if (error) {
     return fail(toAppError(error, "Não foi possível atualizar a receita."));
   }
-  return ok(updated as Income);
+  return ok(updated);
 }
 
 export async function deleteIncome(id: string): Promise<{ error?: string }> {
